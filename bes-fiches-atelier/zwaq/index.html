@@ -1,0 +1,855 @@
+<!doctype html><html><head><meta charset="utf-8"><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>ZWAQ DECO Atelier</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+Arabic:wght@400;600&display=swap">
+<style>
+/* Layout : barre d'onglets produits, puis deux colonnes — tableaux éditables à gauche, bilan de coût collant à droite */
+:root{
+  --bg:#F3F1EC; --panel:#FFFFFF; --ink:#22201C; --muted:#6F6A61; --line:#DDD7CC; --field:#FAF8F4;
+  --accent:#A8461F; --accent-soft:#F4E3D9; --good:#2F6B47; --warn:#9A6B12; --bad:#A3302A;
+  --f-display:"Bricolage Grotesque",ui-sans-serif,system-ui,sans-serif;
+  --f-body:"IBM Plex Sans",ui-sans-serif,system-ui,sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#1A1916; --panel:#23211D; --ink:#EDE9E1; --muted:#A39D92; --line:#3A3731; --field:#2B2924;
+  --accent:#E07A4F; --accent-soft:#3A271D; --good:#6FBF8E; --warn:#D9A84A; --bad:#E07068; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#1A1916; --panel:#23211D; --ink:#EDE9E1; --muted:#A39D92; --line:#3A3731; --field:#2B2924;
+  --accent:#E07A4F; --accent-soft:#3A271D; --good:#6FBF8E; --warn:#D9A84A; --bad:#E07068; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:14px;line-height:1.45;margin:0}
+.wrap{max-width:1240px;margin:0 auto;padding:20px 16px 48px}
+header{display:flex;flex-wrap:wrap;align-items:end;justify-content:space-between;gap:12px;margin-bottom:16px}
+h1{font-family:var(--f-display);font-size:26px;line-height:1.1;margin:0;text-wrap:balance}
+h1 small{display:block;font-family:var(--f-body);font-size:12px;font-weight:500;letter-spacing:.08em;text-transform:uppercase;color:var(--accent);margin-bottom:4px}
+.status{font-size:12px;color:var(--muted);display:flex;align-items:center;gap:6px}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--muted)}
+.dot.ok{background:var(--good)} .dot.busy{background:var(--warn)} .dot.err{background:var(--bad)}
+nav{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:16px;border-bottom:1px solid var(--line);padding-bottom:10px}
+nav button{font:500 13px var(--f-body);color:var(--ink);background:transparent;border:1px solid var(--line);border-radius:999px;padding:6px 14px;cursor:pointer}
+nav button[aria-selected="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+nav button:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.grid{display:grid;grid-template-columns:minmax(0,1fr) 320px;gap:20px;align-items:start}
+@media (max-width:900px){.grid{grid-template-columns:minmax(0,1fr)}}
+section.block{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:14px;margin-bottom:16px;min-width:0}
+h2{font:600 15px var(--f-body);margin:0 0 10px;display:flex;justify-content:space-between;align-items:center;gap:8px}
+h2 .hint{font-weight:400;font-size:12px;color:var(--muted)}
+.scroll{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-variant-numeric:tabular-nums}
+th{font:500 11px var(--f-body);text-transform:uppercase;letter-spacing:.06em;color:var(--muted);text-align:left;padding:6px 6px;border-bottom:1px solid var(--line);white-space:nowrap}
+td{padding:3px 4px;border-bottom:1px solid var(--line);vertical-align:middle}
+td.num{font-family:var(--f-mono);font-size:12.5px;text-align:right;white-space:nowrap;color:var(--muted)}
+input,select{font:400 13px var(--f-body);color:var(--ink);background:var(--field);border:1px solid transparent;border-radius:4px;padding:5px 6px;width:100%;min-width:0}
+input:hover,select:hover{border-color:var(--line)}
+input[type=number]{font-family:var(--f-mono);font-size:12.5px;text-align:right}
+.w-name{min-width:150px}.w-n{width:70px}.w-s{width:84px}
+button.icon{border:0;background:transparent;color:var(--muted);cursor:pointer;font-size:16px;padding:2px 6px;border-radius:4px}
+button.icon:hover{color:var(--bad);background:var(--accent-soft)}
+button.add{font:500 12.5px var(--f-body);color:var(--accent);background:transparent;border:1px dashed var(--accent);border-radius:6px;padding:6px 10px;cursor:pointer;margin-top:8px}
+.fields{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
+.fields label{display:flex;flex-direction:column;gap:3px;font-size:12px;color:var(--muted)}
+.checks{display:flex;gap:14px;flex-wrap:wrap;font-size:13px}
+.checks label{display:flex;align-items:center;gap:6px;color:var(--ink)}
+.checks input{width:auto}
+aside{position:sticky;top:calc(env(safe-area-inset-top,0px) + 12px);display:flex;flex-direction:column;gap:12px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:14px}
+.card h3{font:700 16px var(--f-display);margin:0 0 8px;display:flex;justify-content:space-between;align-items:baseline}
+.pill{font:600 11px var(--f-body);padding:2px 8px;border-radius:999px;letter-spacing:.04em}
+.pill.good{color:var(--good);border:1px solid var(--good)} .pill.warn{color:var(--warn);border:1px solid var(--warn)} .pill.bad{color:var(--bad);border:1px solid var(--bad)}
+dl{display:grid;grid-template-columns:1fr auto;gap:3px 10px;margin:0;font-size:13px}
+dt{color:var(--muted)} dd{margin:0;font-family:var(--f-mono);font-size:12.5px;text-align:right}
+dl .sep{grid-column:1/-1;border-top:1px solid var(--line);margin:4px 0}
+dl .big{color:var(--ink);font-weight:600} dd.big{font-size:14px}
+.note{font-size:12px;color:var(--muted);margin:8px 0 0}
+nav .grp{font:500 11px var(--f-body);letter-spacing:.08em;text-transform:uppercase;color:var(--muted);align-self:center;margin:0 2px 0 8px}
+nav .brk{flex-basis:100%;height:0}
+tr.click{cursor:pointer} tr.click:hover td{background:var(--accent-soft)}
+td.txt{font-size:13px;white-space:nowrap} td.r{text-align:right;font-family:var(--f-mono);font-size:12.5px;white-space:nowrap}
+tfoot td{font-weight:600;border-bottom:0;padding-top:8px}
+.tag{font:500 11px var(--f-body);padding:1px 7px;border-radius:999px;background:var(--accent-soft);color:var(--accent);white-space:nowrap}
+.tools{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 14px}
+.tools button{font:500 13px var(--f-body);color:var(--bg);background:var(--accent);border:0;border-radius:6px;padding:8px 14px;cursor:pointer}
+.tools button.alt{background:transparent;color:var(--accent);border:1px solid var(--accent)}
+.tools button[disabled]{opacity:.6;cursor:progress}
+.photos{display:flex;gap:8px}
+.photos img{flex:1;min-width:0;width:100%;aspect-ratio:4/5;object-fit:cover;border-radius:6px;border:1px solid var(--line);background:var(--field)}
+td img.thumb{width:40px;min-width:40px;height:50px;object-fit:cover;border-radius:4px;display:block}
+.empty{background:var(--panel);border:1px dashed var(--line);border-radius:8px;padding:28px;text-align:center;color:var(--muted)}
+.meta{font-size:12px;color:var(--muted);margin:-4px 0 12px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+.hdr-r{display:flex;flex-wrap:wrap;align-items:center;gap:12px}
+a.lnk{font:500 13px var(--f-body);color:var(--accent);text-decoration:none;border:1px solid var(--accent);border-radius:999px;padding:5px 12px}
+#lockBox{display:flex;align-items:center;gap:6px}
+.lockl{font:600 12px var(--f-body);color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+input.pin{width:84px;font-family:var(--f-mono);border-color:var(--line)}
+.lockbtn{font:500 12.5px var(--f-body);color:var(--ink);background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:5px 10px;cursor:pointer}
+nav.sub{border-bottom:0;margin:0 0 10px;padding:0}
+.lab{display:inline-block;min-width:24px;text-align:center;border:1.5px solid currentColor;border-radius:999px;padding:0 6px;font:700 12px var(--f-body)}
+.atl-head{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.4fr);gap:12px;margin-bottom:16px}
+@media (max-width:760px){.atl-head{grid-template-columns:minmax(0,1fr)}}
+.planbox{background:#fff;border:1px solid var(--line);border-radius:8px;padding:8px;display:flex;align-items:center;justify-content:center;min-height:160px}
+.planbox img{max-height:340px;object-fit:contain}
+.plates{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px;margin:8px 0 14px}
+.plate{background:#fff;border:1px solid var(--line);border-radius:6px;padding:6px;color:#222}
+.pcap{font:600 12px var(--f-body);margin-bottom:4px}
+h3.mh{font:600 14px var(--f-body);margin:10px 0 0;display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.warnline{color:var(--bad);font-size:13px;margin:6px 0}
+label.ck{flex-direction:row!important;align-items:center;gap:8px!important;color:var(--ink)!important}
+label.ck input{width:auto}
+#printArea{display:none}
+#printArea .sheet{font-family:"IBM Plex Sans","IBM Plex Sans Arabic",sans-serif;color:#000;background:#fff}
+.ph{display:flex;gap:14px;align-items:baseline;border-bottom:2px solid #A8461F;padding-bottom:4px;margin-bottom:6px;font-size:11px}
+.ph b{color:#A8461F;font-size:16px;letter-spacing:.04em}.ph .pt{font-weight:700;font-size:13px;flex:1}
+.pps{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:3mm;margin-bottom:3mm}
+.pps.one{grid-template-columns:1fr}
+.pp{border:1px solid #bbb;border-radius:2mm;padding:2mm;font-size:10px;line-height:1.3}
+.ppi{display:flex;gap:2mm;margin-top:1.5mm;justify-content:center}.ppi img{height:30mm;max-width:49%;object-fit:contain}
+.pps.one .ppi img{height:68mm}
+#printArea h4{margin:2mm 0 1.5mm;font-size:12.5px}#printArea h4 small{font-weight:400;color:#444;margin-left:6px;font-size:10px}
+.dt{width:100%;border-collapse:collapse;font-size:10.5px}.dt th,.dt td{border:1px solid #888;padding:1.1mm 1.5mm}
+.dt th{background:#F4ECE1;font-size:9px;text-align:left}.dt .r{text-align:right}.dt .b{font-weight:700;font-size:12.5px}.dt .bx{width:8mm}
+.dt tfoot td{font-weight:700}
+.pls{display:grid;grid-template-columns:1fr 1fr;gap:6mm;align-items:start}.pls.one{grid-template-columns:1fr;width:78%;margin:0 auto}
+.warnp{color:#A3302A;font-weight:600;font-size:11px;margin:1mm 0}
+.sig{margin-top:4mm;font-size:10.5px}
+@media print{
+  @page{size:A4 landscape;margin:0}
+  html,body{background:#fff!important}
+  .wrap{display:none!important}
+  #printArea{display:block}
+  #printArea .sheet{width:297mm;height:209mm;padding:8mm 10mm;box-sizing:border-box;break-after:page;page-break-after:always;overflow:hidden;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+}
+</style>
+
+<div class="wrap">
+  <header>
+    <h1><small>ZWAQ DECO · BOIS ECO-STYLE</small>Fiches atelier &amp; coûts</h1>
+    <div class="hdr-r"><a class="lnk" href="../">← BES Fiches atelier</a><span id="lockBox"></span>
+    <div class="status" id="status" role="status"><span class="dot" id="dot"></span><span id="statusText">Connexion…</span></div></div>
+  </header>
+  <nav id="tabs" role="tablist" aria-label="Produits"></nav>
+  <div id="view"><div class="empty">Chargement des fiches produits…</div></div>
+</div>
+<div id="printArea"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+<script>
+const $=(s,r=document)=>r.querySelector(s);
+const el=(t,a={},...kids)=>{const e=document.createElement(t);for(const[k,v]of Object.entries(a)){if(k==="class")e.className=v;else if(k.startsWith("on"))e.addEventListener(k.slice(2),v);else if(v!==undefined&&v!==null)e.setAttribute(k,v)}for(const c of kids.flat())if(c!=null)e.append(c.nodeType?c:document.createTextNode(c));return e};
+const fmt=n=>(isFinite(n)?n:0).toLocaleString("fr-FR",{minimumFractionDigits:2,maximumFractionDigits:2});
+const fmt0=n=>(isFinite(n)?n:0).toLocaleString("fr-FR",{maximumFractionDigits:0});
+const num=v=>{const n=parseFloat(String(v).replace(",","."));return isFinite(n)?n:0};
+
+const DEF_MATS=[{nom:"Blanc",ep:18,L:2800,H:2100,prix:700},{nom:"Noyer",ep:18,L:2800,H:2100,prix:850},{nom:"L31",ep:18,L:2800,H:2100,prix:0},{nom:"Sonoma",ep:18,L:2800,H:2100,prix:0},{nom:"MDF brut",ep:18,L:2800,H:2100,prix:0}];
+const DEF_PRIX={chantNL:1,chantNl:2,livraison:30,chute:15,chant22:2,chant40:3,cnc:80,mo:30,tva:20};
+function MATS(){return Array.isArray(prix.matieres)&&prix.matieres.length?prix.matieres:DEF_MATS.map(m=>({...m,prix:m.nom==="Blanc"?(prix.plaqueBlanc??700):m.nom==="Noyer"?(prix.plaqueNoyer??850):0}))}
+function matOf(nom){return MATS().find(m=>m.nom===nom)}
+function m2Price(nom){const m=matOf(nom);if(!m)return 0;const s=num(m.L)*num(m.H)/1e6;return s?num(m.prix)/s:0}
+function plateM2(nom){const m=matOf(nom);return m?num(m.L)*num(m.H)/1e6:0}
+function priceOf(p,t){if(p.prix&&p.prix[t]!=null)return num(p.prix[t]);return t==="Blanc"?num(p.prixBlanc):t==="Noyer"?num(p.prixNoyer):0}
+function CAT(){return Array.isArray(prix.fournitures)?prix.fournitures:[]}
+function catOf(n){return n?CAT().find(c=>c.article===n):null}
+function puOf(f){const c=catOf(f.cat);return c?num(c.pu):num(f.pu)}
+const isAutoCh=r=>(r.chant22==null||r.chant22==="")&&(r.chant40==null||r.chant40==="");
+function chAuto(r){return (num(prix.chantNL??1)*num(r.long)+num(prix.chantNl??2)*num(r.larg))/1000}
+function ch22(r){return isAutoCh(r)?chAuto(r):num(r.chant22)}
+function ch40(r){return isAutoCh(r)?0:num(r.chant40)}
+function resolveMat(r,teinte){return r.matiere==="Teinte"?teinte:r.matiere}
+const PRIX_FIELDS=[["livraison","Livraison par défaut (DH/unité)"],["chute","Chute / casse (%)"],["chant22","Bande de chant 22 mm (DH/m)"],["chant40","Bande de chant 40 mm (DH/m)"],["chantNL","Chant auto : nombre de longueurs"],["chantNl","Chant auto : nombre de largeurs"],["cnc","Heure CNC (DH/h)"],["mo","Heure main-d'œuvre (DH/h)"],["tva","TVA (%)"]];
+
+let db=null, products={}, prix={...DEF_PRIX}, current=null, dirty=new Set(), timers={}, saving=0;
+
+function setStatus(kind,text){$("#dot").className="dot "+kind;$("#statusText").textContent=text}
+
+function cost(p,teinte){
+  const k=1+prix.chute/100; let c22=0,c40=0; const mats={};
+  for(const r of p.pieces||[]){
+    const a=num(r.qte)*num(r.long)*num(r.larg)/1e6, mat=resolveMat(r,teinte);
+    const o=mats[mat]||(mats[mat]={m2:0,dh:0,manque:!matOf(mat)||!m2Price(mat)});
+    o.m2+=a; o.dh+=a*m2Price(mat)*k;
+    c22+=num(r.qte)*ch22(r); c40+=num(r.qte)*ch40(r);
+  }
+  const matiere=Object.values(mats).reduce((s,o)=>s+o.dh,0), m2=Object.values(mats).reduce((s,o)=>s+o.m2,0);
+  const chant=c22*prix.chant22+c40*prix.chant40;
+  const fourn=(p.fournitures||[]).reduce((s,f)=>s+num(f.qte)*puOf(f),0);
+  const machine=num(p.cnc)*prix.cnc/60, mo=num(p.mo)*prix.mo/60, emb=num(p.emballage);
+  const cr=matiere+chant+fourn+machine+mo+emb;
+  const ttc=priceOf(p,teinte), ht=ttc/(1+prix.tva/100);
+  const liv=(p.livraison==null||p.livraison==="")?num(prix.livraison):num(p.livraison), prodLiv=cr+liv, mkEst=num(p.mkEst);
+  const mkReel=num(p.mkVentes)>0?num(p.mkBudget)/num(p.mkVentes):null;
+  const totEst=prodLiv+mkEst, margeEst=ht-totEst, totReel=mkReel==null?null:prodLiv+mkReel, margeReel=mkReel==null?null:ht-totReel;
+  const marge=margeEst;
+  return {mats,m2,c22,c40,matiere,chant,fourn,machine,mo,emb,cr,liv,prodLiv,mkEst,mkReel,totEst,totReel,margeEst,margeReel,
+          margeProd:ht-prodLiv,ttc,ht,marge,pct:ht?margeEst/ht:0,pctReel:ht&&margeReel!=null?margeReel/ht:null};
+}
+
+function dimsOf(p,id){if(id!=="LUNE")return p.dims||"";const pcs=p.pieces||[];const pan=pcs.find(r=>/demi|lune|panneau/i.test(r.nom||""));const tab=pcs.find(r=>/tablette/i.test(r.nom||""));
+  if(!pan)return p.dims||"";const W=Math.max(num(pan.larg),tab?num(tab.long):0),D=18+(tab?num(tab.larg):0);return `${fmt0(W)} × ${fmt0(num(pan.long))} × ${fmt0(D)} mm`}
+function visOf(p,id,t){const v=(p.visuels)||VIS[id]||[];const i=(p.teintes||[]).indexOf(t);return v[i>=0&&i<v.length?i:0]}
+function sortedIds(){return Object.keys(products).sort((a,b)=>(products[a].ordre||0)-(products[b].ordre||0))}
+function tabBtn(key,label){return el("button",{role:"tab","aria-selected":String(current===key),onclick:()=>{current=key;renderTabs();renderView()}},label)}
+function renderTabs(){
+  const nav=$("#tabs");nav.textContent="";
+  if(UNLOCK)nav.append(tabBtn("__recap","Récapitulatif"),tabBtn("__prix","Prix fournitures"));
+  nav.append(tabBtn("__cmd","Commande atelier"));
+  let last=null;
+  for(const id of sortedIds()){
+    const c=products[id].collection||"Autres";
+    if(c!==last){nav.append(el("span",{class:"brk"}),el("span",{class:"grp"},c));last=c}
+    nav.append(tabBtn(id,products[id].nom||id));
+  }
+}
+function schedule(id){
+  dirty.add(id);clearTimeout(timers[id]);setStatus("busy","Modifications non enregistrées…");
+  timers[id]=setTimeout(()=>save(id),900);
+}
+async function save(id){
+  if(!db){setStatus("err","Base indisponible");return}
+  if(!UNLOCK){dirty.delete(id);return}
+  saving++;setStatus("busy","Enregistrement…");
+  try{
+    if(id==="__prix")await db.doc("reglages/prix").set({...prix});
+    else{const {id:_,...body}=products[id];await db.doc("produits/"+id).set(JSON.parse(JSON.stringify(body)))}
+    dirty.delete(id);
+  }catch(e){setStatus("err","Échec de l'enregistrement : "+(e&&e.message||"réessayez"));saving--;return}
+  saving--; if(!saving&&!dirty.size)setStatus("ok","Enregistré");
+}
+
+function numInput(val,onv,cls="w-n",step="any",label){return el("input",{type:"number",step,class:cls,value:val??"","aria-label":label,oninput:e=>onv(e.target.value)})}
+function txtInput(val,onv,cls="w-name",label){return el("input",{type:"text",class:cls,value:val??"","aria-label":label,oninput:e=>onv(e.target.value)})}
+
+function renderPrix(){
+  const v=$("#view");v.textContent="";
+  if(!Array.isArray(prix.matieres)||!prix.matieres.length)prix.matieres=JSON.parse(JSON.stringify(MATS()));
+  const sv=()=>schedule("__prix");
+  const tb=el("tbody");
+  prix.matieres.forEach((m,i)=>{
+    const pm=el("td",{class:"num"});
+    const upd=()=>{const s=num(m.L)*num(m.H)/1e6;pm.textContent=s&&num(m.prix)?fmt(num(m.prix)/s):"prix manquant"};
+    tb.append(el("tr",{},
+      el("td",{},txtInput(m.nom,x=>{m.nom=x;sv()},"w-name","Nom de la matière")),
+      el("td",{},numInput(m.ep,x=>{m.ep=num(x);sv()},"w-n","any","Épaisseur mm")),
+      el("td",{},numInput(m.L,x=>{m.L=num(x);upd();sv()},"w-s","any","Longueur plaque mm")),
+      el("td",{},numInput(m.H,x=>{m.H=num(x);upd();sv()},"w-s","any","Largeur plaque mm")),
+      el("td",{},numInput(m.prix,x=>{m.prix=num(x);upd();sv()},"w-s","any","Prix de la plaque DH")),
+      pm,
+      el("td",{},el("button",{class:"icon",title:"Supprimer la matière","aria-label":"Supprimer la matière",onclick:()=>{prix.matieres.splice(i,1);sv();renderPrix()}},"×"))));
+    upd();
+  });
+  v.append(toolbar([["Exporter les prix (PDF)",exportPrix]]));
+  v.append(el("section",{class:"block"},el("h2",{},"Matières (plaques)",el("span",{class:"hint"},"une ligne par couleur ou matière")),
+    el("div",{class:"scroll"},el("table",{},el("thead",{},el("tr",{},...["Matière","Ép. (mm)","Longueur (mm)","Largeur (mm)","Prix plaque (DH)","Prix au m²",""].map(h=>el("th",{},h)))),tb)),
+    el("button",{class:"add",onclick:()=>{prix.matieres.push({nom:"Nouvelle matière",ep:18,L:2800,H:2100,prix:0});sv();renderPrix()}},"+ Ajouter une matière"),
+    el("p",{class:"note"},"Le nom choisi ici apparaît dans la colonne Matière des pièces et dans les teintes vendues. Si vous renommez une matière, vérifiez les produits qui l'utilisaient.")));
+  if(!Array.isArray(prix.fournitures))prix.fournitures=[];
+  const cb=el("tbody");
+  prix.fournitures.forEach((c,i)=>cb.append(el("tr",{},
+    el("td",{},txtInput(c.article,x=>{c.article=x;sv()},"w-name","Article")),
+    el("td",{},txtInput(c.unite,x=>{c.unite=x;sv()},"w-s","Unité")),
+    el("td",{},numInput(c.pu,x=>{c.pu=num(x);sv()},"w-s","any","Prix unitaire DH")),
+    el("td",{},txtInput(c.note,x=>{c.note=x;sv()},"w-name","Remarque")),
+    el("td",{},el("button",{class:"icon",title:"Supprimer l'article","aria-label":"Supprimer l'article",onclick:()=>{prix.fournitures.splice(i,1);sv();renderPrix()}},"×")))));
+  v.append(el("section",{class:"block"},el("h2",{},"Catalogue des fournitures",el("span",{class:"hint"},"choisissez-les ensuite dans chaque produit")),
+    el("div",{class:"scroll"},el("table",{},el("thead",{},el("tr",{},...["Article","Unité","Prix unitaire (DH)","Remarque",""].map(h=>el("th",{},h)))),cb)),
+    el("button",{class:"add",onclick:()=>{prix.fournitures.push({article:"Nouvel article",unite:"pièce",pu:0,note:""});sv();renderPrix()}},"+ Ajouter un article"),
+    el("p",{class:"note"},"Un changement de prix ici met à jour tous les produits qui utilisent l'article. Renommer un article le détache des produits qui l'utilisaient.")));
+  const f=el("div",{class:"fields"});
+  for(const[k,lab]of PRIX_FIELDS)f.append(el("label",{},lab,numInput(prix[k],x=>{prix[k]=num(x);sv()},"","any",lab)));
+  v.append(el("section",{class:"block"},el("h2",{},"Chant, atelier et TVA",el("span",{class:"hint"},"valables pour tous les produits")),f,
+    el("p",{class:"note"},"Les prix des fournitures se règlent dans le catalogue ci-dessus.")));
+}
+
+function renderRecap(){
+  const v=$("#view");v.textContent="";
+  const tb=el("tbody");
+  for(const id of sortedIds()){
+    const p=products[id];
+    for(const t of(p.teintes||[])){
+      const c=cost(p,t), cls=c.pct>=.45?"good":c.pct>=.35?"warn":"bad";
+      tb.append(el("tr",{class:"click",tabindex:"0",title:"Ouvrir "+(p.nom||id),onclick:()=>{current=id;renderTabs();renderView()},
+        onkeydown:e=>{if(e.key==="Enter"){current=id;renderTabs();renderView()}}},
+        el("td",{},(()=>{const v=visOf(p,id,t);return v?el("img",{class:"thumb",src:"img/"+v+".jpg",alt:""}):""})()),el("td",{class:"txt"},p.collection||""),el("td",{class:"txt"},el("strong",{},p.nom||id)," ",el("span",{class:"tag"},p.ref||"")),
+        el("td",{class:"txt"},p.variante||t),el("td",{class:"txt"},dimsOf(p,id)),
+        el("td",{class:"r"},fmt(c.cr)),el("td",{class:"r"},fmt(c.liv)),el("td",{class:"r"},fmt(c.mkEst)),el("td",{class:"r"},c.mkReel==null?"—":fmt(c.mkReel)),
+        el("td",{class:"r"},fmt(c.ht)),el("td",{class:"r"},fmt0(c.ttc)),el("td",{class:"r"},fmt(c.margeEst)),el("td",{class:"r"},c.margeReel==null?"—":fmt(c.margeReel)),
+        el("td",{class:"r"},el("span",{class:"pill "+cls},Math.round(c.pct*100)+" %"))));
+    }
+  }
+  v.append(toolbar([["Exporter le récapitulatif (PDF)",exportRecap]]));
+  v.append(el("section",{class:"block"},el("h2",{},"Tous les produits",el("span",{class:"hint"},"montants en DH · cliquez une ligne pour l'ouvrir")),
+    el("div",{class:"scroll"},el("table",{},el("thead",{},el("tr",{},...["","Collection","Produit","Teinte","Dimensions","Production","Livraison","Mkt estimé","Mkt réel","Prix HT","Prix TTC","Marge est.","Marge réelle","Marge %"].map(h=>el("th",{},h)))),tb)),
+    el("p",{class:"note"},"Les coûts suivent les prix de l'onglet « Prix fournitures » et les pièces saisies dans chaque produit.")));
+  v.append(newProductBlock());
+}
+
+function renderView(){
+  if(current==="__prix")return renderPrix();
+  if(current==="__recap")return renderRecap();
+  if(current==="__cmd")return renderCommande();
+  if(products[current]&&(!UNLOCK||PMODE==="atelier"))return renderAtelierProduit(current);
+  const p=products[current], v=$("#view");v.textContent="";
+  if(!p){v.append(el("div",{class:"empty"},"Aucun produit enregistré pour l'instant. Les fiches de la Collection 2 apparaîtront ici dès qu'elles seront chargées."));return}
+  const id=current, ch=()=>{schedule(id);renderSummary()};
+  // pièces
+  if(!p.prix){p.prix={};for(const t of(p.teintes||[]))p.prix[t]=priceOf(p,t)}
+  const teintesAll=[...new Set([...MATS().map(m=>m.nom),...(p.teintes||[])])];
+  const tb=el("tbody");
+  const pieceRow=(r,i)=>el("tr",{},
+    el("td",{},txtInput(r.nom,x=>{r.nom=x;ch()},"w-name","Nom de la pièce")),
+    el("td",{},numInput(r.qte,x=>{r.qte=num(x);ch()},"w-n","1","Quantité")),
+    el("td",{},numInput(r.long,x=>{r.long=num(x);ch()},"w-s","any","Longueur mm")),
+    el("td",{},numInput(r.larg,x=>{r.larg=num(x);ch()},"w-s","any","Largeur mm")),
+    el("td",{},el("input",{type:"number",step:"any",class:"w-n",value:isAutoCh(r)?"":(r.chant22??""),placeholder:"auto "+chAuto(r).toFixed(2).replace(".",","),title:"Vide = calcul automatique (réglage dans Prix fournitures)","aria-label":"Chant 22 mm par pièce",oninput:e=>{if(e.target.value===""&&(r.chant40==null||r.chant40===""||!num(r.chant40))){delete r.chant22;delete r.chant40}else{r.chant22=num(e.target.value);if(r.chant40==null||r.chant40==="")r.chant40=0}ch()}})),
+    el("td",{},el("input",{type:"number",step:"any",class:"w-n",value:isAutoCh(r)?"":(r.chant40??""),placeholder:"0","aria-label":"Chant 40 mm par pièce",oninput:e=>{if(e.target.value===""&&(r.chant22==null||r.chant22==="")){delete r.chant22;delete r.chant40}else{r.chant40=num(e.target.value);if(r.chant22==null||r.chant22==="")r.chant22=0}ch()}})),
+    el("td",{class:"num"},(num(r.qte)*num(r.long)*num(r.larg)/1e6).toFixed(3).replace(".",",")),
+    el("td",{class:"num mdf"},""),
+    el("td",{},el("button",{class:"icon",title:"Supprimer la pièce","aria-label":"Supprimer la pièce",onclick:()=>{p.pieces.splice(i,1);schedule(id);renderView()}},"×")));
+  (p.pieces||[]).forEach((r,i)=>tb.append(pieceRow(r,i)));
+  const piecesSec=el("section",{class:"block"},
+    el("h2",{},"Pièces MDF 18 mm",el("span",{class:"hint"},"mm · chant en mètres par pièce")),
+    el("div",{class:"checks",style:"margin:0 0 10px"},el("strong",{},"Calculer pour :"),
+      ...teintesAll.map(t=>el("label",{},el("input",{type:"checkbox",...((p.teintes||[]).includes(t)?{checked:""}:{}),onchange:e=>{
+        p.teintes=(p.teintes||[]).filter(x=>x!==t);if(e.target.checked){p.teintes.push(t);if(p.prix[t]==null)p.prix[t]=priceOf(p,t)}schedule(id);renderView()}}),t))),
+    el("div",{class:"scroll"},el("table",{},el("thead",{},el("tr",{},...["Pièce","Qté","Long.","Larg.","Chant 22","Chant 40","m²","Valeur MDF (DH)",""].map(h=>el("th",{},h)))),tb)),
+    el("button",{class:"add",onclick:()=>{(p.pieces=p.pieces||[]).push({nom:"Nouvelle pièce",qte:1,long:0,larg:150,matiere:"Teinte"});schedule(id);renderView()}},"+ Ajouter une pièce"),
+    el("p",{class:"note"},"Les dimensions restent les mêmes : cochez les couleurs à calculer. Chant vide = calcul automatique en 22 mm (par défaut 1 longueur + 2 largeurs, réglable dans « Prix fournitures ») ; saisissez une valeur pour la remplacer sur une pièce."));
+  // fournitures
+  const fb=el("tbody");
+  const catSelect=(val,onv,label)=>{const sel=el("select",{"aria-label":label,onchange:e=>onv(e.target.value)});
+    sel.append(el("option",{value:""},"Libre (hors catalogue)"));for(const c of CAT())sel.append(el("option",{value:c.article,...(val===c.article?{selected:""}:{})},c.article+" · "+fmt(num(c.pu))+" DH/"+(c.unite||"u")));return sel};
+  (p.fournitures||[]).forEach((f,i)=>{const linked=!!catOf(f.cat);
+    fb.append(el("tr",{},
+    el("td",{},catSelect(f.cat||"",x=>{if(x){const c=catOf(x);f.cat=x;f.article=c.article;f.pu=num(c.pu)}else{delete f.cat}schedule(id);renderView()},"Article du catalogue")),
+    el("td",{},linked?el("span",{class:"txt"},f.article):txtInput(f.article,x=>{f.article=x;ch()},"w-name","Article")),
+    el("td",{},numInput(f.qte,x=>{f.qte=num(x);ch()},"w-n","any","Quantité")),
+    el("td",{},linked?el("span",{class:"num"},fmt(puOf(f))):numInput(f.pu,x=>{f.pu=num(x);ch()},"w-s","any","Prix unitaire DH")),
+    el("td",{class:"num"},fmt(num(f.qte)*puOf(f))),
+    el("td",{},el("button",{class:"icon",title:"Supprimer la ligne","aria-label":"Supprimer la ligne",onclick:()=>{p.fournitures.splice(i,1);schedule(id);renderView()}},"×"))))});
+  const fournSec=el("section",{class:"block"},
+    el("h2",{},"Fournitures",el("span",{class:"hint"},"quantité × prix unitaire")),
+    el("div",{class:"scroll"},el("table",{},el("thead",{},el("tr",{},...["Catalogue","Article","Qté","PU (DH)","Total",""].map(h=>el("th",{},h)))),fb)),
+    el("div",{class:"checks",style:"margin-top:8px"},(()=>{const sel=el("select",{"aria-label":"Ajouter depuis le catalogue",style:"max-width:320px",onchange:e=>{const c=catOf(e.target.value);if(!c)return;
+      (p.fournitures=p.fournitures||[]).push({cat:c.article,article:c.article,qte:1,pu:num(c.pu)});schedule(id);renderView()}});
+      sel.append(el("option",{value:""},"+ Ajouter depuis le catalogue…"));for(const c of CAT())sel.append(el("option",{value:c.article},c.article+" · "+fmt(num(c.pu))+" DH/"+(c.unite||"u")));return sel})(),
+    el("button",{class:"add",style:"margin-top:0",onclick:()=>{(p.fournitures=p.fournitures||[]).push({article:"Nouvel article",qte:1,pu:0});schedule(id);renderView()}},"+ Ligne libre")));
+  // temps et prix
+  const fld=(lab,key,step="any")=>el("label",{},lab,numInput(p[key],x=>{p[key]=num(x);ch()},"",step,lab));
+  const tSec=el("section",{class:"block"},el("h2",{},"Temps, emballage et prix de vente"),
+    el("div",{class:"fields"},fld("CNC (min)","cnc"),fld("Main-d'œuvre (min)","mo"),fld("Emballage (DH)","emballage"),
+      ...(p.teintes||[]).map(t=>{const k=1+prix.tva/100;const out=el("span",{class:"note",style:"margin:2px 0 0"},"TTC : "+fmt(num(p.prix[t]))+" DH");
+        const ht=num(p.prix[t])?Math.round(num(p.prix[t])/k*100)/100:"";
+        return el("label",{},"Prix de vente HT "+t+" (DH)",numInput(ht,x=>{p.prix[t]=Math.round(num(x)*k*100)/100;out.textContent="TTC : "+fmt(p.prix[t])+" DH";ch()},"","any","Prix de vente HT "+t),out)})));
+  const mSec=el("section",{class:"block"},el("h2",{},"Livraison et marketing",el("span",{class:"hint"},"par unité vendue, en DH")),
+    el("div",{class:"fields"},el("label",{},"Livraison (DH)",el("input",{type:"number",step:"any",value:p.livraison??"",placeholder:num(prix.livraison)+" (par défaut)","aria-label":"Livraison",oninput:e=>{if(e.target.value==="")delete p.livraison;else p.livraison=num(e.target.value);ch()}})),fld("Marketing estimé (DH/unité)","mkEst"),
+      fld("Budget pub dépensé (DH)","mkBudget"),fld("Unités vendues avec ce budget","mkVentes","1")),
+    el("p",{class:"note"},"Livraison vide = livraison par défaut de « Prix fournitures ». Marketing réel = budget dépensé ÷ unités vendues. Laissez « unités vendues » à 0 tant que vous n'avez pas de chiffres réels."));
+  const debitSec=el("section",{class:"block",id:"debit"});
+  const left=el("div",{style:"min-width:0"},el("p",{class:"meta"},(p.ref||"")+(dimsOf(p,id)?" · "+dimsOf(p,id):"")),toolbar([["Exporter la fiche de coût (PDF)",()=>exportCout(id)],["Exporter le guide de production (PDF)",()=>exportGuide(id),true],["Supprimer ce produit",async()=>{if(!confirm("Supprimer définitivement « "+(p.nom||id)+" » ?"))return;try{await db.doc("produits/"+id).delete();delete products[id];current="__recap";renderTabs();renderView();setStatus("ok","Produit supprimé")}catch(e){setStatus("err","Suppression impossible : "+e.message)}},true]]),piecesSec,debitSec,fournSec,tSec,mSec);
+  const aside=el("aside",{id:"summary"});
+  v.append(modeSwitch(id),el("div",{class:"grid"},left,aside));
+  renderSummary();
+}
+
+function renderDebit(p){
+  const d=$("#debit"); if(!d)return; d.textContent="";
+  const k=1+prix.chute/100, ts=p.teintes||[];
+  const tb=el("tbody"); let n=0,c22=0,c40=0;
+  for(const r of p.pieces||[]){
+    const q=num(r.qte); if(!q)continue; n+=q;
+    const mat=r.matiere==="Teinte"?(ts.join(" ou ")||"Couleur cochée"):r.matiere;
+    c22+=q*ch22(r); c40+=q*ch40(r);
+    tb.append(el("tr",{},el("td",{class:"txt"},r.nom||""),el("td",{class:"r"},String(q)),
+      el("td",{class:"r"},`${fmt0(num(r.long))} × ${fmt0(num(r.larg))} × ${num((matOf(r.matiere==="Teinte"?ts[0]:r.matiere)||{}).ep)||18}`),el("td",{class:"txt"},mat),
+      el("td",{class:"r"},ch22(r)?(q*ch22(r)).toFixed(2).replace(".",","):"—"),
+      el("td",{class:"r"},ch40(r)?(q*ch40(r)).toFixed(2).replace(".",","):"—")));
+  }
+  const foot=el("tfoot",{},el("tr",{},el("td",{class:"txt"},"Total"),el("td",{class:"r"},String(n)),el("td",{}),el("td",{}),
+    el("td",{class:"r"},c22.toFixed(2).replace(".",",")+" m"),el("td",{class:"r"},c40.toFixed(2).replace(".",",")+" m")));
+  d.append(el("h2",{},"Liste de débit",el("span",{class:"hint"},"cotes finies en mm · chant total en mètres")),
+    el("div",{class:"scroll"},el("table",{},el("thead",{},el("tr",{},...["Pièce","Qté","Dimensions","Matière","Chant 22","Chant 40"].map(h=>el("th",{},h)))),tb,foot)));
+}
+
+function renderSummary(){
+  const a=$("#summary"); if(!a)return; const p=products[current]; a.textContent="";
+  const vis=(p.visuels)||VIS[current]||[]; if(vis.length)a.append(el("div",{class:"photos"},...vis.map(n=>el("img",{src:"img/"+n+".jpg",alt:(p.nom||"")+" — visuel",loading:"lazy"})))); renderDebit(p);
+  // m² live
+  document.querySelectorAll("#view tbody tr").forEach(()=>{});
+  for(const t of(p.teintes||[])){
+    const c=cost(p,t), cls=c.pct>=.45?"good":c.pct>=.35?"warn":"bad";
+    const pr=v=>el("dd",{},fmt(v)), neg=v=>v<0?" (perte)":"";
+    a.append(el("div",{class:"card"},el("h3",{},p.variante||t,el("span",{class:"pill "+cls},Math.round(c.pct*100)+" % marge est.")),
+      el("dl",{},
+        el("dt",{class:"big"},"Production"),el("dd",{}),
+        ...Object.entries(c.mats).flatMap(([m,o])=>[el("dt",{},`${m} (${o.m2.toFixed(3).replace(".",",")} m²)`),el("dd",{},o.manque?"prix ?":fmt(o.dh))]),
+        el("dt",{},`Chant (${c.c22.toFixed(1).replace(".",",")} m + ${c.c40.toFixed(1).replace(".",",")} m)`),pr(c.chant),
+        el("dt",{},"Fournitures"),pr(c.fourn),el("dt",{},"CNC"),pr(c.machine),el("dt",{},"Main-d'œuvre"),pr(c.mo),el("dt",{},"Emballage"),pr(c.emb),
+        el("dt",{class:"big"},"Coût de production"),el("dd",{class:"big"},fmt(c.cr)),
+        el("div",{class:"sep"}),
+        el("dt",{},"Livraison"),pr(c.liv),
+        el("dt",{class:"big"},"Production + livraison"),el("dd",{class:"big"},fmt(c.prodLiv)),
+        el("div",{class:"sep"}),
+        el("dt",{},"Prix TTC"),el("dd",{},fmt0(c.ttc)+" DH"),el("dt",{},"Prix HT"),pr(c.ht),
+        el("dt",{},"Marge avant marketing"),pr(c.margeProd),
+        el("div",{class:"sep"}),
+        el("dt",{class:"big"},"Marketing"),el("dd",{},"estimé · réel"),
+        el("dt",{},"Coût par unité"),el("dd",{},fmt(c.mkEst)+" · "+(c.mkReel==null?"—":fmt(c.mkReel))),
+        el("dt",{},"Coût total"),el("dd",{},fmt(c.totEst)+" · "+(c.totReel==null?"—":fmt(c.totReel))),
+        el("dt",{class:"big"},"Marge HT finale"),el("dd",{class:"big"},fmt(c.margeEst)+" · "+(c.margeReel==null?"—":fmt(c.margeReel))),
+        el("dt",{},"Marge %"),el("dd",{},Math.round(c.pct*100)+" % · "+(c.pctReel==null?"—":Math.round(c.pctReel*100)+" %")),
+        ...(c.mkReel==null?[]:[el("dt",{},"Écart marketing réel − estimé"),el("dd",{},(c.mkReel-c.mkEst>0?"+":"")+fmt(c.mkReel-c.mkEst))]))));
+  }
+  if(!(p.teintes||[]).length)a.append(el("div",{class:"card"},el("p",{class:"note"},"Cochez au moins une teinte vendue pour voir le coût.")));
+  a.append(el("p",{class:"note"},`Chute ${prix.chute} % · CNC ${prix.cnc} DH/h · MO ${prix.mo} DH/h. Matières et prix modifiables dans « Prix fournitures ».`));
+  // refresh m² cells
+  const rows=document.querySelectorAll("#view section.block:first-of-type tbody tr");
+  rows.forEach((tr,i)=>{const r=(p.pieces||[])[i];if(!r)return;const a=num(r.qte)*num(r.long)*num(r.larg)/1e6;const tds=tr.querySelectorAll("td.num");
+    if(tds[0])tds[0].textContent=a.toFixed(3).replace(".",",");
+    if(tds[1]){const k=1+prix.chute/100;const ts=(p.teintes&&p.teintes.length)?p.teintes:[""];
+      tds[1].textContent=[...new Set(ts.map(t=>resolveMat(r,t)))].map(m=>(ts.length>1||r.matiere!=="Teinte"?m+" ":"")+fmt(a*m2Price(m)*k)).join(" · ")}
+    const in22=tr.querySelector('input[aria-label="Chant 22 mm par pièce"]');if(in22)in22.placeholder="auto "+chAuto(r).toFixed(2).replace(".",",")});
+}
+
+// ================= EXPORT PDF =================
+const VIS={EPU:["p5","p6"],EPU3:["p5","p6"],EPU18:["p5","p6"],"EPU18-3":["p5","p6"],HONEY:["p2","p3"],CROSS:["p4"],CROSS18:["p4"],L:["n3","n4"],LINE:["n2","n5"],FRAME:["n6","n7"],LUNE:["n1"]};
+const PLAN={EPU:"EPU",EPU3:"EPU",EPU18:"EPU18","EPU18-3":"EPU18",HONEY:"HONEY",CROSS:"CROSS",CROSS18:"CROSS",L:"L",LINE:"LINE",FRAME:"FRAME",LUNE:"LUNE"};
+let downloads=null;
+const T=x=>String(x??"").replace(/[\u202f\u00a0]/g," ").replace(/œ/g,"oe").replace(/Œ/g,"OE").replace(/[—–]/g,"-").replace(/≈/g,"~").replace(/[’‘]/g,"'").replace(/…/g,"...").replace(/[«»]/g,'"');
+const F2=v=>T(fmt(v)), F0=v=>T(fmt0(v));
+function toolbar(btns){return el("div",{class:"tools"},...btns.map(([lab,fn,alt])=>{const b=el("button",{class:alt?"alt":"",onclick:async()=>{b.disabled=true;const o=b.textContent;b.textContent="Préparation…";try{await fn()}finally{b.disabled=false;b.textContent=o}}},lab);return b}))}
+async function imgData(url){
+  try{const r=await fetch(url);if(!r.ok)return null;const bl=await r.blob();
+    const d=await new Promise((ok,ko)=>{const fr=new FileReader();fr.onload=()=>ok(fr.result);fr.onerror=ko;fr.readAsDataURL(bl)});
+    const im=await new Promise((ok,ko)=>{const i=new Image();i.onload=()=>ok(i);i.onerror=ko;i.src=d});
+    return {d,w:im.naturalWidth,h:im.naturalHeight,fmt:url.endsWith(".png")?"PNG":"JPEG"}}catch(e){return null}
+}
+function newDoc(kind,orient="p"){
+  const {jsPDF}=window.jspdf; const doc=new jsPDF({orientation:orient,unit:"mm",format:"a4"});
+  const W=doc.internal.pageSize.getWidth(), H=doc.internal.pageSize.getHeight();
+  doc.__deco=()=>{const n=doc.getNumberOfPages();for(let i=1;i<=n;i++){doc.setPage(i);
+    doc.setFillColor(168,70,31);doc.rect(0,0,W,9,"F");doc.setTextColor(255);doc.setFont("helvetica","bold");doc.setFontSize(10);doc.text("ZWAQ DECO",12,6.2);
+    doc.setFont("helvetica","normal");doc.setFontSize(7.5);doc.text(T(kind+" · BOIS ECO-STYLE · "+new Date().toLocaleDateString("fr-FR")),W-12,6.2,{align:"right"});
+    doc.setTextColor(110);doc.setFontSize(7);doc.text(T("Page "+i+" / "+n),W-12,H-6,{align:"right"})}};
+  doc.setTextColor(34);return {doc,W,H};
+}
+function title(doc,txt,sub,y=18){doc.setFont("helvetica","bold");doc.setFontSize(16);doc.setTextColor(168,70,31);doc.text(T(txt),12,y);
+  if(sub){doc.setFont("helvetica","normal");doc.setFontSize(9);doc.setTextColor(110);doc.text(T(sub),12,y+5)}doc.setTextColor(34);return y+(sub?10:6)}
+function h2(doc,txt,y){doc.setFont("helvetica","bold");doc.setFontSize(10.5);doc.setTextColor(168,70,31);doc.text(T(txt),12,y);doc.setTextColor(34);return y+2}
+const TS={styles:{font:"helvetica",fontSize:8,cellPadding:1.4,textColor:34,lineColor:[221,215,204],lineWidth:.2},headStyles:{fillColor:[244,236,225],textColor:34,fontStyle:"bold"},margin:{left:12,right:12},theme:"grid"};
+function table(doc,y,head,body,extra={}){doc.autoTable({...TS,startY:y,head:[head.map(T)],body:body.map(r=>r.map(T)),...extra});return doc.lastAutoTable.finalY+5}
+function ensure(doc,y,need,H){if(y+need>H-12){doc.addPage();return 16}return y}
+async function images(doc,id,x,y,maxW,maxH){
+  const vis=(products[id]?.visuels)||VIS[id]||[]; let cx=x;
+  for(const n of vis){const im=await imgData("img/"+n+".jpg");if(!im)continue;let w=maxW/vis.length-2,h=w*im.h/im.w;if(h>maxH){h=maxH;w=h*im.w/im.h}
+    doc.addImage(im.d,im.fmt,cx,y,w,h);cx+=w+2}
+}
+async function savePdf(doc,name){
+  doc.__deco();
+  try{doc.save(name);setStatus("ok","PDF prêt : "+name)}catch(e){setStatus("err","Export impossible : "+(e&&e.message||""))}
+}
+const slug=s=>T(s).normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/[^A-Za-z0-9]+/g,"_").replace(/^_|_$/g,"");
+function debitRows(p,t){return(p.pieces||[]).filter(r=>num(r.qte)).map(r=>{const m=resolveMat(r,t);const ep=num((matOf(m)||{}).ep)||18;
+  return [r.nom,String(num(r.qte)),`${fmt0(num(r.long))} × ${fmt0(num(r.larg))} × ${ep}`,m,ch22(r)?(num(r.qte)*ch22(r)).toFixed(2).replace(".",","):"-",ch40(r)?(num(r.qte)*ch40(r)).toFixed(2).replace(".",","):"-"]})}
+function versions(p){const ts=p.teintes||[];const usesT=(p.pieces||[]).some(r=>r.matiere==="Teinte");return usesT&&ts.length?ts:[ts[0]||""]}
+
+async function exportCout(id){
+  const p=products[id];const {doc,W,H}=newDoc("Fiche de coût");
+  let y=title(doc,p.nom||id,(p.ref||"")+(dimsOf(p,id)?" · "+dimsOf(p,id):""));
+  y=Math.max(y,12)+2;
+  y=h2(doc,"Pièces",y+2);y=table(doc,y,["Pièce","Qté","Long.","Larg.","Matière","Chant 22 (m/pièce)","Chant 40 (m/pièce)"],
+    (p.pieces||[]).map(r=>[r.nom,String(num(r.qte)),fmt0(num(r.long)),fmt0(num(r.larg)),r.matiere==="Teinte"?"Couleur cochée":r.matiere,String(ch22(r)).replace(".",","),String(ch40(r)).replace(".",",")]));
+  y=h2(doc,"Fournitures",y);y=table(doc,y,["Article","Qté","PU (DH)","Total (DH)"],(p.fournitures||[]).map(f=>[f.article,String(num(f.qte)).replace(".",","),fmt(puOf(f)),fmt(num(f.qte)*puOf(f))]));
+  const ts=p.teintes||[];const cs=ts.map(t=>cost(p,t));
+  const mats=[...new Set(cs.flatMap(c=>Object.keys(c.mats)))];
+  const row=(lab,f)=>[lab,...cs.map(f)];
+  const body=[...mats.map(m=>row("Matière "+m,c=>c.mats[m]?(c.mats[m].manque?"prix ?":fmt(c.mats[m].dh)):"-")),
+    row("Chant",c=>fmt(c.chant)),row("Fournitures",c=>fmt(c.fourn)),row("CNC ("+num(p.cnc)+" min)",c=>fmt(c.machine)),row("Main-d'œuvre ("+num(p.mo)+" min)",c=>fmt(c.mo)),row("Emballage",c=>fmt(c.emb)),
+    row("COÛT DE PRODUCTION",c=>fmt(c.cr)),row("Livraison",c=>fmt(c.liv)),row("PRODUCTION + LIVRAISON",c=>fmt(c.prodLiv)),
+    row("Prix de vente TTC",c=>fmt0(c.ttc)),row("Prix HT",c=>fmt(c.ht)),row("Marge avant marketing",c=>fmt(c.margeProd)),
+    row("Marketing estimé / unité",c=>fmt(c.mkEst)),row("Marketing réel / unité",c=>c.mkReel==null?"-":fmt(c.mkReel)),
+    row("MARGE FINALE ESTIMÉE",c=>fmt(c.margeEst)+" ("+Math.round(c.pct*100)+" %)"),row("MARGE FINALE RÉELLE",c=>c.margeReel==null?"-":fmt(c.margeReel)+" ("+Math.round(c.pctReel*100)+" %)")];
+  y=ensure(doc,y,80,H);y=h2(doc,"Coût de revient et marges (DH)",y);
+  const bold=new Set(["COÛT DE PRODUCTION","PRODUCTION + LIVRAISON","MARGE FINALE ESTIMÉE","MARGE FINALE RÉELLE"].map(T));
+  y=table(doc,y,["Poste",...ts.map(t=>p.variante||t)],body,{columnStyles:Object.fromEntries(ts.map((_,i)=>[i+1,{halign:"right"}])),
+    didParseCell:d=>{if(d.section==="body"&&bold.has(d.row.raw[0])){d.cell.styles.fontStyle="bold";d.cell.styles.fillColor=[255,244,194]}}});
+  doc.setFontSize(7.5);doc.setTextColor(110);doc.text(T(`Chute ${prix.chute} % · chant 22 mm ${prix.chant22} DH/m · chant 40 mm ${prix.chant40} DH/m · CNC ${prix.cnc} DH/h · MO ${prix.mo} DH/h · TVA ${prix.tva} %`),12,y);
+  y+=5;y=ensure(doc,y,32,H);y=h2(doc,"Visuels",y);await images(doc,id,12,y+1,W-24,Math.min(58,H-16-y));
+  await savePdf(doc,"Fiche_cout_"+slug(p.nom||id)+".pdf");
+}
+
+function drawPiece(doc,r,m,x,y,w,h){
+  const L=num(r.long),l=num(r.larg); if(!L||!l)return;
+  const k=Math.min((w-14)/L,(h-17)/l); const rw=L*k, rh=l*k, rx=x+(w-rw)/2-2, ry=y+8+(h-17-rh)/2;
+  doc.setDrawColor(34);doc.setLineWidth(.3);doc.setFillColor(234,217,194);doc.rect(rx,ry,rw,rh,"FD");
+  // chant marks: thicker line on front (bottom long edge) when chant present
+  if(ch22(r)||ch40(r)){doc.setDrawColor(168,70,31);doc.setLineWidth(1);doc.line(rx,ry+rh,rx+rw,ry+rh);doc.setLineWidth(.3)}
+  doc.setDrawColor(20,48,107);doc.setTextColor(20,48,107);doc.setFont("helvetica","bold");doc.setFontSize(8);
+  doc.line(rx,ry-2,rx+rw,ry-2);doc.text(fmt0(L),rx+rw/2,ry-3,{align:"center"});
+  doc.line(rx+rw+2,ry,rx+rw+2,ry+rh);doc.text(fmt0(l),rx+rw+3,ry+rh/2+1);doc.setFont("helvetica","normal");
+  doc.setTextColor(34);doc.setFont("helvetica","bold");doc.setFontSize(8);doc.text(T(r.nom||""),x+2,y+4,{maxWidth:w-4});
+  doc.setFont("helvetica","normal");doc.setFontSize(7);doc.setTextColor(110);
+  doc.text(T(`× ${num(r.qte)} · ${m} · ép. ${num((matOf(m)||{}).ep)||18}`+(ch22(r)?` · chant 22 : ${String(ch22(r)).replace(".",",")} m`:"")+(ch40(r)?` · chant 40 : ${String(ch40(r)).replace(".",",")} m`:"")),x+2,y+h-2,{maxWidth:w-4});
+  doc.setTextColor(34);doc.setDrawColor(221,215,204);doc.setLineWidth(.2);doc.rect(x,y,w,h);
+}
+
+function dimH(doc,x1,x2,y,txt){doc.setDrawColor(20,48,107);doc.setLineWidth(.3);doc.line(x1,y,x2,y);doc.line(x1,y-1.2,x1,y+1.2);doc.line(x2,y-1.2,x2,y+1.2);
+  doc.setFont("helvetica","bold");doc.setFontSize(8);doc.setTextColor(20,48,107);doc.text(T(txt),(x1+x2)/2,y-1,{align:"center"});doc.setTextColor(34);doc.setFont("helvetica","normal")}
+function dimV(doc,x,y1,y2,txt){doc.setDrawColor(20,48,107);doc.setLineWidth(.3);doc.line(x,y1,x,y2);doc.line(x-1.2,y1,x+1.2,y1);doc.line(x-1.2,y2,x+1.2,y2);
+  doc.setFont("helvetica","bold");doc.setFontSize(8);doc.setTextColor(20,48,107);doc.text(T(txt),x-1.2,(y1+y2)/2,{angle:90,align:"center"});doc.setTextColor(34);doc.setFont("helvetica","normal")}
+function drawLunePlan(doc,p,x,top,w,h){
+  const pcs=p.pieces||[]; const pan=pcs.find(r=>/demi|lune|panneau/i.test(r.nom||""))||pcs[0]; const tab=pcs.find(r=>/tablette/i.test(r.nom||""));
+  if(!pan)return; const H=num(pan.long), A=num(pan.larg); const TL=tab?num(tab.long):0, TP=tab?num(tab.larg):0, TE=tab?(/couche/i.test(tab.nom||"")?num(tab.qte):1)*18:0;
+  doc.setDrawColor(221,215,204);doc.setLineWidth(.2);doc.rect(x,top,w,h);doc.setFontSize(7);doc.setTextColor(110);doc.text("Plan d'ensemble (cotes en mm, d'après les pièces saisies)",x+2,top+3.5);doc.setTextColor(34);
+  const Wt=Math.max(A,TL), textW=48, k=Math.min((w-textW-20)/Wt,(h-19)/H), ox=x+12, oy=top+9, ph=H*k, pw=A*k;
+  // demi-ellipse : bord droit à gauche
+  const pts=[];for(let i=0;i<=60;i++){const t=-Math.PI/2+Math.PI*i/60;pts.push([ox+pw*Math.cos(t),oy+ph/2-ph/2*Math.sin(t)])}
+  doc.setFillColor(154,106,69);doc.setDrawColor(40,30,20);doc.setLineWidth(.3);
+  const rel=pts.slice(1).map((q,i)=>[q[0]-pts[i][0],q[1]-pts[i][1]]);doc.lines(rel,pts[0][0],pts[0][1],[1,1],"FD",true);
+  doc.setDrawColor(74,46,28);doc.setLineWidth(.5);for(let gx=50;gx<A;gx+=50){const hh=(H/2)*Math.sqrt(Math.max(0,1-(gx/A)**2))*k;doc.line(ox+gx*k,oy+ph/2-hh,ox+gx*k,oy+ph/2+hh)}
+  if(tab&&TL){const th=Math.max(TE*k,1.2), ty=oy+ph/2-th/2;doc.setFillColor(176,123,82);doc.setDrawColor(40,30,20);doc.setLineWidth(.3);doc.rect(ox,ty,TL*k,th,"FD");
+    doc.setDrawColor(150);doc.setLineWidth(.15);doc.setLineDashPattern([0.8,0.8],0);doc.line(ox+TL*k,ty+th,ox+TL*k,oy+ph+5);doc.setLineDashPattern([],0);dimH(doc,ox,ox+TL*k,oy+ph+5,fmt0(TL)+" (tablette)");dimV(doc,ox+TL*k+4,ty,ty+th,fmt0(TE))}
+  dimH(doc,ox,ox+pw,oy-3,fmt0(A));dimV(doc,ox-4,oy,oy+ph,fmt0(H));
+  const tx=x+w-textW;doc.setFontSize(7.5);let yy=top+12;
+  const lines=["Vue de face",`Panneau demi-lune ${fmt0(A)} × ${fmt0(H)} × 18`,"Frisage CNC : rainures verticales"];
+  if(tab)lines.push(`Tablette ${fmt0(TL)} × ${fmt0(TP)} × ${fmt0(TE)}`);
+  if((p.fournitures||[]).some(f=>/led/i.test(f.article||"")&&num(f.qte)))lines.push("LED au dos, sur l'arc");
+  for(const [i,l] of lines.entries()){doc.setTextColor(i?110:34);doc.text(T(l),tx,yy,{maxWidth:textW-2});yy+=5}doc.setTextColor(34);
+}
+async function exportGuide(id){
+  const p=products[id];const {doc,W,H}=newDoc("Guide de production");
+  const ts=p.teintes||[], usesT=(p.pieces||[]).some(r=>r.matiere==="Teinte");
+  let y=title(doc,"Guide de production — "+(p.nom||id),(p.ref||"")+(dimsOf(p,id)?" · "+dimsOf(p,id):"")+` · cotes en mm, tolérance ± 2 mm · CNC ${num(p.cnc)} min · main-d'œuvre ${num(p.mo)} min`);
+  // ligne 1 : photo + plan d'ensemble
+  const rowH=58, top=y;
+  const vis=(p.visuels)||VIS[id]||[]; let x=12;
+  const ph=vis.length?await imgData("img/"+vis[0]+".jpg"):null;
+  if(ph){const h=rowH,w=h*ph.w/ph.h;doc.addImage(ph.d,ph.fmt,x,top,w,h);x+=w+4}
+  const pl=p.plan||PLAN[id]; const im=(pl&&id!=="LUNE")?await imgData("plans/"+pl+".png"):null;
+  if(id==="LUNE")drawLunePlan(doc,p,x,top,W-12-x,rowH);
+  if(im){const maxW=W-12-x,maxH=rowH;let w=maxW,h=w*im.h/im.w;if(h>maxH){h=maxH;w=h*im.w/im.h}
+    doc.setDrawColor(221,215,204);doc.setLineWidth(.2);doc.rect(x,top,maxW,rowH);doc.addImage(im.d,"PNG",x+(maxW-w)/2,top+(rowH-h)/2,w,h);
+    doc.setFontSize(7);doc.setTextColor(110);doc.text("Plan d'ensemble",x+2,top+4);doc.setTextColor(34)}
+  y=top+rowH+6;
+  // version à cocher
+  if(usesT&&ts.length>1){doc.setFontSize(9);doc.setFont("helvetica","bold");doc.text("Version commandée :",12,y);doc.setFont("helvetica","normal");
+    let vx=48;for(const t of ts){doc.rect(vx,y-3,3,3);doc.text(T(t),vx+4.5,y);vx+=doc.getTextWidth(T(t))+12}y+=5}
+  // liste de débit (une seule)
+  y=h2(doc,"Liste de débit",y);
+  const rows=(p.pieces||[]).filter(r=>num(r.qte)).map(r=>{const m=r.matiere==="Teinte"?(ts.length>1?"Couleur commandée":(ts[0]||"Couleur commandée")):r.matiere;
+    const ep=num((matOf(r.matiere==="Teinte"?ts[0]:r.matiere)||{}).ep)||18;
+    return [r.nom,String(num(r.qte)),`${fmt0(num(r.long))} × ${fmt0(num(r.larg))} × ${ep}`,m,ch22(r)?(num(r.qte)*ch22(r)).toFixed(2).replace(".",","):"-",ch40(r)?(num(r.qte)*ch40(r)).toFixed(2).replace(".",","):"-"]});
+  let n=0,c22=0,c40=0;for(const r of p.pieces||[]){n+=num(r.qte);c22+=num(r.qte)*ch22(r);c40+=num(r.qte)*ch40(r)}
+  const small={styles:{...TS.styles,fontSize:7.5,cellPadding:1}};
+  y=table(doc,y,["Pièce","Qté","Dimensions finies","Matière","Chant 22 (m)","Chant 40 (m)"],[...rows,["Total",String(n),"","",c22.toFixed(2).replace(".",","),c40.toFixed(2).replace(".",",")]],
+    {...small,columnStyles:{1:{halign:"right"},2:{halign:"right"},4:{halign:"right"},5:{halign:"right"}},didParseCell:d=>{if(d.section==="body"&&d.row.index===rows.length)d.cell.styles.fontStyle="bold"}});
+  // fournitures + contrôle qualité côte à côte
+  const yF=y; const half=(W-24-6)/2;
+  doc.setFont("helvetica","bold");doc.setFontSize(10);doc.setTextColor(168,70,31);doc.text("Fournitures à préparer",12,yF);doc.text(T("Contrôle qualité"),12+half+6,yF);doc.setTextColor(34);
+  doc.autoTable({...TS,...small,startY:yF+2,head:[["Article","Qté"]],body:(p.fournitures||[]).filter(f=>num(f.qte)).map(f=>[T(f.article),T(String(num(f.qte)).replace(".",","))]),
+    margin:{left:12,right:W-12-half},columnStyles:{1:{halign:"right",cellWidth:14}}});
+  const yT=doc.lastAutoTable.finalY;
+  const ck=["Dimensions ± 2 mm, pièces d'équerre","Chants continus, sans bulle ni débord","Fixations et quincaillerie dans le colis","Premier prototype : test de charge 24 h"];
+  let cy=yF+7;doc.setFontSize(8.5);doc.setFont("helvetica","normal");for(const c of ck){doc.rect(12+half+6,cy-2.8,3,3);doc.text(T(c),12+half+11,cy);cy+=5.5}
+  y=Math.max(yT,cy)+5;
+  // détail des pièces : grille adaptative sur l'espace restant
+  const pcs=(p.pieces||[]).filter(r=>num(r.qte)&&num(r.long)&&num(r.larg));
+  const bottom=H-20;
+  if(pcs.length&&bottom-y>30){
+    y=h2(doc,"Détail des pièces (cotes en mm, trait orange = chant avant)",y)+2;
+    const cols=pcs.length<=2?2:pcs.length<=6?3:4, rowsN=Math.ceil(pcs.length/cols);
+    const cw=(W-24-(cols-1)*3)/cols, ch=Math.min(42,(bottom-y-(rowsN-1)*3)/rowsN);
+    if(ch>=20){pcs.forEach((r,i)=>drawPiece(doc,r,r.matiere==="Teinte"&&ts.length>1?"Couleur commandée":resolveMat(r,ts[0]),12+(i%cols)*(cw+3),y+Math.floor(i/cols)*(ch+3),cw,ch));y+=rowsN*(ch+3)}
+  }
+  doc.setFontSize(8.5);doc.text(T("Fabriqué par : ____________________   Date : __________   Contrôlé par : ____________________"),12,H-14);
+  await savePdf(doc,"Guide_production_"+slug(p.nom||id)+".pdf");
+}
+async function exportRecap(){
+  const {doc,W,H}=newDoc("Récapitulatif des coûts","l");let y=title(doc,"Récapitulatif des coûts et marges","Montants en DH par unité vendue");
+  const body=[],ims=[],cache={};for(const id of sortedIds()){const p=products[id];for(const t of(p.teintes||[])){const c=cost(p,t);
+    const v=visOf(p,id,t);let im=null;if(v){if(!(v in cache))cache[v]=await imgData("img/"+v+".jpg");im=cache[v]}ims.push(im);
+    body.push(["",p.collection||"",p.nom||id,p.variante||t,dimsOf(p,id),fmt(c.cr),fmt(c.liv),fmt(c.mkEst),c.mkReel==null?"-":fmt(c.mkReel),fmt(c.ht),fmt0(c.ttc),fmt(c.margeEst),c.margeReel==null?"-":fmt(c.margeReel),Math.round(c.pct*100)+" %"])}}
+  table(doc,y,["Photo","Collection","Produit","Teinte","Dimensions","Production","Livraison","Mkt estimé","Mkt réel","Prix HT","Prix TTC","Marge est.","Marge réelle","Marge %"],body,{
+    styles:{...TS.styles,valign:"middle"},
+    columnStyles:{0:{cellWidth:13,minCellHeight:16},...Object.fromEntries([5,6,7,8,9,10,11,12,13].map(i=>[i,{halign:"right"}]))},
+    didDrawCell:d=>{if(d.section!=="body"||d.column.index!==0)return;const im=ims[d.row.index];if(!im)return;
+      let h=d.cell.height-2,w=h*im.w/im.h;if(w>d.cell.width-2){w=d.cell.width-2;h=w*im.h/im.w}
+      doc.addImage(im.d,im.fmt,d.cell.x+(d.cell.width-w)/2,d.cell.y+(d.cell.height-h)/2,w,h)}});
+  await savePdf(doc,"Recapitulatif_couts_ZWAQ.pdf");
+}
+async function exportPrix(){
+  const {doc,W,H}=newDoc("Prix fournitures");let y=title(doc,"Prix des matières et de l'atelier");
+  y=h2(doc,"Matières (plaques)",y);y=table(doc,y,["Matière","Ép. (mm)","Format (mm)","Prix plaque (DH)","Prix au m² (DH)"],MATS().map(m=>[m.nom,String(num(m.ep)),`${num(m.L)} × ${num(m.H)}`,fmt(num(m.prix)),m2Price(m.nom)?fmt(m2Price(m.nom)):"prix manquant"]));
+  y=h2(doc,"Chant, atelier et TVA",y);table(doc,y,["Paramètre","Valeur"],PRIX_FIELDS.map(([k,l])=>[l,String(prix[k])]));
+  await savePdf(doc,"Prix_fournitures_ZWAQ.pdf");
+}
+
+
+/* ================= BES · ZWAQ : base Supabase (remplace la base de l'artifact) ================= */
+const SB={url:'https://ypvjnermbksjxlebeoyr.supabase.co',key:'sb_publishable_IlWas1CWdwQLHNj1NTLSUw_D97PW-wL'};
+async function sbReq(path,opt={}){
+  const r=await fetch(SB.url+'/rest/v1/'+path,{...opt,headers:{apikey:SB.key,Authorization:'Bearer '+SB.key,'Content-Type':'application/json',...(opt.headers||{})}});
+  if(!r.ok)throw new Error('Supabase '+r.status+' '+(await r.text()).slice(0,120));
+  const t=await r.text();return t?JSON.parse(t):null;
+}
+function makeDb(){
+  const subs=[];let timer=null,busy=false;
+  async function poll(){
+    if(busy)return;busy=true;
+    try{
+      const rows=await sbReq('zwaq_docs?select=coll,id,data,updated_at');
+      const by={};for(const r of rows)(by[r.coll]=by[r.coll]||[]).push(r);
+      for(const s of subs){
+        const list=by[s.coll]||[];
+        if(s.id){const r=list.find(x=>x.id===s.id),v=r?r.updated_at:'-';if(s.seen===v)continue;s.seen=v;s.cb({exists:!!r,data:()=>r?r.data:undefined});}
+        else{const now={},ch=[];
+          for(const r of list){now[r.id]=r.updated_at;if(s.seen[r.id]!==r.updated_at)ch.push({type:s.seen[r.id]?'modified':'added',doc:{id:r.id,data:()=>r.data}});}
+          for(const id in s.seen)if(!(id in now))ch.push({type:'removed',doc:{id,data:()=>undefined}});
+          s.seen=now;if(ch.length||!s.first){s.first=true;s.cb({empty:!list.length,docChanges:()=>ch});}}
+      }
+    }catch(e){subs.forEach(s=>s.err&&s.err(e));}
+    busy=false;
+  }
+  const kick=()=>{clearTimeout(timer);timer=setTimeout(poll,30);};
+  setInterval(()=>{if(!document.hidden)poll();},20000);
+  document.addEventListener('visibilitychange',()=>{if(!document.hidden)poll();});
+  return{
+    doc(path){const [coll,id]=path.split('/');return{
+      set:async data=>{await sbReq('zwaq_docs?on_conflict=coll,id',{method:'POST',headers:{Prefer:'resolution=merge-duplicates,return=minimal'},body:JSON.stringify({coll,id,data,updated_at:new Date().toISOString()})});},
+      delete:async()=>{await sbReq('zwaq_docs?coll=eq.'+encodeURIComponent(coll)+'&id=eq.'+encodeURIComponent(id),{method:'DELETE'});kick();},
+      onSnapshot(cb,err){subs.push({coll,id,cb,err,seen:null});kick();}};},
+    collection(coll){return{onSnapshot(cb,err){subs.push({coll,cb,err,seen:{}});kick();}};}
+  };
+}
+
+/* ================= Accès aux coûts (code) ================= */
+const PIN='2904';
+let UNLOCK=false;try{UNLOCK=sessionStorage.getItem('zwaqUnlock')==='1'}catch(e){}
+let PMODE='atelier';
+function renderLock(){
+  const b=$('#lockBox');b.textContent='';
+  if(UNLOCK){b.append(el('button',{class:'lockbtn',onclick:()=>{UNLOCK=false;try{sessionStorage.removeItem('zwaqUnlock')}catch(e){}
+      if(current==='__recap'||current==='__prix')current='__cmd';PMODE='atelier';renderLock();renderTabs();renderView();}},'Coûts ouverts · verrouiller'));return;}
+  const inp=el('input',{type:'password',inputmode:'numeric',placeholder:'Code',class:'pin','aria-label':'Code pour voir les coûts',maxlength:'8',autocomplete:'off'});
+  const go=()=>{if(inp.value===PIN){UNLOCK=true;try{sessionStorage.setItem('zwaqUnlock','1')}catch(e){}PMODE='cout';renderLock();renderTabs();renderView();}
+    else{inp.value='';inp.placeholder='Code faux';}};
+  inp.addEventListener('keydown',e=>{if(e.key==='Enter')go();});
+  b.append(el('span',{class:'lockl'},'Coûts'),inp,el('button',{class:'lockbtn',onclick:go},'Ouvrir'));
+}
+
+/* ================= Fiche atelier ZWAQ : débit, plan de découpe, impression ================= */
+const KERF=4,TRIM=10;
+let CMD;try{CMD=JSON.parse(localStorage.getItem('zwaq_cmd'))}catch(e){}
+if(!CMD||!Array.isArray(CMD.lignes))CMD={nom:'',lignes:[],sens:false};
+const saveCmd=()=>{try{localStorage.setItem('zwaq_cmd',JSON.stringify(CMD))}catch(e){}};
+let ONE={q:1,t:null,sens:false};
+const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const epOf=m=>num((matOf(m)||{}).ep)||18;
+const plateOf=m=>{const o=matOf(m)||{};return[num(o.L)||2800,num(o.H)||2100];};
+const lettre=i=>String.fromCharCode(65+i%26)+(i>=26?Math.floor(i/26):'');
+const f2=v=>v.toFixed(2).replace('.',',');
+
+function buildDebit(lignes){
+  const rows=[];
+  lignes.forEach((ln,i)=>{const p=products[ln.id];if(!p||!num(ln.q))return;const t=ln.t||(p.teintes||[])[0]||'';let j=0;
+    for(const r of p.pieces||[]){if(!num(r.qte))continue;j++;const m=resolveMat(r,t)||'?';const q=num(r.qte)*num(ln.q);
+      rows.push({lab:lettre(i)+j,prod:p.nom||ln.id,piece:r.nom||'',q,L:num(r.long),l:num(r.larg),mat:m,ep:epOf(m),c22:ch22(r)*q,c40:ch40(r)*q});}});
+  return rows;
+}
+function nestZ(rows,mat,sens){
+  const [w0,h0]=plateOf(mat),PL={w:w0,h:h0},PW=PL.w-2*TRIM,PH=PL.h-2*TRIM,items=[],out=[];
+  rows.filter(r=>r.mat===mat).forEach(r=>{for(let i=0;i<r.q;i++)items.push({n:r.lab,w:r.L,h:r.l});});
+  items.sort((a,b)=>(Math.max(b.w,b.h)-Math.max(a.w,a.h))||(b.w*b.h-a.w*a.h));
+  const plates=[],nouv=()=>{const p={free:[{x:0,y:0,w:PW,h:PH}],parts:[],PL};plates.push(p);return p;};
+  const tryIn=(pl,it)=>{let best=null;for(const f of pl.free)for(const rot of(sens?[false]:[false,true])){const pw=rot?it.h:it.w,ph=rot?it.w:it.h;
+    if(pw<=f.w+.01&&ph<=f.h+.01){const sc=Math.min(f.w-pw,f.h-ph);if(!best||sc<best.sc)best={pl,f,rot,pw,ph,sc};}}return best;};
+  for(const it of items){
+    if(!it.w||!it.h){out.push(it);continue;}
+    let best=null;for(const pl of plates){const b=tryIn(pl,it);if(b&&(!best||b.sc<best.sc))best=b;}
+    if(!best){const pl=nouv();best=tryIn(pl,it);if(!best){plates.pop();out.push(it);continue;}}
+    const {pl,f,rot,pw,ph}=best;pl.parts.push({x:f.x,y:f.y,w:pw,h:ph,n:it.n,rot});pl.free.splice(pl.free.indexOf(f),1);
+    const rw=f.w-pw-KERF,bh=f.h-ph-KERF;let a,b;
+    if(f.w-pw<f.h-ph){a={x:f.x+pw+KERF,y:f.y,w:rw,h:ph};b={x:f.x,y:f.y+ph+KERF,w:f.w,h:bh};}
+    else{a={x:f.x+pw+KERF,y:f.y,w:rw,h:f.h};b={x:f.x,y:f.y+ph+KERF,w:pw,h:bh};}
+    [a,b].forEach(z=>{if(z.w>20&&z.h>20)pl.free.push(z);});
+  }
+  const used=plates.reduce((s,p)=>s+p.parts.reduce((t,q)=>t+q.w*q.h,0),0);
+  return{mat,PL,plates,out,rend:plates.length?used/(plates.length*PL.w*PL.h):0,count:items.length};
+}
+function plateSVGz(pl,W=560){
+  const PL=pl.PL,s=W/PL.w,H=PL.h*s,X=x=>(x+TRIM)*s,Y=y=>(y+TRIM)*s;
+  let o=`<rect x="0.8" y="0.8" width="${W-1.6}" height="${H-1.6}" fill="#fff" stroke="#222" stroke-width="1.4"/>`;
+  pl.free.forEach(f=>{if(f.w>60&&f.h>60)o+=`<path d="M${X(f.x)} ${Y(f.y)}L${X(f.x+f.w)} ${Y(f.y+f.h)}M${X(f.x+f.w)} ${Y(f.y)}L${X(f.x)} ${Y(f.y+f.h)}" stroke="#bbb" stroke-width=".6" fill="none"/>`;});
+  pl.parts.forEach(p=>{const x=X(p.x),y=Y(p.y),w=p.w*s,h=p.h*s;
+    o+=`<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="#F1E4D3" stroke="#222" stroke-width=".9"/>`;
+    const fs=Math.max(7,Math.min(12,Math.min(w,h)/2.4));
+    if(w>=12&&h>=10)o+=`<text x="${x+w/2}" y="${y+h/2+(w>=60&&h>=34?-2:fs*.35)}" text-anchor="middle" font-size="${fs}" font-weight="700" font-family="IBM Plex Sans,sans-serif" fill="#111">${esc(p.n)}</text>`;
+    if(w>=60&&h>=34)o+=`<text x="${x+w/2}" y="${y+h/2+11}" text-anchor="middle" font-size="8.5" font-family="IBM Plex Mono,monospace" fill="#333">${fmt0(p.rot?p.h:p.w)}×${fmt0(p.rot?p.w:p.h)}</text>`;});
+  return`<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto;display:block">${o}</svg>`;
+}
+function nestAll(rows,sens){return[...new Set(rows.map(r=>r.mat))].map(m=>nestZ(rows,m,sens));}
+
+/* ---- blocs écran ---- */
+function debitTable(rows){
+  const tb=el('tbody');let n=0,c22=0,c40=0;
+  for(const r of rows){n+=r.q;c22+=r.c22;c40+=r.c40;
+    tb.append(el('tr',{},el('td',{},el('span',{class:'lab'},r.lab)),el('td',{class:'txt'},r.prod),el('td',{class:'txt'},r.piece),el('td',{class:'r'},String(r.q)),
+      el('td',{class:'r'},fmt0(r.L)),el('td',{class:'r'},fmt0(r.l)),el('td',{class:'r'},String(r.ep)),el('td',{class:'txt'},r.mat),
+      el('td',{class:'r'},r.c22?f2(r.c22):'—'),el('td',{class:'r'},r.c40?f2(r.c40):'—')));}
+  const foot=el('tfoot',{},el('tr',{},el('td',{}),el('td',{class:'txt'},'Total'),el('td',{}),el('td',{class:'r'},String(n)),el('td',{}),el('td',{}),el('td',{}),el('td',{}),el('td',{class:'r'},f2(c22)+' m'),el('td',{class:'r'},f2(c40)+' m')));
+  return el('div',{class:'scroll'},el('table',{},el('thead',{},el('tr',{},...['N°','Produit','Pièce','Qté','Long.','Larg.','Ép.','Matière','Chant 22 (m)','Chant 40 (m)'].map(h=>el('th',{},h)))),tb,foot));
+}
+function plansBlock(res){
+  const box=el('div',{});
+  if(!res.length){box.append(el('p',{class:'note'},'Aucune pièce à découper.'));return box;}
+  for(const r of res){
+    box.append(el('h3',{class:'mh'},`${r.mat} · ${epOf(r.mat)} mm · plaque ${r.PL.w} × ${r.PL.h}`,el('span',{class:'tag'},`${r.plates.length} plaque${r.plates.length>1?'s':''} · ${Math.round(r.rend*100)} % utilisé`)));
+    if(r.out.length)box.append(el('p',{class:'warnline'},`${r.out.length} pièce(s) trop grande(s) pour la plaque : ${[...new Set(r.out.map(o=>o.n))].join(', ')}`));
+    const g=el('div',{class:'plates'});r.plates.forEach((pl,i)=>{const d=el('div',{class:'plate'});d.innerHTML=`<div class="pcap">Plaque ${i+1} / ${r.plates.length}</div>`+plateSVGz(pl);g.append(d);});box.append(g);
+  }
+  box.append(el('p',{class:'note'},`Trait de scie ${KERF} mm · délignage ${TRIM} mm par bord · les pièces peuvent tourner sauf si « décor avec sens » est coché.`));
+  return box;
+}
+function costBlock(lignes){
+  const tb=el('tbody');let tc=0,tv=0,tm=0;
+  for(const ln of lignes){const p=products[ln.id];if(!p||!num(ln.q))continue;const t=ln.t||(p.teintes||[])[0]||'';const c=cost(p,t),q=num(ln.q);
+    tc+=c.cr*q;tv+=c.ht*q;tm+=c.margeEst*q;
+    tb.append(el('tr',{},el('td',{class:'txt'},p.nom||ln.id),el('td',{class:'txt'},t),el('td',{class:'r'},String(q)),el('td',{class:'r'},fmt(c.cr)),el('td',{class:'r'},fmt(c.cr*q)),el('td',{class:'r'},fmt(c.ht*q)),el('td',{class:'r'},fmt(c.margeEst*q))));}
+  return el('section',{class:'block'},el('h2',{},'Coût de la commande',el('span',{class:'hint'},'visible avec le code seulement · DH')),
+    el('div',{class:'scroll'},el('table',{},el('thead',{},el('tr',{},...['Produit','Teinte','Qté','Coût prod. / u','Coût prod. total','Vente HT','Marge est.'].map(h=>el('th',{},h)))),tb,
+      el('tfoot',{},el('tr',{},el('td',{class:'txt'},'Total'),el('td',{}),el('td',{}),el('td',{}),el('td',{class:'r'},fmt(tc)),el('td',{class:'r'},fmt(tv)),el('td',{class:'r'},fmt(tm)))))));
+}
+
+/* ---- vue atelier d'un produit ---- */
+function renderAtelierProduit(id){
+  const p=products[id],v=$('#view');v.textContent='';
+  const ts=p.teintes&&p.teintes.length?p.teintes:[...new Set((p.pieces||[]).map(r=>r.matiere).filter(m=>m&&m!=='Teinte'))];
+  if(!ONE.t||!ts.includes(ONE.t))ONE.t=ts[0]||'';
+  const usesT=(p.pieces||[]).some(r=>r.matiere==='Teinte');
+  const lignes=[{id,t:ONE.t,q:ONE.q}];
+  const rows=buildDebit(lignes),res=nestAll(rows,ONE.sens);
+  const sel=el('select',{'aria-label':'Teinte',onchange:e=>{ONE.t=e.target.value;renderAtelierProduit(id);}},...ts.map(t=>el('option',{value:t,...(t===ONE.t?{selected:''}:{})},t)));
+  const ctr=el('div',{class:'fields'},
+    usesT&&ts.length?el('label',{},'Teinte',sel):'',
+    el('label',{},"Nombre d'unités",el('input',{type:'number',min:'1',step:'1',value:ONE.q,onchange:e=>{ONE.q=Math.max(1,Math.round(num(e.target.value)));renderAtelierProduit(id);}})),
+    el('label',{class:'ck'},el('input',{type:'checkbox',...(ONE.sens?{checked:''}:{}),onchange:e=>{ONE.sens=e.target.checked;renderAtelierProduit(id);}}),'Décor avec sens (ne pas tourner)'));
+  const vis=(p.visuels)||VIS[id]||[],pl=p.plan||PLAN[id];
+  const head=el('div',{class:'atl-head'},
+    vis.length?el('div',{class:'photos'},...vis.map(n=>el('img',{src:'img/'+n+'.jpg',alt:(p.nom||'')+' — photo'}))):'',
+    pl?el('div',{class:'planbox'},el('img',{src:'plans/'+pl+'.png',alt:"Plan d'ensemble "+(p.nom||'')})):el('div',{class:'planbox empty'},"Pas encore de plan d'ensemble"));
+  v.append(modeSwitch(id),
+    el('p',{class:'meta'},(p.ref||'')+(dimsOf(p,id)?' · '+dimsOf(p,id):'')+(p.collection?' · '+p.collection:'')),
+    el('div',{class:'tools'},el('button',{onclick:()=>printAtelier(p.nom||id,lignes,ONE.sens,p)},'Imprimer la fiche atelier'),
+      ...toolbar([['Guide de production (PDF)',()=>exportGuide(id),true]]).children,
+      el('button',{class:'alt',onclick:()=>{CMD.lignes.push({id,t:ONE.t,q:ONE.q});saveCmd();current='__cmd';renderTabs();renderView();}},'Ajouter à la commande')),
+    el('section',{class:'block'},ctr),head,
+    el('section',{class:'block'},el('h2',{},'Liste de débit',el('span',{class:'hint'},'cotes en mm, telles que saisies dans la fiche produit')),debitTable(rows)),
+    el('section',{class:'block'},el('h2',{},'Plan de découpe',el('span',{class:'hint'},'par matière')),plansBlock(res)));
+}
+function modeSwitch(id){
+  if(!UNLOCK)return '';
+  const b=(k,l)=>el('button',{role:'tab','aria-selected':String(PMODE===k),onclick:()=>{PMODE=k;renderView();}},l);
+  return el('nav',{class:'sub',role:'tablist','aria-label':'Vue du produit'},b('atelier','Fiche atelier'),b('cout','Fiche de coût'));
+}
+
+/* ---- commande atelier (plusieurs produits) ---- */
+function renderCommande(){
+  const v=$('#view');v.textContent='';
+  const ids=sortedIds();
+  const tb=el('tbody');
+  CMD.lignes.forEach((ln,i)=>{const p=products[ln.id];const ts=p?(p.teintes&&p.teintes.length?p.teintes:['']):[''];if(p&&!ts.includes(ln.t))ln.t=ts[0];
+    tb.append(el('tr',{},el('td',{},el('span',{class:'lab'},lettre(i))),
+      el('td',{},el('select',{'aria-label':'Produit',onchange:e=>{ln.id=e.target.value;ln.t=null;saveCmd();renderCommande();}},...ids.map(x=>el('option',{value:x,...(x===ln.id?{selected:''}:{})},(products[x].nom||x)+(products[x].ref?' · '+products[x].ref:''))))),
+      el('td',{},el('select',{'aria-label':'Teinte',onchange:e=>{ln.t=e.target.value;saveCmd();renderCommande();}},...ts.map(t=>el('option',{value:t,...(t===ln.t?{selected:''}:{})},t||'—')))),
+      el('td',{},el('input',{type:'number',min:'1',step:'1',class:'w-n',value:ln.q,'aria-label':'Quantité',onchange:e=>{ln.q=Math.max(1,Math.round(num(e.target.value)));saveCmd();renderCommande();}})),
+      el('td',{},el('button',{class:'icon',title:'Retirer','aria-label':'Retirer la ligne',onclick:()=>{CMD.lignes.splice(i,1);saveCmd();renderCommande();}},'×'))));});
+  const rows=buildDebit(CMD.lignes),res=nestAll(rows,CMD.sens);
+  v.append(
+    el('section',{class:'block'},el('h2',{},'Commande atelier',el('span',{class:'hint'},'une ligne par produit · les pièces sont regroupées pour la découpe')),
+      el('div',{class:'fields',style:'margin-bottom:10px'},el('label',{},'Nom de la commande / client',el('input',{type:'text',value:CMD.nom||'',placeholder:'ex. Commande Instagram 12/10',oninput:e=>{CMD.nom=e.target.value;saveCmd();}})),
+        el('label',{class:'ck'},el('input',{type:'checkbox',...(CMD.sens?{checked:''}:{}),onchange:e=>{CMD.sens=e.target.checked;saveCmd();renderCommande();}}),'Décor avec sens (ne pas tourner)')),
+      el('div',{class:'scroll'},el('table',{},el('thead',{},el('tr',{},...['','Produit','Teinte','Qté',''].map(h=>el('th',{},h)))),tb)),
+      el('div',{class:'checks',style:'margin-top:8px'},
+        el('button',{class:'add',style:'margin-top:0',onclick:()=>{if(!ids.length)return;CMD.lignes.push({id:ids[0],t:null,q:1});saveCmd();renderCommande();}},'+ Ajouter un produit'),
+        CMD.lignes.length?el('button',{class:'add',style:'margin-top:0',onclick:()=>{CMD.lignes=[];CMD.nom='';saveCmd();renderCommande();}},'Vider la commande'):'')),
+    CMD.lignes.length?el('div',{class:'tools'},el('button',{onclick:()=>printAtelier(CMD.nom||'Commande',CMD.lignes,CMD.sens,null)},'Imprimer la fiche atelier')):'',
+    ...(CMD.lignes.length?[
+      UNLOCK?costBlock(CMD.lignes):'',
+      el('section',{class:'block'},el('h2',{},'Liste de débit',el('span',{class:'hint'},'N° = lettre du produit + numéro de pièce')),debitTable(rows)),
+      el('section',{class:'block'},el('h2',{},'Plan de découpe',el('span',{class:'hint'},'toutes les pièces de la commande, par matière')),plansBlock(res))]:
+      [el('div',{class:'empty'},'Ajoutez les produits à fabriquer : la liste de débit et le plan de découpe se calculent tout seuls.')]));
+}
+
+/* ---- nouveau produit / suppression (avec le code) ---- */
+function newProductBlock(){
+  const idI=el('input',{type:'text',placeholder:'ex. HEXA60','aria-label':'Code produit'}),nomI=el('input',{type:'text',placeholder:'ex. ZWAQ Hexa 60','aria-label':'Nom'}),
+    colI=el('input',{type:'text',placeholder:'ex. Collection 3','aria-label':'Collection',list:'colls'}),msg=el('span',{class:'note'});
+  const dl=el('datalist',{id:'colls'},...[...new Set(Object.values(products).map(p=>p.collection).filter(Boolean))].map(c=>el('option',{value:c})));
+  const go=()=>{const id=idI.value.trim().toUpperCase().replace(/[^A-Z0-9_-]+/g,'-');if(!id){msg.textContent='Donnez un code.';return;}
+    if(products[id]){msg.textContent='Ce code existe déjà.';return;}
+    const ordre=Math.max(0,...Object.values(products).map(p=>num(p.ordre)))+1;
+    products[id]={id,nom:nomI.value.trim()||id,collection:colI.value.trim()||'Autres',ref:'ZS-'+id,ordre,pieces:[{nom:'Pièce',qte:1,long:0,larg:150,matiere:'Teinte'}],fournitures:[],teintes:['Blanc'],prix:{Blanc:0},cnc:0,mo:0,emballage:0};
+    schedule(id);current=id;PMODE='cout';renderTabs();renderView();};
+  return el('section',{class:'block'},el('h2',{},'Nouveau produit',el('span',{class:'hint'},'ensuite : pièces, teintes et prix dans sa fiche')),
+    el('div',{class:'fields'},el('label',{},'Code (unique)',idI),el('label',{},'Nom',nomI),el('label',{},'Collection',colI),dl),
+    el('div',{class:'checks',style:'margin-top:8px;align-items:center'},el('button',{class:'add',style:'margin-top:0',onclick:go},'+ Créer le produit'),msg));
+}
+
+/* ---- impression A4 paysage ---- */
+function printAtelier(titre,lignes,sens,single){
+  const rows=buildDebit(lignes),res=nestAll(rows,sens),date=new Date().toLocaleDateString('fr-FR');
+  const pages=[];
+  const head=(sub)=>`<div class="ph"><b>ZWAQ DECO</b><span>Fiche atelier · ورقة الورشة</span><span class="pt">${esc(titre)}</span><span>${esc(sub||'')}</span><span>${date}</span></div>`;
+  // page 1 : produits (photos + plans) + début du débit
+  const prods=lignes.map((ln,i)=>{const p=products[ln.id];if(!p)return'';const vis=(p.visuels)||VIS[ln.id]||[],pl=p.plan||PLAN[ln.id];
+    return`<div class="pp"><div class="ppt"><span class="lab">${lettre(i)}</span> <b>${esc(p.nom||ln.id)}</b> · ${esc(ln.t||'')} · <b>× ${num(ln.q)}</b><br><small>${esc(p.ref||'')} ${esc(dimsOf(p,ln.id)||'')}</small></div>
+      <div class="ppi">${vis[0]?`<img src="img/${vis[0]}.jpg" alt="">`:''}${pl?`<img src="plans/${pl}.png" alt="">`:''}</div></div>`;}).join('');
+  const tr=r=>`<tr><td><span class="lab">${esc(r.lab)}</span></td><td>${esc(r.prod)}</td><td>${esc(r.piece)}</td><td class="r b">${r.q}</td><td class="r b">${fmt0(r.L)}</td><td class="r b">${fmt0(r.l)}</td><td class="r">${r.ep}</td><td>${esc(r.mat)}</td><td class="r">${r.c22?f2(r.c22):'—'}</td><td class="r">${r.c40?f2(r.c40):'—'}</td><td class="bx"></td></tr>`;
+  const th=`<thead><tr><th>N°</th><th>Produit · المنتج</th><th>Pièce · القطعة</th><th>Qté · العدد</th><th>Long. · الطول</th><th>Larg. · العرض</th><th>Ép.</th><th>Matière · المادة</th><th>Chant 22 · سينتا (m)</th><th>Chant 40 · سينتا (m)</th><th>✓</th></tr></thead>`;
+  const tot={n:rows.reduce((s,r)=>s+r.q,0),c22:rows.reduce((s,r)=>s+r.c22,0),c40:rows.reduce((s,r)=>s+r.c40,0)};
+  const sepP=!single&&lignes.length>4,per=16,first=single?7:sepP?per:8;
+  if(sepP){const cards=prods.split('<div class="pp">').slice(1).map(x=>'<div class="pp">'+x);
+    for(let i=0;i<cards.length;i+=12)pages.push(`<div class="sheet">${head('Produits de la commande')}<div class="pps">${cards.slice(i,i+12).join('')}</div></div>`);}
+  const chunks=[rows.slice(0,first)];for(let i=first;i<rows.length;i+=per)chunks.push(rows.slice(i,i+per));
+  chunks.forEach((ch,k)=>{const last=k===chunks.length-1;
+    pages.push(`<div class="sheet">${head(k?'Liste de débit (suite)':'')}${k===0&&!sepP?`<div class="pps ${single?'one':''}">${prods}</div>`:''}
+      <h4>Liste de débit · لائحة التقطيع <small>cotes en mm</small></h4><table class="dt">${th}<tbody>${ch.map(tr).join('')}</tbody>
+      ${last?`<tfoot><tr><td></td><td>Total</td><td></td><td class="r b">${tot.n}</td><td></td><td></td><td></td><td></td><td class="r">${f2(tot.c22)}</td><td class="r">${f2(tot.c40)}</td><td></td></tr></tfoot>`:''}</table>
+      ${last?`<div class="sig">Fabriqué par : ____________ &nbsp; Date : ________ &nbsp; Contrôlé par : ____________</div>`:''}</div>`);});
+  // pages plans de découpe : 2 plaques par page
+  for(const r of res){for(let i=0;i<r.plates.length;i+=2){
+    const two=r.plates.slice(i,i+2).map((pl,j)=>`<div class="pl"><div class="pcap">Plaque ${i+j+1} / ${r.plates.length}</div>${plateSVGz(pl,560)}</div>`).join('');
+    pages.push(`<div class="sheet">${head('Plan de découpe · مخطط التقطيع')}<h4>${esc(r.mat)} · ${epOf(r.mat)} mm · plaque ${r.PL.w} × ${r.PL.h} <small>${r.plates.length} plaque(s) · ${Math.round(r.rend*100)} % utilisé · scie ${KERF} mm · délignage ${TRIM} mm</small></h4>
+      ${r.out.length?`<p class="warnp">Trop grand pour la plaque : ${esc([...new Set(r.out.map(o=>o.n))].join(', '))}</p>`:''}<div class="pls ${r.plates.length-i===1?'one':''}">${two}</div></div>`);}}
+  $('#printArea').innerHTML=pages.join('');
+  const imgs=[...$('#printArea').querySelectorAll('img')];
+  Promise.all(imgs.map(im=>im.complete?1:new Promise(ok=>{im.onload=im.onerror=ok;}))).then(()=>window.print());
+}
+
+(async()=>{
+  db=makeDb(); current="__cmd"; renderLock(); renderTabs();
+  setStatus("busy","Chargement…");
+  db.doc("reglages/prix").onSnapshot(s=>{
+    const typing=!!document.activeElement?.closest?.("#view");
+    if(dirty.has("__prix")||(current==="__prix"&&typing))return;
+    prix={...DEF_PRIX,...JSON.parse(JSON.stringify(s.exists?s.data():{}))};
+    if(current==="__prix"){if(!document.activeElement?.closest?.("#view"))renderPrix()} else if(current==="__recap")renderRecap(); else if(current)renderSummary();
+  },e=>setStatus("err","Connexion perdue : rechargez la page"));
+  db.collection("produits").onSnapshot(snap=>{
+    for(const ch of snap.docChanges()){
+      const id=ch.doc.id;
+      if(ch.type==="removed"){delete products[id];continue}
+      if(dirty.has(id))continue;
+      if(id===current&&document.activeElement?.closest?.("#view")&&products[id])continue;
+      products[id]={id,...JSON.parse(JSON.stringify(ch.doc.data()))};
+    }
+    if(!current||(!products[current]&&!current.startsWith("__")))current=UNLOCK?"__recap":"__cmd";
+    renderTabs();
+    const typing=document.activeElement&&document.activeElement.closest&&document.activeElement.closest("#view");
+    if(!typing)renderView();
+    if(!dirty.size&&!saving)setStatus("ok",snap.empty?"Aucune fiche enregistrée":"À jour");
+  },e=>setStatus("err","Connexion perdue : rechargez la page"));
+})();
+</script>
+
+</body></html>

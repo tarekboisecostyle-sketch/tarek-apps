@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Applications de Tarek</title>
+<style>
+:root{--bg:#f4f1ec;--card:#fff;--ink:#2b2118;--muted:#7a6a5a;--line:#e3dbd0;--bes:#5b3a1e;--perso:#1a3a5c;--zwaq:#8a5a2b}
+@media (prefers-color-scheme:dark){:root{--bg:#1b1714;--card:#26201b;--ink:#f1e9df;--muted:#b3a291;--line:#3a312a}}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font-family:"Segoe UI",Arial,sans-serif}
+main{max-width:960px;margin:0 auto;padding:28px 16px 48px}
+h1{margin:0 0 4px;font-size:26px}p.sub{margin:0 0 26px;color:var(--muted)}
+h2{font-size:13px;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);margin:26px 0 10px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px}
+a.app{display:block;background:var(--card);border:1px solid var(--line);border-left:5px solid var(--c);border-radius:10px;padding:16px;text-decoration:none;color:inherit;transition:transform .15s}
+a.app:hover{transform:translateY(-2px)}
+a.app b{display:block;font-size:16px;margin-bottom:4px}a.app span{font-size:13px;color:var(--muted)}
+a.app.soon{opacity:.55;pointer-events:none}
+</style>
+</head>
+<body><main>
+<h1>Applications de Tarek</h1>
+<p class="sub">Toutes les applications réunies en un seul endroit.</p>
+
+<h2>BOIS ECO-STYLE (BES)</h2>
+<div class="grid">
+ <a class="app" style="--c:var(--bes)" href="bes-facturepro/"><b>BES FacturePro</b><span>Devis, factures, bons de commande, stock, chantiers</span></a>
+ <a class="app" style="--c:var(--bes)" href="bes-fiches-atelier/"><b>Fiches atelier</b><span>Plans cotés, liste de débit, fiches imprimables</span></a>
+ <a class="app" style="--c:var(--bes)" href="bes-fiches-atelier/releve/"><b>Relevé de chantier</b><span>Croquis coté sur tablette</span></a>
+ <a class="app soon" style="--c:var(--bes)" href="bes-caisse/"><b>BES Caisse</b><span>Caisse espèces — bientôt ici</span></a>
+</div>
+
+<h2>Zwaq Deco</h2>
+<div class="grid">
+ <a class="app" style="--c:var(--zwaq)" href="bes-fiches-atelier/zwaq/"><b>Zwaq Deco</b><span>Panneaux décoratifs CNC</span></a>
+</div>
+
+<h2>Perso</h2>
+<div class="grid">
+ <a class="app soon" style="--c:var(--perso)" href="gestionpro/"><b>GestionPro Perso</b><span>Finances perso, POD, cafés mobiles — bientôt ici</span></a>
+</div>
+</main></body></html>
