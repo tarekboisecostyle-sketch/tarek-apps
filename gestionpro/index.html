@@ -320,7 +320,8 @@ i.wk.ok { background:var(--accent); } i.wk.part { background:var(--warn); } i.wk
  <div id="auth-error" style="color:#C0392B;font-size:12px;min-height:16px;margin-bottom:8px;"></div>
  <button id="auth-btn"
  style="width:100%;padding:12px;background:#27AE60;color:#fff;border:none;border-radius:8px;font-size:15px;font-weight:600;cursor:pointer;">Se connecter</button>
- <div style="text-align:center;color:#95A5A6;font-size:11px;margin-top:14px;">Vos données sont privées et synchronisées.</div>
+ <button id="auth-signup" style="display:none;width:100%;margin-top:8px;padding:11px;background:#fff;color:#1A3A5C;border:1.5px solid #1A3A5C;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;">Créer mon compte</button>
+ <div style="text-align:center;color:#95A5A6;font-size:11px;margin-top:14px;">Tes données sont privées et enregistrées dans Supabase.</div>
  </div>
 </div>
 
@@ -1823,149 +1824,175 @@ initDates();
 showPage('dashboard');
 </script>
 
-<!-- ================= FIREBASE (synchro cloud) ================= -->
+<!-- ================= SUPABASE (synchro cloud) ================= -->
 <script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-app.js";
-import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut, setPersistence, browserLocalPersistence, browserSessionPersistence }
- from "https://www.gstatic.com/firebasejs/11.0.0/firebase-auth.js";
-import { initializeFirestore, getFirestore, persistentLocalCache, persistentSingleTabManager, doc, setDoc, onSnapshot }
- from "https://www.gstatic.com/firebasejs/11.0.0/firebase-firestore.js";
+import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/+esm";
 
-const firebaseConfig = {
- apiKey: "AIzaSyA-QLeG8K1vrFHC-PfzGWnO1fZEaP2WOq4",
- authDomain: "gestionpro-a6639.firebaseapp.com",
- projectId: "gestionpro-a6639",
- storageBucket: "gestionpro-a6639.firebasestorage.app",
- messagingSenderId: "763244197983",
- appId: "1:763244197983:web:d20ecee42e7faedb5543ea",
- measurementId: "G-9M6HH9FNZW"
+// Projet Supabase commun aux applications de Tarek. La clé publique est faite pour être dans la page :
+// les données GestionPro sont protégées par le compte (chaque ligne n'est lisible que par son propriétaire).
+const SB_URL = 'https://ypvjnermbksjxlebeoyr.supabase.co';
+const SB_KEY = 'sb_publishable_IlWas1CWdwQLHNj1NTLSUw_D97PW-wL';
+
+// Session gardée sur l'appareil si "Rester connecté" est coché, sinon jusqu'à la fermeture du navigateur
+const authStorage = {
+ getItem: k => localStorage.getItem(k) ?? sessionStorage.getItem(k),
+ setItem: (k, v) => (localStorage.getItem('gp_remember') === '0' ? sessionStorage : localStorage).setItem(k, v),
+ removeItem: k => { localStorage.removeItem(k); sessionStorage.removeItem(k); }
 };
-
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-
-let db;
-try {
- db = initializeFirestore(app, {
- localCache: persistentLocalCache({ tabManager: persistentSingleTabManager() })
- });
-} catch (e) {
- db = getFirestore(app); // secours si IndexedDB indisponible
-}
+const sb = createClient(SB_URL, SB_KEY, { auth: { persistSession: true, autoRefreshToken: true, storage: authStorage, storageKey: 'gp_sb_auth' } });
 
 const $ = id => document.getElementById(id);
 const deviceId = 'dev-' + Math.random().toString(36).slice(2, 9);
-let userDocRef = null, lastSentTs = 0, saveTimer = null, unsub = null;
+let uid = null, saveTimer = null, channel = null, lastCreds = null, lastRemoteAt = '';
 
-function setStatus(txt, color) {
- const b = $('cloud-status');
- if (b) { b.textContent = txt; b.style.background = color; }
-}
+function setStatus(txt, color) { const b = $('cloud-status'); if (b) { b.textContent = txt; b.style.background = color; } }
+function authMsg(txt, ok) { const e = $('auth-error'); e.style.color = ok ? '#1E8449' : '#C0392B'; e.textContent = txt; }
+function hasData(d) { return d && ['revenus','depenses','budgets','epargnes','dettes','pod','cafes','contrats'].some(k => Array.isArray(d[k]) && d[k].length); }
+function clean(d) { const c = { ...d }; delete c._ts; delete c._device; return c; }
 
-// ---- Sauvegarde cloud (regroupée / debounced) ----
+// ---- Sauvegarde cloud (regroupée) ----
 window.__cloudSave = function (D) {
- if (!userDocRef) return;
+ if (!uid) return;
  clearTimeout(saveTimer);
  setStatus('⏳ Sync…', '#FDEBD0');
  saveTimer = setTimeout(async () => {
- try {
- lastSentTs = Date.now();
- await setDoc(userDocRef, { ...D, _ts: lastSentTs, _device: deviceId });
- setStatus('☁️ Synchronisé', '#D5F5E3');
- } catch (err) {
- console.error('Cloud save error', err);
- setStatus('⚠️ Hors-ligne', '#FADBD8');
- }
+ const now = new Date().toISOString();
+ const { error } = await sb.from('gp_state').upsert({ user_id: uid, data: clean(D), device: deviceId, source: 'app', updated_at: now });
+ if (error) { console.error('Cloud save error', error); setStatus('⚠️ Non enregistré', '#FADBD8'); }
+ else { lastRemoteAt = now; setStatus('☁️ Synchronisé', '#D5F5E3'); }
  }, 700);
 };
 
-// ---- Connexion ----
-async function doLogin() {
- const email = $('auth-email').value.trim();
- const pass = $('auth-pass').value;
- const remember = $('auth-remember').checked;
- const errEl = $('auth-error');
- errEl.textContent = '';
- if (!email || !pass) { errEl.textContent = 'Email et mot de passe requis.'; return; }
- $('auth-btn').disabled = true; $('auth-btn').textContent = 'Connexion…';
- try {
- // Case cochée -> session gardée sur cet appareil (reconnexion auto, plus besoin du mot de passe)
- // Case décochée -> déconnexion à la fermeture du navigateur
- await setPersistence(auth, remember ? browserLocalPersistence : browserSessionPersistence);
- // On mémorise l'email (jamais le mot de passe) pour le pré-remplir la prochaine fois
- if (remember) { localStorage.setItem('gp_email', email); localStorage.setItem('gp_remember', '1'); }
- else { localStorage.setItem('gp_email', email); localStorage.setItem('gp_remember', '0'); }
- await signInWithEmailAndPassword(auth, email, pass);
- } catch (e) {
- const map = {
- 'auth/invalid-credential': 'Email ou mot de passe incorrect.',
- 'auth/invalid-email': 'Adresse e-mail invalide.',
- 'auth/user-not-found': 'Aucun compte pour cet email.',
- 'auth/wrong-password': 'Mot de passe incorrect.',
- 'auth/too-many-requests': 'Trop de tentatives, réessayez plus tard.',
- 'auth/network-request-failed': 'Pas de connexion internet.'
- };
- errEl.textContent = map[e.code] || ('Échec : ' + (e.code || e.message));
- $('auth-btn').disabled = false; $('auth-btn').textContent = 'Se connecter';
+// ---- Reprise des données de l'ancienne application (Firebase), une seule fois ----
+async function importFirebase(email, pass) {
+ const [{ initializeApp }, { getAuth, signInWithEmailAndPassword, signOut }, { getFirestore, doc, getDoc }] = await Promise.all([
+ import("https://www.gstatic.com/firebasejs/11.0.0/firebase-app.js"),
+ import("https://www.gstatic.com/firebasejs/11.0.0/firebase-auth.js"),
+ import("https://www.gstatic.com/firebasejs/11.0.0/firebase-firestore.js")
+ ]);
+ const app = initializeApp({
+ apiKey: "AIzaSyA-QLeG8K1vrFHC-PfzGWnO1fZEaP2WOq4", authDomain: "gestionpro-a6639.firebaseapp.com",
+ projectId: "gestionpro-a6639", storageBucket: "gestionpro-a6639.firebasestorage.app",
+ messagingSenderId: "763244197983", appId: "1:763244197983:web:d20ecee42e7faedb5543ea"
+ }, 'import-' + Date.now());
+ const auth = getAuth(app);
+ const cred = await signInWithEmailAndPassword(auth, email, pass);
+ const snap = await getDoc(doc(getFirestore(app), 'users', cred.user.uid, 'store', 'main'));
+ await signOut(auth).catch(() => {});
+ return snap.exists() ? clean(snap.data()) : null;
+}
+
+async function firstSync() {
+ setStatus('⏳ Reprise des données…', '#FDEBD0');
+ let data = null, source = 'nouveau', fbError = null;
+ if (lastCreds) {
+ try { data = await importFirebase(lastCreds.email, lastCreds.pass); if (data) source = 'import-firebase'; }
+ catch (e) { console.warn('Import Firebase impossible', e); fbError = e; }
  }
+ if (!data && hasData(window.__getD())) { data = clean(window.__getD()); source = 'import-local'; }
+ if (!data && fbError) {
+ // On ne crée jamais un compte vide tant que l'ancienne app n'a pas pu être lue : rien ne doit se perdre
+ await sb.auth.signOut(); uid = null;
+ $('auth-overlay').style.display = 'flex';
+ authMsg('Impossible de lire l\'ancienne application (' + (fbError.code || fbError.message) + '). Utilise le même email et mot de passe que l\'ancienne application GestionPro.');
+ setStatus('🔒 Déconnecté', '#EBF4FF');
+ return false;
+ }
+ if (!data && !lastCreds) {
+ // Session restaurée sans mot de passe en mémoire : on redemande la connexion pour pouvoir reprendre l'ancienne app
+ await sb.auth.signOut(); uid = null;
+ $('auth-overlay').style.display = 'flex';
+ authMsg('Reconnecte-toi une fois pour reprendre les données de l\'ancienne application.', true);
+ return false;
+ }
+ data = data || clean(window.__getD());
+ try { localStorage.setItem('gp_backup_import', JSON.stringify({ date: new Date().toISOString(), source, data })); } catch (e) {}
+ const now = new Date().toISOString();
+ const { error } = await sb.from('gp_state').insert({ user_id: uid, data, device: deviceId, source, updated_at: now });
+ if (error) { console.error(error); setStatus('⚠️ Reprise échouée', '#FADBD8'); return false; }
+ lastRemoteAt = now;
+ window.__applyRemote(data);
+ notify(source === 'import-firebase' ? 'Données reprises de l\'ancienne application ✅' : 'Compte prêt ✅', 'ok');
+ return true;
+}
+
+async function pull() {
+ const { data, error } = await sb.from('gp_state').select('data, updated_at, device').eq('user_id', uid).maybeSingle();
+ if (error) { console.error(error); setStatus('⚠️ Hors-ligne', '#FADBD8'); return; }
+ if (!data) { await firstSync(); return; }
+ if (data.updated_at !== lastRemoteAt) { lastRemoteAt = data.updated_at; window.__applyRemote(data.data); }
+ setStatus('☁️ Synchronisé', '#D5F5E3');
+}
+
+async function start(user) {
+ uid = user.id;
+ $('auth-overlay').style.display = 'none';
+ $('auth-btn').disabled = false; $('auth-btn').textContent = 'Se connecter';
+ setStatus('⏳ Chargement…', '#FDEBD0');
+ await pull();
+ if (!uid) return;
+ if (channel) sb.removeChannel(channel);
+ channel = sb.channel('gp-' + uid)
+ .on('postgres_changes', { event: '*', schema: 'public', table: 'gp_state', filter: `user_id=eq.${uid}` }, p => {
+ const row = p.new; if (!row || row.device === deviceId) return;
+ lastRemoteAt = row.updated_at; window.__applyRemote(row.data); setStatus('☁️ Synchronisé', '#D5F5E3');
+ }).subscribe();
+}
+document.addEventListener('visibilitychange', () => { if (!document.hidden && uid) pull(); });
+
+// ---- Connexion / création du compte ----
+async function doLogin() {
+ const email = $('auth-email').value.trim(), pass = $('auth-pass').value;
+ const remember = $('auth-remember').checked;
+ authMsg('');
+ if (!email || !pass) { authMsg('Email et mot de passe requis.'); return; }
+ localStorage.setItem('gp_email', email); localStorage.setItem('gp_remember', remember ? '1' : '0');
+ lastCreds = { email, pass };
+ $('auth-btn').disabled = true; $('auth-btn').textContent = 'Connexion…';
+ const { data, error } = await sb.auth.signInWithPassword({ email, password: pass });
+ $('auth-btn').disabled = false; $('auth-btn').textContent = 'Se connecter';
+ if (error) {
+ if (/invalid login/i.test(error.message)) { authMsg('Email ou mot de passe incorrect. Première fois ici ? Crée ton compte avec le même email et mot de passe que l\'ancienne application.'); $('auth-signup').style.display = 'block'; }
+ else if (/not confirmed/i.test(error.message)) authMsg('Confirme d\'abord ton email : clique sur le lien reçu, puis reconnecte-toi.');
+ else authMsg('Échec : ' + error.message);
+ return;
+ }
+ await start(data.user);
+}
+async function doSignup() {
+ const email = $('auth-email').value.trim(), pass = $('auth-pass').value;
+ if (!email || pass.length < 6) { authMsg('Email et mot de passe (6 caractères minimum) requis.'); return; }
+ lastCreds = { email, pass };
+ $('auth-signup').disabled = true;
+ const { data, error } = await sb.auth.signUp({ email, password: pass, options: { emailRedirectTo: location.href.split('#')[0] } });
+ $('auth-signup').disabled = false;
+ if (error) { authMsg('Échec : ' + error.message); return; }
+ if (data.session) { $('auth-signup').style.display = 'none'; await start(data.user); }
+ else authMsg('Compte créé. Ouvre l\'email de confirmation envoyé à ' + email + ', clique sur le lien, puis reconnecte-toi ici.', true);
 }
 window.__logout = async function () {
- if (unsub) { unsub(); unsub = null; }
- userDocRef = null;
- await signOut(auth);
+ if (channel) { sb.removeChannel(channel); channel = null; }
+ uid = null; lastCreds = null;
+ await sb.auth.signOut();
+ $('auth-overlay').style.display = 'flex';
+ setStatus('🔒 Déconnecté', '#EBF4FF');
 };
 
 $('auth-btn').addEventListener('click', doLogin);
+$('auth-signup').addEventListener('click', doSignup);
 $('auth-pass').addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
 
-// Pré-remplissage : email mémorisé + état de la case "Rester connecté"
 (function prefill() {
  const savedEmail = localStorage.getItem('gp_email');
  if (savedEmail) $('auth-email').value = savedEmail;
- const rem = localStorage.getItem('gp_remember');
- if (rem === '0') $('auth-remember').checked = false; // sinon coché par défaut
- // si l'email est déjà là, on place le curseur directement sur le mot de passe
+ if (localStorage.getItem('gp_remember') === '0') $('auth-remember').checked = false;
  if (savedEmail) $('auth-pass').focus();
 })();
 
-// ---- Suivi de l'état de connexion ----
-onAuthStateChanged(auth, user => {
- if (user) {
- $('auth-overlay').style.display = 'none';
- $('auth-btn').disabled = false; $('auth-btn').textContent = 'Se connecter';
- userDocRef = doc(db, 'users', user.uid, 'store', 'main');
- setStatus('⏳ Chargement…', '#FDEBD0');
- if (unsub) unsub();
- unsub = onSnapshot(userDocRef, snap => {
- if (!snap.exists()) {
- // 1ère synchro : on envoie les données locales actuelles vers le cloud
- setStatus('⏳ Init cloud…', '#FDEBD0');
- const D = window.__getD();
- lastSentTs = Date.now();
- setDoc(userDocRef, { ...D, _ts: lastSentTs, _device: deviceId })
- .then(() => setStatus('☁️ Synchronisé', '#D5F5E3'))
- .catch(() => setStatus('⚠️ Hors-ligne', '#FADBD8'));
- return;
- }
- const remote = snap.data();
- // on ignore l'écho de notre propre écriture
- if (remote._device === deviceId && remote._ts === lastSentTs) {
- setStatus('☁️ Synchronisé', '#D5F5E3');
- return;
- }
- // données venant du cloud (autre appareil ou 1er chargement) → on applique
- window.__applyRemote(remote);
- setStatus('☁️ Synchronisé', '#D5F5E3');
- }, err => {
- console.error('Snapshot error', err);
- setStatus('⚠️ Hors-ligne', '#FADBD8');
- });
- } else {
- userDocRef = null;
- setStatus('🔒 Déconnecté', '#EBF4FF');
- $('auth-overlay').style.display = 'flex';
- }
-});
+const { data: { session } } = await sb.auth.getSession();
+if (session) start(session.user);
+else { setStatus('🔒 Déconnecté', '#EBF4FF'); $('auth-overlay').style.display = 'flex'; }
+sb.auth.onAuthStateChange((ev) => { if (ev === 'SIGNED_OUT') { uid = null; } });
 </script>
 </body>
 </html>

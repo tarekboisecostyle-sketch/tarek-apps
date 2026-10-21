@@ -5651,28 +5651,15 @@ const MODALS_HTML = `
 
 const CLOUD_CARD_HTML = `
 <div class="card" style="max-width:600px;margin-top:14px;">
-  <div class="card-hdr"><div class="card-title">☁️ Synchronisation Cloud (Firebase — gratuit)</div></div>
+  <div class="card-hdr"><div class="card-title">☁️ Synchronisation cloud (Supabase)</div></div>
   <div style="padding:16px;">
     <div style="background:#dbeafe;border:1px solid #93c5fd;border-radius:7px;padding:10px 12px;margin-bottom:14px;font-size:11px;color:#1e40af;">
-      Sauvegarde en ligne gratuite pour ne jamais perdre tes données, même en changeant de navigateur/ordinateur. Crée un projet gratuit sur <strong>console.firebase.google.com</strong> (Firestore Database + authentification anonyme activée), puis colle les clés de configuration ci-dessous.
-    </div>
-    <div class="form-grid">
-      <div class="fg full"><label>API Key</label><input id="cl-apiKey" placeholder="AIza..."></div>
-      <div class="fg"><label>Auth Domain</label><input id="cl-authDomain" placeholder="projet.firebaseapp.com"></div>
-      <div class="fg"><label>Project ID</label><input id="cl-projectId" placeholder="mon-projet-bes"></div>
-      <div class="fg"><label>Storage Bucket</label><input id="cl-storageBucket" placeholder="projet.appspot.com"></div>
-      <div class="fg"><label>Messaging Sender ID</label><input id="cl-messagingSenderId" placeholder="123456789"></div>
-      <div class="fg full"><label>App ID</label><input id="cl-appId" placeholder="1:123:web:abc"></div>
-    </div>
-    <div style="margin-top:10px;display:flex;align-items:center;gap:8px;">
-      <input type="checkbox" id="cl-enabled" style="width:16px;height:16px;">
-      <label style="font-size:12px;font-weight:600;">Activer la synchronisation cloud</label>
+      Les données de FacturePro sont enregistrées automatiquement dans le Supabase de BES (même base que la Caisse et les Fiches), avec les 200 dernières versions gardées en historique. Rien à configurer.
     </div>
     <div id="cloud-status" style="margin-top:8px;font-size:11px;color:var(--muted);"></div>
     <div style="margin-top:14px;display:flex;gap:8px;justify-content:flex-end;">
-      <button class="btn btn-outline" onclick="pullCloud()">⬇️ Forcer la réception</button>
-      <button class="btn btn-outline" onclick="pushCloud()">⬆️ Forcer l'envoi</button>
-      <button class="btn btn-green" onclick="saveCloudConfig()">💾 Enregistrer &amp; connecter</button>
+      <button class="btn btn-outline" onclick="pullCloud()">⬇️ Recharger depuis le cloud</button>
+      <button class="btn btn-outline" onclick="pushCloud()">⬆️ Envoyer maintenant</button>
     </div>
   </div>
 </div>`;
@@ -6057,8 +6044,12 @@ window.renderMarge = function(){
   }).join('') || '<tr><td colspan="6" style="text-align:center;padding:22px;color:var(--muted);">Aucune donnée</td></tr>';
 };
 
-// ─────────────────────────── CLOUD SYNC (Firebase) ───────────────────────────
-let cloudDb=null, cloudReady=false, cloudPushTimer=null, cloudApplyingRemote=false;
+// ─────────────────────────── CLOUD SYNC (Supabase) ───────────────────────────
+// Même projet Supabase que Caisse, Fiches, Relevé et Zwaq. Table bes_state (une ligne 'main'),
+// avec un historique automatique des 200 dernières versions (table bes_state_history).
+const SB_URL = 'https://ypvjnermbksjxlebeoyr.supabase.co';
+const SB_KEY = 'sb_publishable_IlWas1CWdwQLHNj1NTLSUw_D97PW-wL';
+let sbc=null, cloudReady=false, cloudPushTimer=null, cloudApplyingRemote=false, cloudChannel=null;
 const cloudClientId = 'c_'+Math.random().toString(36).slice(2)+Date.now();
 
 window.cloudStatus = function(msg, ok){
@@ -6066,122 +6057,142 @@ window.cloudStatus = function(msg, ok){
   if(el){ el.textContent=msg; el.style.color = ok===true?'var(--green)':(ok===false?'var(--red)':'var(--muted)'); }
 };
 
-function loadScriptSeq(urls, cb){
+function loadScriptSeq(urls, cb, onErr){
   if(!urls.length){ cb(); return; }
   const s=document.createElement('script');
   s.src=urls[0];
-  s.onload=()=>loadScriptSeq(urls.slice(1), cb);
-  s.onerror=()=>cloudStatus('Impossible de charger Firebase (connexion internet requise)', false);
+  s.onload=()=>loadScriptSeq(urls.slice(1), cb, onErr);
+  s.onerror=()=>{ cloudStatus('Impossible de charger la synchronisation (connexion internet requise)', false); if(onErr) onErr(); };
   document.head.appendChild(s);
 }
 
-window.initCloudSync = function(){
-  const c = D.cloud||{};
-  if(!c.enabled || !c.apiKey || !c.projectId){ cloudStatus('Synchronisation cloud désactivée'); return; }
-  loadScriptSeq([
-    'https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js',
-    'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js',
-    'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js'
-  ], () => {
+function hasLocalData(){
+  return ['docs','clients','fournisseurs','stock','entrees','sorties','inventaires','commandes','imports','chantiers'].some(k=>Array.isArray(D[k]) && D[k].length);
+}
+
+// Lecture unique de l'ancienne sauvegarde Firebase (pour reprendre tout l'historique)
+function readFirebaseOnce(c){
+  return new Promise((resolve,reject)=>{
+    loadScriptSeq([
+      'https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js',
+      'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js',
+      'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js'
+    ], ()=>{
+      try{
+        const app = firebase.apps.length ? firebase.apps[0] : firebase.initializeApp({
+          apiKey:c.apiKey, authDomain:c.authDomain, projectId:c.projectId,
+          storageBucket:c.storageBucket, messagingSenderId:c.messagingSenderId, appId:c.appId
+        });
+        firebase.auth(app).signInAnonymously()
+          .then(()=>firebase.firestore(app).collection('bes_data').doc('main').get())
+          .then(snap=>resolve(snap.exists ? snap.data() : null))
+          .catch(reject);
+      }catch(e){ reject(e); }
+    }, ()=>reject(new Error('Firebase indisponible')));
+  });
+}
+
+function firebaseCfg(){
+  let c=null;
+  try{ c = JSON.parse(localStorage.getItem('bes_cloud_cfg_firebase')); }catch(e){}
+  if(!(c && c.apiKey)){ try{ c = JSON.parse(localStorage.getItem(CLOUD_CFG_KEY)); }catch(e){} }
+  if(!(c && c.apiKey) && D.cloud && D.cloud.apiKey) c = D.cloud;
+  if(c && c.apiKey){ try{ localStorage.setItem('bes_cloud_cfg_firebase', JSON.stringify(c)); }catch(e){} return c; }
+  return null;
+}
+
+function applyRemoteJson(json, updatedAt){
+  try{
+    cloudApplyingRemote = true;
+    const remoteD = JSON.parse(json);
+    remoteD.cloud = D.cloud;
+    remoteD._cloudUpdatedAt = updatedAt;
+    localStorage.setItem(KEY, JSON.stringify(remoteD));
+    notify('📥 Données synchronisées — rechargement…','ok');
+    setTimeout(()=>location.reload(), 800);
+  }catch(e){ cloudApplyingRemote=false; console.error('Cloud parse error', e); cloudStatus('Donnée cloud illisible : '+e.message, false); }
+}
+
+async function firstCloudSync(){
+  // 1) Ancienne sauvegarde Firebase  2) sinon les données de cet appareil  3) jamais de cloud vide par-dessus des données existantes
+  const fb = firebaseCfg();
+  let json=null, source=null, fbErr=null;
+  if(fb){
+    cloudStatus('Reprise des données Firebase…');
     try{
-      const app = firebase.apps.length ? firebase.apps[0] : firebase.initializeApp({
-        apiKey:c.apiKey, authDomain:c.authDomain, projectId:c.projectId,
-        storageBucket:c.storageBucket, messagingSenderId:c.messagingSenderId, appId:c.appId
-      });
-      cloudDb = firebase.firestore();
-      firebase.auth().signInAnonymously().then(()=>{
-        cloudReady = true;
-        cloudStatus('Connecté ✅ — synchronisation active', true);
-        cloudDb.collection('bes_data').doc('main').onSnapshot(snap=>{
-          if(!snap.exists) return;
-          const remote = snap.data();
-          if(!remote || !remote.json || remote.updatedBy===cloudClientId) return;
-          // Ne jamais réappliquer/recharger pour une mise à jour déjà vue : cloudClientId
-          // change à chaque rechargement de page, donc sans cette vérification l'appareil
-          // voit sans arrêt "ce n'est pas moi qui ai écrit ça" et se recharge en boucle,
-          // même quand la donnée cloud n'a pas changé depuis la dernière fois.
-          if(remote.updatedAt && remote.updatedAt===D._cloudUpdatedAt) return;
-          try{
-            cloudApplyingRemote = true;
-            const remoteD = JSON.parse(remote.json);
-            // Ne jamais écraser la config cloud de CET appareil avec celle reçue du
-            // cloud (sinon un appareil qui vient de connecter son propre projet Firebase
-            // perd ses clés dès qu'un autre appareil pousse une donnée plus récente).
-            remoteD.cloud = D.cloud;
-            remoteD._cloudUpdatedAt = remote.updatedAt||Date.now();
-            localStorage.setItem(KEY, JSON.stringify(remoteD));
-            notify('📥 Données synchronisées depuis le cloud — rechargement…','ok');
-            setTimeout(()=>location.reload(), 800);
-          } catch(e){ console.error('Cloud parse error', e); }
-        }, err=>{ console.error('Cloud listen error', err); cloudStatus('Erreur d\'écoute cloud : '+err.message, false); });
-      }).catch(err=>{ cloudStatus('Erreur de connexion : '+err.message, false); });
-    } catch(e){ cloudStatus('Erreur de configuration : '+e.message, false); }
+      const r = await readFirebaseOnce(fb);
+      if(r && r.json){ json = r.json; source='import-firebase'; }
+    }catch(e){ fbErr=e; console.warn('Lecture Firebase impossible', e); }
+  }
+  if(!json && hasLocalData()){ json = JSON.stringify(D); source='import-local'; }
+  if(!json){
+    cloudStatus(fbErr ? 'Ancienne sauvegarde Firebase illisible ('+fbErr.message+') — rien n\'a été envoyé, réessaie plus tard' : 'Cloud vide et appareil vide — rien à envoyer pour l\'instant', fbErr?false:undefined);
+    return false;
+  }
+  try{ localStorage.setItem('bes_backup_import', json); }catch(e){}
+  const now = Date.now();
+  const { error } = await sbc.from('bes_state').insert({ id:'main', json, updated_at:now, updated_by:source });
+  if(error){ cloudStatus('Erreur d\'envoi : '+error.message, false); return false; }
+  if(source==='import-firebase') applyRemoteJson(json, now);
+  else { D._cloudUpdatedAt = now; _origSaveNoPush(); }
+  return true;
+}
+
+window.initCloudSync = function(){
+  loadScriptSeq(['https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js'], async ()=>{
+    try{
+      sbc = sbc || window.supabase.createClient(SB_URL, SB_KEY);
+      const { data, error } = await sbc.from('bes_state').select('updated_at, updated_by').eq('id','main').maybeSingle();
+      if(error){ cloudStatus('Erreur de connexion : '+error.message, false); return; }
+      if(!data){ if(!(await firstCloudSync())) return; }
+      else if(+data.updated_at !== +D._cloudUpdatedAt && data.updated_by !== cloudClientId){
+        const r = await sbc.from('bes_state').select('json, updated_at').eq('id','main').single();
+        if(!r.error && r.data){ applyRemoteJson(r.data.json, +r.data.updated_at); return; }
+      }
+      cloudReady = true;
+      cloudStatus('Connecté ✅ — synchronisation Supabase active', true);
+      if(cloudChannel) sbc.removeChannel(cloudChannel);
+      cloudChannel = sbc.channel('bes_state_main')
+        .on('postgres_changes', { event:'*', schema:'public', table:'bes_state', filter:'id=eq.main' }, async p=>{
+          const row = p.new; if(!row || row.updated_by===cloudClientId) return;
+          if(+row.updated_at === +D._cloudUpdatedAt) return;
+          const r = row.json ? { data: row } : await sbc.from('bes_state').select('json, updated_at').eq('id','main').single();
+          if(r.data && r.data.json) applyRemoteJson(r.data.json, +r.data.updated_at);
+        }).subscribe();
+    }catch(e){ cloudStatus('Erreur : '+e.message, false); }
   });
 };
 
 window.scheduleCloudPush = function(){
-  if(!D.cloud || !D.cloud.enabled || !cloudReady || cloudApplyingRemote) return;
+  if(!cloudReady || cloudApplyingRemote) return;
   clearTimeout(cloudPushTimer);
-  cloudPushTimer = setTimeout(pushCloud, 1200);
+  cloudPushTimer = setTimeout(()=>pushCloud(true), 1200);
 };
 
-window.pushCloud = function(){
-  if(!cloudDb){ notify('Active et connecte la synchronisation cloud avant (Paramètres)','err'); return; }
+window.pushCloud = async function(silent){
+  if(!sbc || !cloudReady){ notify('Synchronisation pas encore prête — vérifie la connexion internet','err'); return; }
   const now = Date.now();
   D._cloudUpdatedAt = now;
-  cloudDb.collection('bes_data').doc('main').set({
-    json: JSON.stringify(D), updatedAt: now, updatedBy: cloudClientId
-  }).then(()=>notify('☁️ Envoyé sur le cloud ✅','ok')).catch(err=>{
-    console.error('Cloud push error', err);
-    notify('Erreur envoi cloud : '+err.message,'err');
-  });
+  _origSaveNoPush();
+  const { error } = await sbc.from('bes_state').upsert({ id:'main', json: JSON.stringify(D), updated_at: now, updated_by: cloudClientId });
+  if(error){ console.error('Cloud push error', error); notify('Erreur envoi cloud : '+error.message,'err'); cloudStatus('Erreur d\'envoi : '+error.message, false); }
+  else { cloudStatus('Enregistré ✅ '+new Date(now).toLocaleTimeString('fr-FR'), true); if(silent!==true) notify('☁️ Envoyé sur le cloud ✅','ok'); }
 };
 
-// Récupération manuelle — utile si la synchronisation automatique semble bloquée
-// (ex. un autre appareil a poussé une mise à jour mais rien ne s'affiche ici).
-window.pullCloud = function(){
-  if(!cloudDb){ notify('Active et connecte la synchronisation cloud avant (Paramètres)','err'); return; }
-  cloudDb.collection('bes_data').doc('main').get().then(snap=>{
-    if(!snap.exists){ notify('Rien sur le cloud pour l\'instant','err'); return; }
-    const remote = snap.data();
-    if(!remote || !remote.json){ notify('Donnée cloud vide ou invalide','err'); return; }
-    try{
-      const remoteD = JSON.parse(remote.json);
-      remoteD.cloud = D.cloud;
-      remoteD._cloudUpdatedAt = remote.updatedAt||Date.now();
-      localStorage.setItem(KEY, JSON.stringify(remoteD));
-      notify('📥 Dernières données reçues — rechargement…','ok');
-      setTimeout(()=>location.reload(), 800);
-    } catch(e){
-      console.error('Cloud pull parse error', e);
-      notify('Erreur de lecture cloud : '+e.message,'err');
-    }
-  }).catch(err=>{
-    console.error('Cloud pull error', err);
-    notify('Erreur réception cloud : '+err.message,'err');
-  });
+window.pullCloud = async function(){
+  if(!sbc){ notify('Synchronisation pas encore prête','err'); return; }
+  const { data, error } = await sbc.from('bes_state').select('json, updated_at').eq('id','main').maybeSingle();
+  if(error){ notify('Erreur réception cloud : '+error.message,'err'); return; }
+  if(!data){ notify('Rien sur le cloud pour l\'instant','err'); return; }
+  applyRemoteJson(data.json, +data.updated_at);
 };
 
 window.loadCloudForm = function(){
-  const c = D.cloud||{};
-  ['apiKey','authDomain','projectId','storageBucket','messagingSenderId','appId'].forEach(k=>{
-    const el=document.getElementById('cl-'+k); if(el) el.value=c[k]||'';
-  });
-  const chk=document.getElementById('cl-enabled'); if(chk) chk.checked=!!c.enabled;
-  cloudStatus(c.enabled ? 'Configuré — clique "Enregistrer & connecter" pour activer' : 'Synchronisation cloud désactivée');
+  cloudStatus(cloudReady ? 'Connecté ✅ — synchronisation Supabase active' : 'Connexion en cours…', cloudReady||undefined);
 };
+window.saveCloudConfig = function(){ initCloudSync(); };
 
-window.saveCloudConfig = function(){
-  if(!D.cloud) D.cloud={};
-  ['apiKey','authDomain','projectId','storageBucket','messagingSenderId','appId'].forEach(k=>{
-    const el=document.getElementById('cl-'+k); if(el) D.cloud[k]=el.value.trim();
-  });
-  D.cloud.enabled = document.getElementById('cl-enabled').checked;
-  save();
-  try{ localStorage.setItem(CLOUD_CFG_KEY, JSON.stringify(D.cloud)); }catch(e){}
-  notify('Configuration cloud enregistrée ✅','ok');
-  if(D.cloud.enabled) initCloudSync();
-};
+const _origSaveNoPush = window.save;
 
 // ─────────────────────────── SAVE (monkey-patch) ───────────────────────────
 const _origSave = window.save;
@@ -6192,7 +6203,7 @@ window.save = function(){
 
 // ─────────────────────────── INIT ───────────────────────────
 injectDom();
-if(D.cloud && D.cloud.enabled) initCloudSync();
+initCloudSync();
 
 })();
 </script>
