@@ -5661,6 +5661,14 @@ const CLOUD_CARD_HTML = `
       <button class="btn btn-outline" onclick="pullCloud()">⬇️ Recharger depuis le cloud</button>
       <button class="btn btn-outline" onclick="pushCloud()">⬆️ Envoyer maintenant</button>
     </div>
+    <div style="margin-top:18px;padding-top:14px;border-top:1px solid var(--border);">
+      <div style="font-size:12px;font-weight:700;margin-bottom:6px;">Reprendre l'ancienne sauvegarde Firebase</div>
+      <div style="font-size:11px;color:var(--muted);margin-bottom:8px;">Colle ici les clés de connexion Firebase de l'ancienne version (le bloc <code>firebaseConfig</code> ou les 6 valeurs apiKey, authDomain, projectId, storageBucket, messagingSenderId, appId). L'appli lit la sauvegarde, te montre ce qu'elle contient, puis la met dans Supabase. Firebase n'est pas modifié.</div>
+      <textarea id="fb-import-cfg" rows="6" style="width:100%;font-family:var(--mono);font-size:11px;padding:8px;border:1px solid var(--border);border-radius:6px;" placeholder='apiKey: "AIza...", authDomain: "....firebaseapp.com", projectId: "...", ...'></textarea>
+      <div style="margin-top:8px;display:flex;justify-content:flex-end;">
+        <button class="btn btn-green" onclick="importFirebaseFromForm()">📥 Reprendre les données</button>
+      </div>
+    </div>
   </div>
 </div>`;
 
@@ -6185,6 +6193,32 @@ window.pullCloud = async function(){
   if(error){ notify('Erreur réception cloud : '+error.message,'err'); return; }
   if(!data){ notify('Rien sur le cloud pour l\'instant','err'); return; }
   applyRemoteJson(data.json, +data.updated_at);
+};
+
+window.importFirebaseFromForm = async function(){
+  const txt = (document.getElementById('fb-import-cfg')||{}).value||'';
+  const cfg = {};
+  ['apiKey','authDomain','projectId','storageBucket','messagingSenderId','appId'].forEach(k=>{
+    const m = txt.match(new RegExp('["\']?'+k+'["\']?\\s*[:=]\\s*["\']([^"\']+)["\']'));
+    if(m) cfg[k]=m[1].trim();
+  });
+  if(!cfg.apiKey || !cfg.projectId){ notify('Clés incomplètes : il faut au moins apiKey et projectId','err'); return; }
+  if(!cfg.authDomain) cfg.authDomain = cfg.projectId+'.firebaseapp.com';
+  if(!sbc){ notify('Synchronisation pas encore prête — vérifie la connexion internet','err'); return; }
+  cloudStatus('Lecture de la sauvegarde Firebase…');
+  let r;
+  try{ r = await readFirebaseOnce(cfg); }
+  catch(e){ cloudStatus('Lecture Firebase impossible : '+e.message, false); notify('Lecture Firebase impossible : '+e.message,'err'); return; }
+  if(!r || !r.json){ cloudStatus('Aucune sauvegarde trouvée dans ce Firebase', false); notify('Aucune sauvegarde trouvée dans ce Firebase','err'); return; }
+  let d; try{ d = JSON.parse(r.json); }catch(e){ notify('Sauvegarde Firebase illisible','err'); return; }
+  const n = k => Array.isArray(d[k]) ? d[k].length : 0;
+  const quand = r.updatedAt ? new Date(r.updatedAt).toLocaleString('fr-FR') : 'date inconnue';
+  if(!confirm('Sauvegarde Firebase du '+quand+' :\n- '+n('docs')+' documents (devis, factures…)\n- '+n('clients')+' clients · '+n('fournisseurs')+' fournisseurs\n- '+n('stock')+' articles en stock · '+n('entrees')+' entrées · '+n('sorties')+' sorties\n- '+n('commandes')+' commandes\n\nLa mettre dans Supabase et l\'afficher ici ?')) return;
+  try{ localStorage.setItem('bes_cloud_cfg_firebase', JSON.stringify(cfg)); localStorage.setItem('bes_backup_import', r.json); }catch(e){}
+  const now = Date.now();
+  const { error } = await sbc.from('bes_state').upsert({ id:'main', json:r.json, updated_at:now, updated_by:'import-firebase' });
+  if(error){ cloudStatus('Erreur d\'envoi : '+error.message, false); notify('Erreur d\'envoi : '+error.message,'err'); return; }
+  applyRemoteJson(r.json, now);
 };
 
 window.loadCloudForm = function(){
