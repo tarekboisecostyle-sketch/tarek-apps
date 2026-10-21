@@ -1,0 +1,1008 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BES Caisse — Gestion de la Caisse Espèces</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<style>
+:root{
+  --dark:#2E5A8E;
+  --dark2:#254a75;
+  --light:#CFE2F3;
+  --total:#D6EAF8;
+  --gray:#F5F5F5;
+  --border:#BBBBBB;
+  --green:#2e7d46;
+  --red:#c0392b;
+  --text:#222;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Segoe UI',Arial,sans-serif;color:var(--text);background:#eef2f6;}
+#app{display:none;min-height:100vh;flex-direction:row;}
+#app.ready{display:flex;}
+
+/* LOGIN */
+#loginScreen{min-height:100vh;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#2E5A8E,#183a5e);}
+#loginScreen.hidden{display:none;}
+.login-box{background:#fff;border-radius:12px;padding:34px 30px;width:100%;max-width:340px;box-shadow:0 12px 30px rgba(0,0,0,.25);text-align:center;}
+.login-box h1{color:var(--dark);font-size:18px;margin-bottom:4px;}
+.login-box .sub{font-size:12px;color:#777;margin-bottom:22px;}
+.login-box input{width:100%;padding:12px;border:1px solid var(--border);border-radius:8px;font-size:20px;text-align:center;letter-spacing:4px;margin-bottom:14px;}
+.login-box button{width:100%;padding:11px;background:var(--dark);color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer;}
+.login-box button:hover{background:var(--dark2);}
+.login-err{color:var(--red);font-size:12.5px;margin-top:10px;min-height:16px;}
+#loadingScreen{min-height:100vh;display:flex;align-items:center;justify-content:center;color:#fff;font-size:14px;background:linear-gradient(135deg,#2E5A8E,#183a5e);}
+
+/* SIDEBAR */
+#sidebar{width:220px;background:var(--dark);color:#fff;flex-shrink:0;display:flex;flex-direction:column;}
+#sidebar .brand{padding:22px 18px;border-bottom:1px solid rgba(255,255,255,.15);}
+#sidebar .brand .name{font-size:17px;font-weight:700;letter-spacing:.5px;}
+#sidebar .brand .sub{font-size:11px;opacity:.75;margin-top:2px;}
+#sidebar nav{flex:1;padding:10px 0;}
+#sidebar nav a{display:flex;align-items:center;gap:10px;padding:12px 18px;color:#e8f0fa;text-decoration:none;font-size:14px;cursor:pointer;border-left:3px solid transparent;}
+#sidebar nav a:hover{background:rgba(255,255,255,.08);}
+#sidebar nav a.active{background:rgba(255,255,255,.14);border-left:3px solid #fff;font-weight:600;}
+#sidebar .foot{padding:14px 18px;font-size:10px;opacity:.6;border-top:1px solid rgba(255,255,255,.15);}
+#sidebar .foot .dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:#4caf50;margin-right:5px;}
+
+/* MAIN */
+#main{flex:1;display:flex;flex-direction:column;min-width:0;}
+#topbar{background:#fff;border-bottom:1px solid var(--border);padding:14px 24px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;}
+#topbar h1{font-size:19px;color:var(--dark);}
+.solde-badge{background:var(--total);border:1px solid var(--dark);border-radius:8px;padding:8px 16px;text-align:right;}
+.solde-badge .lbl{font-size:11px;color:var(--dark);opacity:.8;}
+.solde-badge .val{font-size:20px;font-weight:700;color:var(--dark);}
+.solde-badge.neg .val{color:var(--red);}
+
+#content{flex:1;padding:22px 24px;overflow:auto;}
+.page{display:none;}
+.page.active{display:block;}
+
+/* CARDS */
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:14px;margin-bottom:20px;}
+.card{background:#fff;border:1px solid var(--border);border-radius:10px;padding:16px;}
+.card .lbl{font-size:12px;color:#666;margin-bottom:6px;}
+.card .val{font-size:22px;font-weight:700;color:var(--dark);}
+.card.green .val{color:var(--green);}
+.card.red .val{color:var(--red);}
+
+/* BUTTONS */
+.btn{display:inline-flex;align-items:center;gap:6px;background:var(--dark);color:#fff;border:none;border-radius:6px;padding:9px 16px;font-size:13.5px;cursor:pointer;font-weight:600;}
+.btn:hover{background:var(--dark2);}
+.btn.green{background:var(--green);}
+.btn.red{background:var(--red);}
+.btn.gray{background:#888;}
+.btn.outline{background:#fff;color:var(--dark);border:1px solid var(--dark);}
+.btn.sm{padding:5px 10px;font-size:12px;}
+.btn:disabled{opacity:.5;cursor:not-allowed;}
+.actions-row{display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap;}
+
+/* TABLE */
+table{width:100%;border-collapse:collapse;background:#fff;font-size:13.5px;}
+thead th{background:var(--dark);color:#fff;padding:10px 8px;text-align:center;font-size:12.5px;}
+tbody td{padding:8px;border-bottom:1px solid #eee;text-align:center;}
+tbody tr:nth-child(even){background:var(--gray);}
+tbody td.desc{text-align:left;}
+td.montant-in{color:var(--green);font-weight:700;}
+td.montant-out{color:var(--red);font-weight:700;}
+.table-wrap{overflow-x:auto;background:#fff;border:1px solid var(--border);border-radius:8px;}
+.tag{display:inline-block;padding:2px 8px;border-radius:12px;font-size:11px;font-weight:600;}
+.tag.entree{background:#e3f4e9;color:var(--green);}
+.tag.sortie{background:#fbe6e4;color:var(--red);}
+.empty-row td{padding:26px;color:#888;text-align:center;}
+
+/* FILTERS */
+.filters{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px;background:#fff;border:1px solid var(--border);padding:12px;border-radius:8px;}
+.filters .f{display:flex;flex-direction:column;gap:3px;}
+.filters label{font-size:11px;color:#666;}
+.filters select,.filters input{padding:6px 8px;border:1px solid var(--border);border-radius:5px;font-size:13px;}
+
+/* FORMS */
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.form-grid .full{grid-column:1/-1;}
+.field label{display:block;font-size:12px;color:#555;margin-bottom:4px;font-weight:600;}
+.field input,.field select,.field textarea{width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:6px;font-size:13.5px;font-family:inherit;}
+.field textarea{resize:vertical;min-height:50px;}
+.radio-group{display:flex;gap:14px;}
+.radio-group label{display:flex;align-items:center;gap:5px;font-weight:600;font-size:13.5px;color:#333;}
+
+/* MODAL */
+.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:100;align-items:flex-start;justify-content:center;padding:30px 12px;overflow:auto;}
+.overlay.open{display:flex;}
+.modal{background:#fff;border-radius:10px;width:100%;max-width:560px;max-height:92vh;overflow:auto;}
+.modal-head{background:var(--dark);color:#fff;padding:14px 20px;border-radius:10px 10px 0 0;display:flex;justify-content:space-between;align-items:center;}
+.modal-head h3{font-size:16px;}
+.modal-head .x{cursor:pointer;font-size:20px;line-height:1;}
+.modal-body{padding:18px 20px;}
+.modal-foot{padding:14px 20px;border-top:1px solid #eee;display:flex;justify-content:flex-end;gap:10px;}
+
+/* CATEGORIES */
+.cat-cols{display:grid;grid-template-columns:1fr 1fr;gap:20px;}
+.cat-box{background:#fff;border:1px solid var(--border);border-radius:8px;padding:14px;}
+.cat-box h3{font-size:14px;color:var(--dark);margin-bottom:10px;}
+.cat-item{display:flex;justify-content:space-between;align-items:center;padding:7px 4px;border-bottom:1px solid #eee;font-size:13.5px;}
+.cat-add{display:flex;gap:8px;margin-top:10px;}
+.cat-add input{flex:1;padding:7px 9px;border:1px solid var(--border);border-radius:5px;}
+
+.thumb{width:34px;height:34px;object-fit:cover;border-radius:5px;cursor:pointer;border:1px solid var(--border);}
+.no-just{color:#bbb;font-size:12px;}
+
+#toast{position:fixed;bottom:20px;right:20px;background:#222;color:#fff;padding:12px 18px;border-radius:8px;font-size:13.5px;z-index:999;display:none;box-shadow:0 4px 14px rgba(0,0,0,.25);}
+#toast.ok{background:var(--green);}
+#toast.err{background:var(--red);}
+
+.section-title{font-size:15px;color:var(--dark);font-weight:700;margin:22px 0 10px;}
+.hint{font-size:12px;color:#777;margin-top:6px;}
+.danger-box{border:1px solid var(--red);background:#fdf1f0;border-radius:8px;padding:14px;margin-top:16px;}
+.danger-box h3{color:var(--red);font-size:14px;margin-bottom:8px;}
+.security-box{border:1px solid var(--dark);background:#eef4fb;border-radius:8px;padding:14px;margin-top:16px;font-size:12.5px;color:#333;}
+.security-box h3{color:var(--dark);font-size:14px;margin-bottom:8px;}
+
+#printArea{display:none;}
+@media print{
+  #sidebar,#topbar,.actions-row,.filters,.no-print{display:none !important;}
+  #content{padding:0;}
+  .page{display:none !important;}
+  #printArea{display:block !important;}
+  body{background:#fff;}
+}
+@media (max-width:820px){
+  #sidebar{width:64px;}
+  #sidebar .brand .name,#sidebar .brand .sub,#sidebar nav a span.lbl{display:none;}
+  #sidebar .foot{display:none;}
+  .form-grid{grid-template-columns:1fr;}
+  .cat-cols{grid-template-columns:1fr;}
+}
+</style>
+</head>
+<body>
+
+<div id="loadingScreen">Connexion à la caisse en ligne…</div>
+
+<div id="loginScreen" class="hidden">
+  <div class="login-box">
+    <h1>BES CAISSE</h1>
+    <div class="sub">Code d'accès requis</div>
+    <input type="password" inputmode="numeric" id="pinInput" maxlength="10" placeholder="••••" autofocus>
+    <button onclick="tryLogin()">Entrer</button>
+    <div class="login-err" id="loginErr"></div>
+  </div>
+</div>
+
+<div id="app">
+  <div id="sidebar">
+    <div class="brand">
+      <div class="name">BES CAISSE</div>
+      <div class="sub">BOIS ECO-STYLE SARL.AU</div>
+    </div>
+    <nav id="navMenu"></nav>
+    <div class="foot"><span class="dot"></span>En ligne — synchronisé</div>
+  </div>
+
+  <div id="main">
+    <div id="topbar">
+      <h1 id="pageTitle">Tableau de bord</h1>
+      <div class="solde-badge" id="soldeBadge">
+        <div class="lbl">Solde caisse actuel</div>
+        <div class="val" id="soldeVal">0,00 MAD</div>
+      </div>
+    </div>
+
+    <div id="content">
+
+      <!-- DASHBOARD -->
+      <div class="page active" id="page-dashboard">
+        <div class="actions-row">
+          <button class="btn green" onclick="openMouvModal('entree')">+ Nouvelle entrée</button>
+          <button class="btn red" onclick="openMouvModal('sortie')">+ Nouvelle dépense</button>
+          <button class="btn outline" onclick="refreshAll()">⟳ Actualiser</button>
+        </div>
+        <div class="cards">
+          <div class="card"><div class="lbl">Solde actuel</div><div class="val" id="cardSolde">0,00 MAD</div></div>
+          <div class="card green"><div class="lbl">Entrées du mois</div><div class="val" id="cardInMonth">0,00 MAD</div></div>
+          <div class="card red"><div class="lbl">Dépenses du mois</div><div class="val" id="cardOutMonth">0,00 MAD</div></div>
+          <div class="card"><div class="lbl">Mouvements du mois</div><div class="val" id="cardCountMonth">0</div></div>
+        </div>
+        <div class="section-title">Derniers mouvements</div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Date</th><th>Type</th><th>Catégorie</th><th>Description</th><th>Montant</th></tr></thead>
+            <tbody id="recentBody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- JOURNAL -->
+      <div class="page" id="page-journal">
+        <div class="actions-row">
+          <button class="btn green" onclick="openMouvModal('entree')">+ Nouvelle entrée</button>
+          <button class="btn red" onclick="openMouvModal('sortie')">+ Nouvelle dépense</button>
+          <button class="btn outline" onclick="printJournal()">🖨️ Imprimer / PDF</button>
+          <button class="btn outline" onclick="exportCSVJournal()">⬇️ Export CSV</button>
+        </div>
+        <div class="filters">
+          <div class="f"><label>Mois</label>
+            <select id="fMonth" onchange="renderJournal()">
+              <option value="">Tous</option>
+              <option value="01">Janvier</option><option value="02">Février</option><option value="03">Mars</option>
+              <option value="04">Avril</option><option value="05">Mai</option><option value="06">Juin</option>
+              <option value="07">Juillet</option><option value="08">Août</option><option value="09">Septembre</option>
+              <option value="10">Octobre</option><option value="11">Novembre</option><option value="12">Décembre</option>
+            </select>
+          </div>
+          <div class="f"><label>Année</label><select id="fYear" onchange="renderJournal()"></select></div>
+          <div class="f"><label>Type</label>
+            <select id="fType" onchange="renderJournal()">
+              <option value="">Tous</option><option value="entree">Entrées</option><option value="sortie">Sorties</option>
+            </select>
+          </div>
+          <div class="f"><label>Catégorie</label><select id="fCat" onchange="renderJournal()"><option value="">Toutes</option></select></div>
+          <div class="f" style="flex:1;min-width:160px"><label>Recherche</label>
+            <input type="text" id="fSearch" placeholder="description, bénéficiaire..." oninput="renderJournal()">
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr>
+              <th>Date</th><th>Type</th><th>Catégorie</th><th>Description</th><th>Bénéf. / Fourn.</th>
+              <th>N° Pièce</th><th>Montant</th><th>Justif.</th><th class="no-print">Actions</th>
+            </tr></thead>
+            <tbody id="journalBody"></tbody>
+          </table>
+        </div>
+        <div style="text-align:right;margin-top:10px;font-size:14px;font-weight:700;color:var(--dark)" id="journalTotal"></div>
+      </div>
+
+      <!-- CATEGORIES -->
+      <div class="page" id="page-categories">
+        <div class="cat-cols">
+          <div class="cat-box">
+            <h3>Catégories d'entrées (recettes)</h3>
+            <div id="catInList"></div>
+            <div class="cat-add">
+              <input type="text" id="newCatIn" placeholder="Nouvelle catégorie...">
+              <button class="btn sm green" onclick="addCategorie('entree')">Ajouter</button>
+            </div>
+          </div>
+          <div class="cat-box">
+            <h3>Catégories de dépenses</h3>
+            <div id="catOutList"></div>
+            <div class="cat-add">
+              <input type="text" id="newCatOut" placeholder="Nouvelle catégorie...">
+              <button class="btn sm red" onclick="addCategorie('sortie')">Ajouter</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- CLOTURES -->
+      <div class="page" id="page-clotures">
+        <div class="actions-row">
+          <button class="btn" onclick="openClotureModal()">+ Nouvelle clôture</button>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Période</th><th>Date clôture</th><th>Solde théorique</th><th>Solde compté</th><th>Écart</th><th>Note</th><th class="no-print">Actions</th></tr></thead>
+            <tbody id="cloturesBody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- IMPORT/EXPORT -->
+      <div class="page" id="page-io">
+        <div class="section-title">Sauvegarde</div>
+        <div class="actions-row">
+          <button class="btn" onclick="exportJSONBackup()">⬇️ Exporter sauvegarde (JSON)</button>
+        </div>
+        <p class="hint">Les données sont stockées en ligne (Supabase) et synchronisées automatiquement entre tous les appareils. L'export JSON est une copie de secours locale.</p>
+
+        <div class="section-title">Export du journal</div>
+        <div class="actions-row">
+          <button class="btn outline" onclick="exportCSVAll()">⬇️ Export CSV (tous les mouvements)</button>
+        </div>
+
+        <div class="danger-box">
+          <h3>Zone sensible</h3>
+          <button class="btn red" onclick="resetAll()">🗑️ Réinitialiser toutes les données en ligne</button>
+          <p class="hint">Supprime définitivement tous les mouvements et clôtures pour TOUS les appareils connectés.</p>
+        </div>
+      </div>
+
+      <!-- PARAMETRES -->
+      <div class="page" id="page-params">
+        <div class="section-title">Informations société</div>
+        <div class="form-grid" style="max-width:640px">
+          <div class="field full"><label>Nom société</label><input id="pSociete"></div>
+          <div class="field"><label>R.C</label><input id="pRC"></div>
+          <div class="field"><label>T.P</label><input id="pTP"></div>
+          <div class="field"><label>I.F</label><input id="pIF"></div>
+          <div class="field"><label>ICE</label><input id="pICE"></div>
+          <div class="field"><label>Téléphone</label><input id="pTel"></div>
+          <div class="field full"><label>Siège</label><input id="pSiege"></div>
+        </div>
+        <div class="section-title">Caisse</div>
+        <div class="form-grid" style="max-width:640px">
+          <div class="field"><label>Solde initial (fond de caisse)</label><input type="number" step="0.01" id="pSoldeInit"></div>
+          <div class="field"><label>Date d'ouverture</label><input type="date" id="pDateOuv"></div>
+          <div class="field full"><label>Nom par défaut (saisi par)</label><input id="pUser"></div>
+        </div>
+        <div class="actions-row" style="margin-top:16px">
+          <button class="btn" onclick="saveParams()">Enregistrer</button>
+        </div>
+        <div class="security-box">
+          <h3>Code d'accès</h3>
+          <div class="form-grid" style="max-width:400px">
+            <div class="field full"><label>Nouveau code d'accès</label><input id="pPin" maxlength="10" placeholder="4 à 10 caractères"></div>
+          </div>
+          <div class="actions-row" style="margin-top:10px"><button class="btn outline" onclick="changePin()">Changer le code</button></div>
+          <p class="hint">Ce code protège l'accès à l'appli. Il n'y a pas de compte par personne : partagez-le uniquement avec les personnes autorisées à saisir des dépenses.</p>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- MODAL MOUVEMENT -->
+<div class="overlay" id="mouvOverlay">
+  <div class="modal">
+    <div class="modal-head"><h3 id="mouvModalTitle">Nouveau mouvement</h3><span class="x" onclick="closeModal('mouvOverlay')">&times;</span></div>
+    <div class="modal-body">
+      <input type="hidden" id="mId">
+      <div class="field" style="margin-bottom:14px">
+        <div class="radio-group">
+          <label><input type="radio" name="mType" value="entree" onchange="onTypeChange()"> Entrée (recette)</label>
+          <label><input type="radio" name="mType" value="sortie" onchange="onTypeChange()"> Sortie (dépense)</label>
+        </div>
+      </div>
+      <div class="form-grid">
+        <div class="field"><label>Date</label><input type="date" id="mDate"></div>
+        <div class="field"><label>Montant (MAD)</label><input type="number" step="0.01" min="0" id="mMontant"></div>
+        <div class="field full"><label>Catégorie</label><select id="mCategorie"></select></div>
+        <div class="field full"><label>Description</label><textarea id="mDesc" placeholder="Détail de la dépense / recette"></textarea></div>
+        <div class="field"><label>Bénéficiaire / Fournisseur</label><input id="mTiers"></div>
+        <div class="field"><label>N° Pièce / Référence</label><input id="mPiece"></div>
+        <div class="field"><label>Saisi par</label><input id="mSaisi"></div>
+        <div class="field"><label>Justificatif (photo/scan)</label><input type="file" accept="image/*" id="mJustif" onchange="previewJustif(event)"></div>
+        <div class="field full" id="justifPreviewWrap" style="display:none"><img id="justifPreview" class="thumb" style="width:70px;height:70px"></div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn gray" onclick="closeModal('mouvOverlay')">Annuler</button>
+      <button class="btn" id="mSaveBtn" onclick="saveMouvement()">Enregistrer</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL CLOTURE -->
+<div class="overlay" id="clotureOverlay">
+  <div class="modal">
+    <div class="modal-head"><h3>Nouvelle clôture de caisse</h3><span class="x" onclick="closeModal('clotureOverlay')">&times;</span></div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <div class="field"><label>Mois</label>
+          <select id="cMonth">
+            <option value="01">Janvier</option><option value="02">Février</option><option value="03">Mars</option>
+            <option value="04">Avril</option><option value="05">Mai</option><option value="06">Juin</option>
+            <option value="07">Juillet</option><option value="08">Août</option><option value="09">Septembre</option>
+            <option value="10">Octobre</option><option value="11">Novembre</option><option value="12">Décembre</option>
+          </select>
+        </div>
+        <div class="field"><label>Année</label><select id="cYear"></select></div>
+        <div class="field full">
+          <label>Solde théorique (calculé au 31 du mois)</label>
+          <input id="cTheo" readonly style="background:#f5f5f5;font-weight:700">
+        </div>
+        <div class="field full"><label>Solde compté en espèces (réel)</label><input type="number" step="0.01" id="cReel" oninput="updateEcart()"></div>
+        <div class="field full"><label>Écart</label><input id="cEcart" readonly style="background:#f5f5f5;font-weight:700"></div>
+        <div class="field full"><label>Note</label><textarea id="cNote" placeholder="Observations éventuelles"></textarea></div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn gray" onclick="closeModal('clotureOverlay')">Annuler</button>
+      <button class="btn" onclick="saveCloture()">Valider la clôture</button>
+    </div>
+  </div>
+</div>
+
+<!-- LIGHTBOX -->
+<div class="overlay" id="lightboxOverlay" onclick="closeModal('lightboxOverlay')">
+  <img id="lightboxImg" style="max-width:90%;max-height:90vh;border-radius:8px;margin:auto">
+</div>
+
+<div id="toast"></div>
+<div id="printArea"></div>
+
+<script>
+/* ================= SUPABASE ================= */
+const SUPABASE_URL = 'https://ypvjnermbksjxlebeoyr.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlwdmpuZXJtYmtzanhsZWJlb3lyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM3ODQ2ODIsImV4cCI6MjA5OTM2MDY4Mn0.Qrx7yF1J62qSBUA0mp6fsyh7k5sYDsumtVCgZEuXr1w';
+const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+let D = { params:{}, categories:{entree:[],sortie:[]}, mouvements:[], clotures:[] };
+
+/* ================= AUTH GATE (PIN applicatif) ================= */
+const SESSION_KEY = 'bes_caisse_unlocked';
+async function initGate(){
+  document.getElementById('pinInput').addEventListener('keydown', e=>{ if(e.key==='Enter') tryLogin(); });
+  if(sessionStorage.getItem(SESSION_KEY)==='1'){
+    await bootApp();
+  } else {
+    document.getElementById('loadingScreen').style.display='none';
+    document.getElementById('loginScreen').classList.remove('hidden');
+    document.getElementById('pinInput').focus();
+  }
+}
+async function tryLogin(){
+  const val = document.getElementById('pinInput').value.trim();
+  const errEl = document.getElementById('loginErr');
+  errEl.textContent = '';
+  if(!val){ errEl.textContent = 'Saisissez le code'; return; }
+  const {data, error} = await sb.from('caisse_params').select('access_pin').eq('id',1).single();
+  if(error){ errEl.textContent = 'Erreur de connexion. Réessayez.'; return; }
+  if(String(data.access_pin) !== val){ errEl.textContent = 'Code incorrect'; document.getElementById('pinInput').value=''; return; }
+  sessionStorage.setItem(SESSION_KEY,'1');
+  document.getElementById('loginScreen').classList.add('hidden');
+  document.getElementById('loadingScreen').style.display='flex';
+  await bootApp();
+}
+
+/* ================= HELPERS ================= */
+function fmt(n){
+  n = Number(n)||0;
+  return n.toLocaleString('fr-FR',{minimumFractionDigits:2,maximumFractionDigits:2}) + ' MAD';
+}
+function todayISO(){ return new Date().toISOString().slice(0,10); }
+function frDate(iso){
+  if(!iso) return '';
+  const [y,m,d] = iso.split('-');
+  return `${d}/${m}/${y}`;
+}
+function escapeHtml(s){
+  return (s||'').replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+function notify(msg,type){
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.className = type||'';
+  t.style.display='block';
+  clearTimeout(window._toastT);
+  window._toastT = setTimeout(()=>{t.style.display='none';},2600);
+}
+function computeSolde(uptoDateISO){
+  let s = Number(D.params.solde_initial)||0;
+  D.mouvements.forEach(m=>{
+    if(uptoDateISO && m.date > uptoDateISO) return;
+    s += (m.type==='entree' ? Number(m.montant) : -Number(m.montant));
+  });
+  return s;
+}
+
+/* ================= LOAD DATA ================= */
+async function loadAll(){
+  const [pRes, cRes, mRes, clRes] = await Promise.all([
+    sb.from('caisse_params').select('*').eq('id',1).single(),
+    sb.from('caisse_categories').select('*').order('created_at'),
+    sb.from('caisse_mouvements').select('*').order('date',{ascending:false}),
+    sb.from('caisse_clotures').select('*').order('periode',{ascending:false})
+  ]);
+  if(pRes.error) throw pRes.error;
+  D.params = pRes.data;
+  D.categories = {entree:[], sortie:[]};
+  (cRes.data||[]).forEach(c=> D.categories[c.type].push(c.nom));
+  D.mouvements = (mRes.data||[]).map(m=>({...m, montant:Number(m.montant), justificatif:m.justificatif_url}));
+  D.clotures = (clRes.data||[]).map(c=>({...c, soldeTheorique:Number(c.solde_theorique), soldeCompte:Number(c.solde_compte), ecart:Number(c.ecart), dateCloture:c.date_cloture}));
+}
+async function refreshAll(){
+  await loadAll();
+  renderAll();
+  notify('Données actualisées','ok');
+}
+
+/* Realtime : rafraîchit automatiquement si un autre appareil modifie les données */
+function subscribeRealtime(){
+  sb.channel('caisse-sync')
+    .on('postgres_changes',{event:'*',schema:'public',table:'caisse_mouvements'}, ()=>{ loadAll().then(renderAll); })
+    .on('postgres_changes',{event:'*',schema:'public',table:'caisse_clotures'}, ()=>{ loadAll().then(renderAll); })
+    .on('postgres_changes',{event:'*',schema:'public',table:'caisse_categories'}, ()=>{ loadAll().then(renderAll); })
+    .on('postgres_changes',{event:'*',schema:'public',table:'caisse_params'}, ()=>{ loadAll().then(renderAll); })
+    .subscribe();
+}
+
+async function bootApp(){
+  try{
+    await loadAll();
+    buildNav();
+    document.getElementById('app').classList.add('ready');
+    document.getElementById('loadingScreen').style.display='none';
+    showPage('dashboard');
+    renderAll();
+    subscribeRealtime();
+  }catch(e){
+    document.getElementById('loadingScreen').textContent = 'Erreur de connexion à la base de données. Vérifiez votre connexion internet et rechargez la page.';
+    document.getElementById('loadingScreen').style.display='flex';
+  }
+}
+
+/* ================= NAV ================= */
+const PAGES = [
+  {id:'dashboard', label:'Tableau de bord', icon:'📊'},
+  {id:'journal', label:'Journal de caisse', icon:'📒'},
+  {id:'categories', label:'Catégories', icon:'🏷️'},
+  {id:'clotures', label:'Clôtures', icon:'🔒'},
+  {id:'io', label:'Sauvegarde', icon:'⬇️'},
+  {id:'params', label:'Paramètres', icon:'⚙️'}
+];
+function buildNav(){
+  const nav = document.getElementById('navMenu');
+  nav.innerHTML = PAGES.map(p=>`<a data-page="${p.id}" onclick="showPage('${p.id}')"><span>${p.icon}</span><span class="lbl">${p.label}</span></a>`).join('');
+}
+function showPage(id){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.getElementById('page-'+id).classList.add('active');
+  document.querySelectorAll('#navMenu a').forEach(a=>a.classList.toggle('active', a.dataset.page===id));
+  document.getElementById('pageTitle').textContent = PAGES.find(p=>p.id===id).label;
+  if(id==='dashboard') renderDashboard();
+  if(id==='journal') renderJournal();
+  if(id==='categories') renderCategories();
+  if(id==='clotures') renderClotures();
+  if(id==='params') fillParamsForm();
+}
+
+/* ================= TOPBAR ================= */
+function renderSoldeBadge(){
+  const s = computeSolde();
+  document.getElementById('soldeVal').textContent = fmt(s);
+  document.getElementById('soldeBadge').classList.toggle('neg', s<0);
+}
+
+/* ================= DASHBOARD ================= */
+function renderDashboard(){
+  renderSoldeBadge();
+  document.getElementById('cardSolde').textContent = fmt(computeSolde());
+  const ym = new Date().toISOString().slice(0,7);
+  let inM=0, outM=0, cnt=0;
+  D.mouvements.forEach(m=>{
+    if(m.date.slice(0,7)===ym){
+      cnt++;
+      if(m.type==='entree') inM+=Number(m.montant); else outM+=Number(m.montant);
+    }
+  });
+  document.getElementById('cardInMonth').textContent = fmt(inM);
+  document.getElementById('cardOutMonth').textContent = fmt(outM);
+  document.getElementById('cardCountMonth').textContent = cnt;
+
+  const recent = [...D.mouvements].sort((a,b)=> (b.date+b.created_at).localeCompare(a.date+a.created_at)).slice(0,10);
+  const body = document.getElementById('recentBody');
+  body.innerHTML = recent.length===0
+    ? '<tr class="empty-row"><td colspan="5">Aucun mouvement enregistré</td></tr>'
+    : recent.map(m=>`
+      <tr>
+        <td>${frDate(m.date)}</td>
+        <td><span class="tag ${m.type}">${m.type==='entree'?'Entrée':'Sortie'}</span></td>
+        <td>${escapeHtml(m.categorie)}</td>
+        <td class="desc">${escapeHtml(m.description||'')}</td>
+        <td class="${m.type==='entree'?'montant-in':'montant-out'}">${m.type==='entree'?'+':'-'} ${fmt(m.montant)}</td>
+      </tr>`).join('');
+}
+
+/* ================= CATEGORIES ================= */
+function fillYearSelect(sel, includeAll){
+  const years = new Set();
+  D.mouvements.forEach(m=>years.add(m.date.slice(0,4)));
+  years.add(String(new Date().getFullYear()));
+  const arr = [...years].sort().reverse();
+  sel.innerHTML = (includeAll?'<option value="">Toutes</option>':'') + arr.map(y=>`<option value="${y}">${y}</option>`).join('');
+}
+function renderCategories(){
+  document.getElementById('catInList').innerHTML = D.categories.entree.map(c=>`
+    <div class="cat-item"><span>${escapeHtml(c)}</span><button class="btn sm gray" onclick="removeCategorie('entree','${escapeHtml(c).replace(/'/g,"\\'")}')">Suppr.</button></div>`).join('') || '<div class="hint">Aucune catégorie</div>';
+  document.getElementById('catOutList').innerHTML = D.categories.sortie.map(c=>`
+    <div class="cat-item"><span>${escapeHtml(c)}</span><button class="btn sm gray" onclick="removeCategorie('sortie','${escapeHtml(c).replace(/'/g,"\\'")}')">Suppr.</button></div>`).join('') || '<div class="hint">Aucune catégorie</div>';
+}
+async function addCategorie(type){
+  const inputId = type==='entree' ? 'newCatIn' : 'newCatOut';
+  const el = document.getElementById(inputId);
+  const val = el.value.trim();
+  if(!val){ notify('Saisissez un nom de catégorie','err'); return; }
+  if(D.categories[type].includes(val)){ notify('Catégorie déjà existante','err'); return; }
+  const {error} = await sb.from('caisse_categories').insert({type, nom:val});
+  if(error){ notify('Erreur : '+error.message,'err'); return; }
+  el.value='';
+  await loadAll(); renderCategories();
+  notify('Catégorie ajoutée','ok');
+}
+async function removeCategorie(type, nom){
+  const used = D.mouvements.some(m=>m.type===type && m.categorie===nom);
+  if(used && !confirm(`"${nom}" est utilisée par des mouvements existants. Supprimer quand même ?`)) return;
+  const {error} = await sb.from('caisse_categories').delete().eq('type',type).eq('nom',nom);
+  if(error){ notify('Erreur : '+error.message,'err'); return; }
+  await loadAll(); renderCategories();
+}
+
+/* ================= IMAGE COMPRESSION ================= */
+function compressImage(file, maxDim=1000, quality=0.7){
+  return new Promise((resolve,reject)=>{
+    const img = new Image();
+    const reader = new FileReader();
+    reader.onload = ev=>{
+      img.onload = ()=>{
+        let {width,height} = img;
+        if(width>height && width>maxDim){ height = Math.round(height*maxDim/width); width = maxDim; }
+        else if(height>maxDim){ width = Math.round(width*maxDim/height); height = maxDim; }
+        const canvas = document.createElement('canvas');
+        canvas.width = width; canvas.height = height;
+        canvas.getContext('2d').drawImage(img,0,0,width,height);
+        canvas.toBlob(blob=> resolve(blob), 'image/jpeg', quality);
+      };
+      img.onerror = reject;
+      img.src = ev.target.result;
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+/* ================= MOUVEMENT MODAL ================= */
+function openMouvModal(type, existing){
+  document.getElementById('mouvModalTitle').textContent = existing ? 'Modifier le mouvement' : 'Nouveau mouvement';
+  document.getElementById('mId').value = existing ? existing.id : '';
+  document.querySelectorAll('input[name="mType"]').forEach(r=> r.checked = (r.value === (existing?existing.type:type)));
+  document.getElementById('mDate').value = existing ? existing.date : todayISO();
+  document.getElementById('mMontant').value = existing ? existing.montant : '';
+  document.getElementById('mDesc').value = existing ? (existing.description||'') : '';
+  document.getElementById('mTiers').value = existing ? (existing.tiers||'') : '';
+  document.getElementById('mPiece').value = existing ? (existing.piece||'') : '';
+  document.getElementById('mSaisi').value = existing ? (existing.saisi_par||'') : (D.params.user_defaut||'');
+  document.getElementById('justifPreviewWrap').style.display = existing && existing.justificatif ? 'block':'none';
+  document.getElementById('justifPreview').src = existing && existing.justificatif ? existing.justificatif : '';
+  document.getElementById('mJustif').value = '';
+  window._currentJustifBlob = null;
+  window._currentJustifUrl = existing ? (existing.justificatif||null) : null;
+  onTypeChange();
+  document.getElementById('mouvOverlay').classList.add('open');
+}
+function onTypeChange(){
+  const type = document.querySelector('input[name="mType"]:checked').value;
+  const sel = document.getElementById('mCategorie');
+  const current = sel.value;
+  sel.innerHTML = D.categories[type].map(c=>`<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join('');
+  if(D.categories[type].includes(current)) sel.value = current;
+}
+async function previewJustif(e){
+  const file = e.target.files[0];
+  if(!file) return;
+  notify('Traitement de la photo…','');
+  const blob = await compressImage(file);
+  window._currentJustifBlob = blob;
+  document.getElementById('justifPreview').src = URL.createObjectURL(blob);
+  document.getElementById('justifPreviewWrap').style.display='block';
+}
+async function saveMouvement(){
+  const id = document.getElementById('mId').value;
+  const type = document.querySelector('input[name="mType"]:checked').value;
+  const date = document.getElementById('mDate').value;
+  const montant = parseFloat(document.getElementById('mMontant').value);
+  const categorie = document.getElementById('mCategorie').value;
+  const description = document.getElementById('mDesc').value.trim();
+  const tiers = document.getElementById('mTiers').value.trim();
+  const piece = document.getElementById('mPiece').value.trim();
+  const saisiPar = document.getElementById('mSaisi').value.trim();
+
+  if(!date){ notify('Date requise','err'); return; }
+  if(!montant || montant<=0){ notify('Montant invalide','err'); return; }
+  if(!categorie){ notify('Catégorie requise','err'); return; }
+
+  const btn = document.getElementById('mSaveBtn');
+  btn.disabled = true; btn.textContent = 'Enregistrement...';
+  try{
+    let justifUrl = window._currentJustifUrl;
+    if(window._currentJustifBlob){
+      const path = `${Date.now()}_${Math.random().toString(36).slice(2,8)}.jpg`;
+      const {error: upErr} = await sb.storage.from('justificatifs').upload(path, window._currentJustifBlob, {contentType:'image/jpeg'});
+      if(upErr) throw upErr;
+      justifUrl = sb.storage.from('justificatifs').getPublicUrl(path).data.publicUrl;
+    }
+    const record = {type, date, montant, categorie, description, tiers, piece, saisi_par:saisiPar, justificatif_url:justifUrl};
+    if(id){
+      const {error} = await sb.from('caisse_mouvements').update(record).eq('id',id);
+      if(error) throw error;
+    } else {
+      const {error} = await sb.from('caisse_mouvements').insert(record);
+      if(error) throw error;
+    }
+    await loadAll();
+    closeModal('mouvOverlay');
+    notify('Mouvement enregistré','ok');
+    renderDashboard(); renderJournal(); renderSoldeBadge();
+  }catch(err){
+    notify('Erreur : '+err.message,'err');
+  }finally{
+    btn.disabled = false; btn.textContent = 'Enregistrer';
+  }
+}
+function editMouvement(id){
+  const m = D.mouvements.find(x=>x.id===id);
+  if(m) openMouvModal(m.type, m);
+}
+async function deleteMouvement(id){
+  if(!confirm('Supprimer ce mouvement ?')) return;
+  const {error} = await sb.from('caisse_mouvements').delete().eq('id',id);
+  if(error){ notify('Erreur : '+error.message,'err'); return; }
+  await loadAll();
+  renderJournal(); renderDashboard(); renderSoldeBadge();
+  notify('Mouvement supprimé','ok');
+}
+
+/* ================= JOURNAL ================= */
+function ensureFilterOptions(){
+  fillYearSelect(document.getElementById('fYear'), true);
+  const catSel = document.getElementById('fCat');
+  const all = [...new Set([...D.categories.entree, ...D.categories.sortie])];
+  catSel.innerHTML = '<option value="">Toutes</option>' + all.map(c=>`<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join('');
+}
+function getFilteredMouvements(){
+  const month = document.getElementById('fMonth').value;
+  const year = document.getElementById('fYear').value;
+  const type = document.getElementById('fType').value;
+  const cat = document.getElementById('fCat').value;
+  const q = (document.getElementById('fSearch').value||'').toLowerCase();
+  return D.mouvements.filter(m=>{
+    if(month && m.date.slice(5,7)!==month) return false;
+    if(year && m.date.slice(0,4)!==year) return false;
+    if(type && m.type!==type) return false;
+    if(cat && m.categorie!==cat) return false;
+    if(q && !( (m.description||'').toLowerCase().includes(q) || (m.tiers||'').toLowerCase().includes(q) )) return false;
+    return true;
+  }).sort((a,b)=> (b.date+b.created_at).localeCompare(a.date+a.created_at));
+}
+function renderJournal(){
+  if(document.getElementById('fYear').options.length===0) ensureFilterOptions();
+  const list = getFilteredMouvements();
+  const body = document.getElementById('journalBody');
+  body.innerHTML = list.length===0
+    ? '<tr class="empty-row"><td colspan="9">Aucun mouvement pour ces filtres</td></tr>'
+    : list.map(m=>`
+      <tr>
+        <td>${frDate(m.date)}</td>
+        <td><span class="tag ${m.type}">${m.type==='entree'?'Entrée':'Sortie'}</span></td>
+        <td>${escapeHtml(m.categorie)}</td>
+        <td class="desc">${escapeHtml(m.description||'')}</td>
+        <td>${escapeHtml(m.tiers||'-')}</td>
+        <td>${escapeHtml(m.piece||'-')}</td>
+        <td class="${m.type==='entree'?'montant-in':'montant-out'}">${m.type==='entree'?'+':'-'} ${fmt(m.montant)}</td>
+        <td>${m.justificatif?`<img src="${m.justificatif}" class="thumb" onclick="openLightbox('${m.id}')">`:'<span class="no-just">—</span>'}</td>
+        <td class="no-print">
+          <button class="btn sm outline" onclick="editMouvement('${m.id}')">✎</button>
+          <button class="btn sm red" onclick="deleteMouvement('${m.id}')">🗑</button>
+        </td>
+      </tr>`).join('');
+  let tot = 0;
+  list.forEach(m=> tot += (m.type==='entree'?m.montant:-m.montant));
+  document.getElementById('journalTotal').textContent = `Solde net des mouvements filtrés : ${fmt(tot)}`;
+}
+function openLightbox(id){
+  const m = D.mouvements.find(x=>x.id===id);
+  if(!m || !m.justificatif) return;
+  document.getElementById('lightboxImg').src = m.justificatif;
+  document.getElementById('lightboxOverlay').classList.add('open');
+}
+
+/* ================= CLOTURES ================= */
+function openClotureModal(){
+  fillYearSelect(document.getElementById('cYear'), false);
+  document.getElementById('cMonth').value = String(new Date().getMonth()+1).padStart(2,'0');
+  document.getElementById('cReel').value='';
+  document.getElementById('cEcart').value='';
+  document.getElementById('cNote').value='';
+  updateTheo();
+  document.getElementById('cMonth').onchange = updateTheo;
+  document.getElementById('cYear').onchange = updateTheo;
+  document.getElementById('clotureOverlay').classList.add('open');
+}
+function lastDayOfMonth(y,m){ return new Date(Number(y), Number(m), 0).toISOString().slice(0,10); }
+function updateTheo(){
+  const m = document.getElementById('cMonth').value;
+  const y = document.getElementById('cYear').value;
+  const theo = computeSolde(lastDayOfMonth(y,m));
+  document.getElementById('cTheo').value = fmt(theo);
+  window._clotureTheo = theo;
+  updateEcart();
+}
+function updateEcart(){
+  const reel = parseFloat(document.getElementById('cReel').value);
+  if(isNaN(reel)){ document.getElementById('cEcart').value=''; return; }
+  const ecart = reel - (window._clotureTheo||0);
+  document.getElementById('cEcart').value = fmt(ecart) + (ecart===0?' (OK)': (ecart>0?' (excédent)':' (manquant)'));
+}
+async function saveCloture(){
+  const month = document.getElementById('cMonth').value;
+  const year = document.getElementById('cYear').value;
+  const reel = parseFloat(document.getElementById('cReel').value);
+  if(isNaN(reel)){ notify('Saisissez le solde compté','err'); return; }
+  const periode = `${year}-${month}`;
+  const theo = window._clotureTheo||0;
+  const {error} = await sb.from('caisse_clotures').upsert({
+    periode, date_cloture: todayISO(), solde_theorique: theo, solde_compte: reel, ecart: reel-theo,
+    note: document.getElementById('cNote').value.trim()
+  }, {onConflict:'periode'});
+  if(error){ notify('Erreur : '+error.message,'err'); return; }
+  await loadAll();
+  closeModal('clotureOverlay');
+  renderClotures();
+  notify('Clôture enregistrée','ok');
+}
+function renderClotures(){
+  const list = [...D.clotures];
+  const body = document.getElementById('cloturesBody');
+  if(list.length===0){ body.innerHTML = '<tr class="empty-row"><td colspan="7">Aucune clôture enregistrée</td></tr>'; return; }
+  const moisNoms = {'01':'Janvier','02':'Février','03':'Mars','04':'Avril','05':'Mai','06':'Juin','07':'Juillet','08':'Août','09':'Septembre','10':'Octobre','11':'Novembre','12':'Décembre'};
+  body.innerHTML = list.map(c=>{
+    const [y,m] = c.periode.split('-');
+    return `<tr>
+      <td>${moisNoms[m]} ${y}</td>
+      <td>${frDate(c.dateCloture)}</td>
+      <td>${fmt(c.soldeTheorique)}</td>
+      <td>${fmt(c.soldeCompte)}</td>
+      <td style="color:${c.ecart===0?'var(--green)':'var(--red)'};font-weight:700">${fmt(c.ecart)}</td>
+      <td class="desc">${escapeHtml(c.note||'-')}</td>
+      <td class="no-print"><button class="btn sm red" onclick="deleteCloture('${c.id}')">🗑</button></td>
+    </tr>`;
+  }).join('');
+}
+async function deleteCloture(id){
+  if(!confirm('Supprimer cette clôture ?')) return;
+  const {error} = await sb.from('caisse_clotures').delete().eq('id',id);
+  if(error){ notify('Erreur : '+error.message,'err'); return; }
+  await loadAll(); renderClotures();
+}
+
+/* ================= EXPORT ================= */
+function downloadBlob(content, filename, mime){
+  const blob = new Blob([content], {type:mime});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = filename;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+function exportJSONBackup(){
+  const payload = {format:'bes-caisse-v1', exportedAt:new Date().toISOString(), data:D};
+  downloadBlob(JSON.stringify(payload,null,2), `BES_Caisse_sauvegarde_${todayISO()}.json`, 'application/json');
+  notify('Sauvegarde exportée','ok');
+}
+function csvEscape(v){
+  v = String(v==null?'':v);
+  if(/[",;\n]/.test(v)) return '"'+v.replace(/"/g,'""')+'"';
+  return v;
+}
+function toCSV(list){
+  const header = ['Date','Type','Catégorie','Description','Bénéficiaire/Fournisseur','N° Pièce','Montant','Saisi par'];
+  const rows = list.map(m=>[frDate(m.date), m.type==='entree'?'Entrée':'Sortie', m.categorie, m.description, m.tiers, m.piece, m.montant, m.saisi_par]);
+  return [header, ...rows].map(r=>r.map(csvEscape).join(';')).join('\n');
+}
+function exportCSVJournal(){
+  const list = getFilteredMouvements();
+  if(list.length===0){ notify('Aucun mouvement à exporter','err'); return; }
+  downloadBlob('﻿'+toCSV(list), `BES_Caisse_journal_${todayISO()}.csv`, 'text/csv;charset=utf-8');
+}
+function exportCSVAll(){
+  if(D.mouvements.length===0){ notify('Aucun mouvement à exporter','err'); return; }
+  downloadBlob('﻿'+toCSV(D.mouvements), `BES_Caisse_tous_mouvements_${todayISO()}.csv`, 'text/csv;charset=utf-8');
+}
+async function resetAll(){
+  if(!confirm('Cette action supprime DÉFINITIVEMENT tous les mouvements et clôtures POUR TOUS LES APPAREILS. Continuer ?')) return;
+  if(!confirm('Confirmez-vous une seconde fois ? Cette action est irréversible.')) return;
+  await sb.from('caisse_mouvements').delete().neq('id','00000000-0000-0000-0000-000000000000');
+  await sb.from('caisse_clotures').delete().neq('id','00000000-0000-0000-0000-000000000000');
+  await loadAll();
+  renderAll();
+  notify('Données réinitialisées','ok');
+}
+
+/* ================= PRINT ================= */
+function printJournal(){
+  const list = getFilteredMouvements();
+  const p = D.params;
+  let tot = 0; list.forEach(m=> tot += (m.type==='entree'?m.montant:-m.montant));
+  const rows = list.map(m=>`
+    <tr>
+      <td>${frDate(m.date)}</td>
+      <td>${m.type==='entree'?'Entrée':'Sortie'}</td>
+      <td>${escapeHtml(m.categorie)}</td>
+      <td style="text-align:left">${escapeHtml(m.description||'')}</td>
+      <td>${escapeHtml(m.tiers||'-')}</td>
+      <td>${escapeHtml(m.piece||'-')}</td>
+      <td style="text-align:right">${m.type==='entree'?'+':'-'} ${fmt(m.montant)}</td>
+    </tr>`).join('');
+  document.getElementById('printArea').innerHTML = `
+    <div style="font-family:Arial,sans-serif;padding:20px;color:#222">
+      <div style="display:flex;justify-content:space-between;border-bottom:3px solid #2E5A8E;padding-bottom:10px;margin-bottom:14px">
+        <div><h2 style="color:#2E5A8E">${escapeHtml(p.societe)}</h2>
+        <div style="font-size:12px">Journal de caisse — espèces</div></div>
+        <div style="text-align:right;font-size:12px">Édité le ${frDate(todayISO())}<br>Solde actuel : <b>${fmt(computeSolde())}</b></div>
+      </div>
+      <table style="width:100%;border-collapse:collapse;font-size:12px">
+        <thead><tr style="background:#2E5A8E;color:#fff">
+          <th style="padding:6px">Date</th><th style="padding:6px">Type</th><th style="padding:6px">Catégorie</th>
+          <th style="padding:6px;text-align:left">Description</th><th style="padding:6px">Bénéf./Fourn.</th>
+          <th style="padding:6px">N° Pièce</th><th style="padding:6px">Montant</th>
+        </tr></thead>
+        <tbody>${rows || '<tr><td colspan="7" style="text-align:center;padding:14px">Aucun mouvement</td></tr>'}</tbody>
+      </table>
+      <div style="text-align:right;margin-top:12px;font-weight:bold">Solde net de la période affichée : ${fmt(tot)}</div>
+      <div style="margin-top:40px;display:flex;justify-content:space-between;font-size:12px">
+        <div>Établi par : _______________________</div>
+        <div>Visa / Cachet : _______________________</div>
+      </div>
+      <div style="margin-top:30px;border-top:1px solid #999;padding-top:8px;font-size:10px;color:#555;text-align:center">
+        ${escapeHtml(p.societe)} — R.C ${escapeHtml(p.rc)} — T.P ${escapeHtml(p.tp)} — IF ${escapeHtml(p.if_num)} — ICE ${escapeHtml(p.ice)}<br>
+        Tél : ${escapeHtml(p.tel)} — ${escapeHtml(p.siege)}
+      </div>
+    </div>`;
+  window.print();
+}
+
+/* ================= PARAMS ================= */
+function fillParamsForm(){
+  const p = D.params;
+  document.getElementById('pSociete').value = p.societe||'';
+  document.getElementById('pRC').value = p.rc||'';
+  document.getElementById('pTP').value = p.tp||'';
+  document.getElementById('pIF').value = p.if_num||'';
+  document.getElementById('pICE').value = p.ice||'';
+  document.getElementById('pTel').value = p.tel||'';
+  document.getElementById('pSiege').value = p.siege||'';
+  document.getElementById('pSoldeInit').value = p.solde_initial||0;
+  document.getElementById('pDateOuv').value = p.date_ouverture||todayISO();
+  document.getElementById('pUser').value = p.user_defaut||'';
+  document.getElementById('pPin').value = '';
+}
+async function saveParams(){
+  const record = {
+    societe: document.getElementById('pSociete').value.trim(),
+    rc: document.getElementById('pRC').value.trim(),
+    tp: document.getElementById('pTP').value.trim(),
+    if_num: document.getElementById('pIF').value.trim(),
+    ice: document.getElementById('pICE').value.trim(),
+    tel: document.getElementById('pTel').value.trim(),
+    siege: document.getElementById('pSiege').value.trim(),
+    solde_initial: parseFloat(document.getElementById('pSoldeInit').value)||0,
+    date_ouverture: document.getElementById('pDateOuv').value,
+    user_defaut: document.getElementById('pUser').value.trim()
+  };
+  const {error} = await sb.from('caisse_params').update(record).eq('id',1);
+  if(error){ notify('Erreur : '+error.message,'err'); return; }
+  await loadAll();
+  renderSoldeBadge();
+  notify('Paramètres enregistrés','ok');
+}
+async function changePin(){
+  const val = document.getElementById('pPin').value.trim();
+  if(val.length<4){ notify('Le code doit contenir au moins 4 caractères','err'); return; }
+  if(!confirm('Changer le code d\'accès ? Tous les appareils devront utiliser le nouveau code.')) return;
+  const {error} = await sb.from('caisse_params').update({access_pin:val}).eq('id',1);
+  if(error){ notify('Erreur : '+error.message,'err'); return; }
+  document.getElementById('pPin').value='';
+  notify('Code d\'accès changé','ok');
+}
+
+/* ================= MODAL UTIL ================= */
+function closeModal(id){ document.getElementById(id).classList.remove('open'); }
+document.querySelectorAll('.overlay').forEach(o=>{
+  o.addEventListener('click', e=>{ if(e.target===o) o.classList.remove('open'); });
+});
+
+/* ================= INIT ================= */
+function renderAll(){
+  renderSoldeBadge();
+  renderDashboard();
+  ensureFilterOptions();
+  renderJournal();
+  renderCategories();
+  renderClotures();
+}
+initGate();
+</script>
+</body>
+</html>
