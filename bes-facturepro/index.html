@@ -471,11 +471,17 @@ tr:last-child td{border-bottom:none;} tbody tr:hover td{background:#f8faff;}
                   <option value="Atelier">Atelier</option>
                   <option value="Autres">Autres</option>
                 </select>
+                <select id="flt-lien-sor" onchange="renderSorties()">
+                  <option value="">Liées + non liées</option>
+                  <option value="non">Non liées à un chantier</option>
+                  <option value="oui">Liées à un chantier</option>
+                </select>
               </div>
+              <button class="btn btn-sm" id="btn-lier-sor" style="background:#fef3c7;color:#92400e;border:1px solid #f59e0b;font-weight:700;" onclick="openLierSorties()">🔗 Lier au chantier (<span id="nb-sel-sor">0</span>)</button>
               <button class="btn btn-primary btn-sm" onclick="openSortieModal()">+ Sortie</button>
             </div>
           </div>
-          <table><thead><tr><th>Date</th><th>N° BS</th><th>Produit</th><th>Qté</th><th>PMP HT</th><th>Valeur HT</th><th>TVA</th><th>Valeur TTC</th><th>Destination</th><th>Détail</th><th>Note</th><th>Actions</th></tr></thead>
+          <table><thead><tr><th style="width:26px;"><input type="checkbox" id="sel-all-sor" title="Tout cocher" onchange="toggleAllSorties(this.checked)"></th><th>Date</th><th>N° BS</th><th>Produit</th><th>Qté</th><th>PMP HT</th><th>Valeur HT</th><th>TVA</th><th>Valeur TTC</th><th>Destination</th><th>Détail</th><th>Note</th><th>Actions</th></tr></thead>
           <tbody id="list-sorties"></tbody></table>
         </div>
         <!-- Récapitulatif valorisation sorties -->
@@ -3170,7 +3176,7 @@ ${BES_PRINT_FIX}
 function renderStockStats() {
   const ok=D.stock.filter(p=>p.qty>p.seuil).length;
   const low=D.stock.filter(p=>p.qty>0&&p.qty<=p.seuil).length;
-  const zero=D.stock.filter(p=>p.qty===0).length;
+  const zero=D.stock.filter(p=>p.qty<=0).length;
   document.getElementById('stock-stats').innerHTML=[
     ['Total',D.stock.length,'bb','blue'],['En stock',ok,'bg','green'],
     ['Faible',low,'ba','amber'],['Rupture',zero,'br','red']
@@ -3254,7 +3260,7 @@ function renderStock(q='') {
   tb.innerHTML=list.map(p=>{
     const ri=D.stock.indexOf(p);
     const pct=p.seuil>0?Math.min(100,Math.round(p.qty/p.seuil*100)):100;
-    const col=p.qty===0?'var(--red)':p.qty<=p.seuil?'var(--amber)':'var(--green)';
+    const col=p.qty<=0?'var(--red)':p.qty<=p.seuil?'var(--amber)':'var(--green)';
     const pmp = p.pmp||p.pu||0;
     const taux = tauxTvaProduit(p);
     const valHT  = p.qty * pmp;
@@ -3650,7 +3656,7 @@ function saveEntreeGroupe(){
         typeMvt: 'DIRECT_CHANTIER'
       });
       // Stock : déduire la qty (elle vient d'être ajoutée par l'entrée → net = 0)
-      D.stock[idx].qty = Math.max(0, D.stock[idx].qty - qty);
+      D.stock[idx].qty = (D.stock[idx].qty||0) - qty;
       nbSortiesLiees++;
     }
     nb++;
@@ -3678,7 +3684,7 @@ function recalculerStockCompletProduit(produitRef){
   // Sommes
   const totEnt = (D.entrees||[]).filter(e=>e.produitRef===produitRef).reduce((s,e)=>s+(e.qty||0),0);
   const totSor = (D.sorties||[]).filter(s=>s.produitRef===produitRef).reduce((s,x)=>s+(x.qty||0),0);
-  prod.qty = Math.max(0, totEnt - totSor);
+  prod.qty = totEnt - totSor; // stock négatif autorisé
   // Recalcul PMP chronologique
   recalculerPMP(produitRef);
 }
@@ -4063,13 +4069,11 @@ function saveSortieGroupe(){
     if(memeProduit){
       const stockApresRollback = (nouveauProduit.qty||0) + (old.qty||0);
       if(l.qty > stockApresRollback){
-        notify('Stock insuffisant après modification ('+stockApresRollback+' disponible)','err');
-        return;
+        notify('⚠️ Stock théorique insuffisant ('+stockApresRollback+') — enregistré quand même, le stock passera en négatif','');
       }
     } else {
       if(l.qty > (nouveauProduit.qty||0)){
-        notify('Stock insuffisant pour le nouveau produit ('+(nouveauProduit.qty||0)+' disponible)','err');
-        return;
+        notify('⚠️ Stock théorique insuffisant ('+(nouveauProduit.qty||0)+') — enregistré quand même, le stock passera en négatif','');
       }
     }
     // Mise à jour IN-PLACE
@@ -4103,7 +4107,7 @@ function saveSortieGroupe(){
 
   // ── Mode CRÉATION ──
   const insuf=valides.filter(l=>l.qty>D.stock[l.pi].qty);
-  if(insuf.length){notify('Stock insuffisant : '+insuf.map(l=>D.stock[l.pi].des).join(', '),'err');return;}
+  if(insuf.length){setTimeout(()=>notify('⚠️ Stock négatif : '+insuf.map(l=>D.stock[l.pi].des).join(', ')+' (inventaire à refaire)',''),1500);}
   let nb=0;
   valides.forEach((l,i)=>{
     const idx=l.pi,prod=D.stock[idx];
@@ -4125,7 +4129,7 @@ function saveSortieGroupe(){
       destination:dest, detail, note,
       bs, bsAuto
     });
-    D.stock[idx].qty=Math.max(0,(D.stock[idx].qty||0)-l.qty);
+    D.stock[idx].qty=(D.stock[idx].qty||0)-l.qty; // stock négatif autorisé
     nb++;
   });
   save();closeModal('modal-sortie');
@@ -4139,18 +4143,22 @@ function renderSorties(){
   const fD=(document.getElementById('flt-dest-sor')||{}).value||'';
   const mo=(document.getElementById('flt-mois-sor')||{}).value||'';
   const q =((document.getElementById('flt-q-sor')||{}).value||'').toLowerCase().trim();
+  const fL=(document.getElementById('flt-lien-sor')||{}).value||'';
   const list=D.sorties.filter(s=>{
     if(mo&&!(s.date||'').startsWith(mo))return false;
     if(fD&&s.destination!==fD)return false;
+    if(fL==='oui'&&!s.chantierId)return false;
+    if(fL==='non'&&s.chantierId)return false;
     if(q){
-      const t=((s.produitDes||'')+' '+(s.produitRef||'')).toLowerCase();
+      const t=((s.produitDes||'')+' '+(s.produitRef||'')+' '+(s.detail||'')+' '+(s.note||'')).toLowerCase();
       if(!t.includes(q))return false;
     }
     return true;
   });
   const tb=document.getElementById('list-sorties');
   if(!list.length){
-    tb.innerHTML='<tr><td colspan="12" style="text-align:center;padding:22px;color:var(--muted);">Aucune sortie</td></tr>';
+    tb.innerHTML='<tr><td colspan="13" style="text-align:center;padding:22px;color:var(--muted);">Aucune sortie</td></tr>';
+    majSelSorties();
     renderRecapSorties(list,mo,fD);
     return;
   }
@@ -4178,7 +4186,13 @@ function renderSorties(){
     const ajBadge = s.typeMvt==='AJUSTEMENT_INV'
       ? ' <span title="Ajustement d\'inventaire" style="display:inline-block;background:#fce7f3;color:#9d174d;font-size:9px;padding:1px 5px;border-radius:8px;font-weight:700;margin-left:3px;">📋 INV</span>'
       : '';
+    const chL = s.chantierId ? (D.chantiers||[]).find(c=>c.id===s.chantierId) : null;
+    const chBadge = chL
+      ? '<br><span title="Lié au chantier" style="display:inline-block;margin-top:3px;background:#dcfce7;color:#166534;font-size:10px;padding:1px 6px;border-radius:8px;font-weight:700;">🏗️ '+escSor(chL.nom)+'</span>'
+      : '';
+    const coche = selSorties.has(String(s.id));
     return'<tr'+(s.linkId?' style="background:#fffbeb;"':'')+'>'+
+      '<td><input type="checkbox" '+(coche?'checked':'')+' onchange="toggleSelSortie(\''+s.id+'\',this.checked)"></td>'+
       '<td>'+(s.date||'-')+'</td>'+
       '<td>'+bsCell+'</td>'+
       '<td><strong>'+(s.produitDes||'')+'</strong>'+linkBadge+ajBadge+'<br><span style="font-size:10px;color:var(--muted);">'+(s.produitRef||'')+'</span></td>'+
@@ -4188,7 +4202,7 @@ function renderSorties(){
       '<td style="text-align:center;font-size:11px;color:var(--muted);">'+taux+'%</td>'+
       '<td style="font-family:var(--mono);font-weight:700;color:#1F497D;background:#e8f0fc;">'+fmt(valTTC)+'</td>'+
       '<td><span class="status" style="background:'+(dBg[s.destination]||'#f1f5f9')+';color:'+(dCol[s.destination]||'#333')+';"> '+(s.destination||'-')+'</span></td>'+
-      '<td style="font-size:11px;">'+(s.detail||'-')+'</td>'+
+      '<td style="font-size:11px;">'+(s.detail||'-')+chBadge+'</td>'+
       '<td style="font-size:11px;color:var(--muted);">'+(s.note||'-')+'</td>'+
       '<td style="white-space:nowrap;">'+
         '<button class="btn-icon" style="color:#1F497D;" title="Modifier" onclick="openSortieEditModal('+ri+')">✏️</button>'+
@@ -4197,7 +4211,76 @@ function renderSorties(){
       '</td>'+
     '</tr>';
   }).join('');
+  majSelSorties();
   renderRecapSorties(list,mo,fD);
+}
+
+// ═══════════ LIER DES SORTIES À UN CHANTIER (regroupement) ═══════════
+// On coche plusieurs sorties (ex. « Cuisine Majid », « Majid »…) puis on les
+// rattache toutes à un chantier existant (devis, avances…) via s.chantierId.
+var selSorties = new Set();
+function escSor(s){return String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+function toggleSelSortie(id,v){ if(v) selSorties.add(String(id)); else selSorties.delete(String(id)); majSelSorties(); }
+function toggleAllSorties(v){
+  document.querySelectorAll('#list-sorties input[type=checkbox]').forEach(cb=>{
+    if(cb.checked!==v){ cb.checked=v; cb.onchange(); }
+  });
+}
+function majSelSorties(){
+  const ids=new Set((D.sorties||[]).map(s=>String(s.id)));
+  [...selSorties].forEach(id=>{ if(!ids.has(id)) selSorties.delete(id); });
+  const el=document.getElementById('nb-sel-sor'); if(el) el.textContent=selSorties.size;
+  const all=document.getElementById('sel-all-sor');
+  if(all){ const cbs=[...document.querySelectorAll('#list-sorties input[type=checkbox]')]; all.checked=cbs.length>0&&cbs.every(cb=>cb.checked); }
+}
+function openLierSorties(){
+  if(!selSorties.size){ notify('Coche d\'abord les sorties à regrouper','err'); return; }
+  const chs=(D.chantiers||[]).slice().sort((a,b)=>(b.dateDebut||'').localeCompare(a.dateDebut||'')||(a.nom||'').localeCompare(b.nom||''));
+  let ov=document.getElementById('modal-lier-sor');
+  if(ov) ov.remove();
+  ov=document.createElement('div');
+  ov.className='modal-overlay open'; ov.id='modal-lier-sor';
+  ov.innerHTML='<div class="modal modal-sm"><div class="modal-hdr"><div class="modal-title">🔗 Lier '+selSorties.size+' sortie(s) à un chantier</div>'+
+    '<button class="modal-close" onclick="fermerLierSorties()">&times;</button></div>'+
+    '<div class="modal-body" style="padding:16px;">'+
+    '<input class="search-inp" id="lier-sor-q" placeholder="🔍 Chercher un chantier ou un client" style="width:100%;margin-bottom:10px;" oninput="filtrerLierSorties()">'+
+    '<div id="lier-sor-list" style="max-height:340px;overflow:auto;border:1px solid var(--border,#ddd);border-radius:8px;"></div>'+
+    '<div style="font-size:11px;color:var(--muted);margin-top:8px;">Les sorties apparaîtront dans le chantier choisi (onglet documents + coût des sorties de stock).</div>'+
+    '</div><div class="modal-foot" style="display:flex;justify-content:space-between;gap:8px;">'+
+    '<button class="btn btn-sm" style="color:var(--red);" onclick="lierSortiesA(null)">✖ Délier la sélection</button>'+
+    '<button class="btn btn-sm" onclick="fermerLierSorties()">Annuler</button></div></div>';
+  document.body.appendChild(ov);
+  ov.style.display='flex';
+  ov._chs=chs;
+  filtrerLierSorties();
+  setTimeout(()=>{const i=document.getElementById('lier-sor-q'); if(i) i.focus();},50);
+}
+function filtrerLierSorties(){
+  const ov=document.getElementById('modal-lier-sor'); if(!ov) return;
+  const q=((document.getElementById('lier-sor-q')||{}).value||'').toLowerCase().trim();
+  const list=(ov._chs||[]).filter(c=>!q||((c.nom||'')+' '+(c.clientNom||'')).toLowerCase().includes(q));
+  document.getElementById('lier-sor-list').innerHTML = list.length ? list.map(c=>
+    '<div onclick="lierSortiesA('+c.id+')" style="padding:9px 12px;border-bottom:1px solid #eee;cursor:pointer;" onmouseover="this.style.background=\'#f1f5f9\'" onmouseout="this.style.background=\'\'">'+
+    '<strong>'+escSor(c.nom)+'</strong>'+(c.clientNom?' <span style="font-size:11px;color:var(--muted);">— '+escSor(c.clientNom)+'</span>':'')+
+    (c.statut&&c.statut!=='en_cours'?' <span style="font-size:10px;color:var(--muted);">('+escSor(c.statut)+')</span>':'')+'</div>'
+  ).join('') : '<div style="padding:14px;text-align:center;color:var(--muted);">Aucun chantier trouvé</div>';
+}
+function fermerLierSorties(){ const ov=document.getElementById('modal-lier-sor'); if(ov) ov.remove(); }
+function lierSortiesA(chId){
+  const ch = chId ? (D.chantiers||[]).find(c=>c.id===chId) : null;
+  if(chId && !ch){ notify('Chantier introuvable','err'); return; }
+  let n=0;
+  (D.sorties||[]).forEach(s=>{
+    if(!selSorties.has(String(s.id))) return;
+    if(ch){ s.chantierId=ch.id; s.chantierNom=ch.nom; if(!s.destination) s.destination='Chantier'; }
+    else { delete s.chantierId; delete s.chantierNom; }
+    n++;
+  });
+  save();
+  fermerLierSorties();
+  selSorties.clear();
+  notify(ch ? ('✅ '+n+' sortie(s) liée(s) au chantier « '+ch.nom+' »') : ('✖ '+n+' sortie(s) déliée(s)'),'ok');
+  renderSorties();
 }
 
 // ── Récapitulatif valorisation sorties (par destination) ──
@@ -7681,6 +7764,7 @@ function sortiesOf(ch){
   const cliL = (ch.clientNom||'').toLowerCase().trim();
   return (D.sorties||[]).filter(s => {
     if(s.chantierId === ch.id) return true;
+    if(s.chantierId) return false; // déjà liée à un autre chantier
     const det = (s.detail||'').toLowerCase().trim();
     return det && (det === nomL || (nomL && (det.includes(nomL) || nomL.includes(det))) || (cliL && det.includes(cliL)));
   });
