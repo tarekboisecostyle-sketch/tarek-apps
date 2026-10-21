@@ -5664,7 +5664,7 @@ const CLOUD_CARD_HTML = `
     <div style="margin-top:18px;padding-top:14px;border-top:1px solid var(--border);">
       <div style="font-size:12px;font-weight:700;margin-bottom:6px;">Reprendre l'ancienne sauvegarde Firebase</div>
       <div style="font-size:11px;color:var(--muted);margin-bottom:8px;">Colle ici les clés de connexion Firebase de l'ancienne version (le bloc <code>firebaseConfig</code> ou les 6 valeurs apiKey, authDomain, projectId, storageBucket, messagingSenderId, appId). L'appli lit la sauvegarde, te montre ce qu'elle contient, puis la met dans Supabase. Firebase n'est pas modifié.</div>
-      <textarea id="fb-import-cfg" rows="6" style="width:100%;font-family:var(--mono);font-size:11px;padding:8px;border:1px solid var(--border);border-radius:6px;" placeholder='apiKey: "AIza...", authDomain: "....firebaseapp.com", projectId: "...", ...'></textarea>
+      <textarea id="fb-import-cfg" rows="6" style="width:100%;font-family:var(--mono);font-size:11px;padding:8px;border:1px solid var(--border);border-radius:6px;" placeholder='apiKey: "AIza...", authDomain: "....firebaseapp.com", projectId: "...", ...'>apiKey: "AIzaSyBMblq-tpK59vV2zc4O3hoRVf6qy_8Up6c", authDomain: "tm-bes.firebaseapp.com", projectId: "tm-bes", storageBucket: "tm-bes.firebasestorage.app", messagingSenderId: "1043123612179", appId: "1:1043123612179:web:b24e448c1199f3a83f2de6"</textarea>
       <div style="margin-top:8px;display:flex;justify-content:flex-end;">
         <button class="btn btn-green" onclick="importFirebaseFromForm()">📥 Reprendre les données</button>
       </div>
@@ -6087,10 +6087,11 @@ function readFirebaseOnce(c){
       'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js'
     ], ()=>{
       try{
-        const app = firebase.apps.length ? firebase.apps[0] : firebase.initializeApp({
+        const name = 'fb-'+c.apiKey.slice(-6);
+        const app = firebase.apps.find(a=>a.name===name) || firebase.initializeApp({
           apiKey:c.apiKey, authDomain:c.authDomain, projectId:c.projectId,
           storageBucket:c.storageBucket, messagingSenderId:c.messagingSenderId, appId:c.appId
-        });
+        }, name);
         firebase.auth(app).signInAnonymously()
           .then(()=>firebase.firestore(app).collection('bes_data').doc('main').get())
           .then(snap=>resolve(snap.exists ? snap.data() : null))
@@ -6100,13 +6101,31 @@ function readFirebaseOnce(c){
   });
 }
 
+// Clés de l'ancienne sauvegarde Firebase de FacturePro (projet tm-bes), gardées ici pour ne plus les chercher.
+// Deux écritures de la clé existent dans l'historique (l/I, O/0) : on essaie l'une puis l'autre.
+const FB_DEFAULT_CFG = {
+  apiKey: "AIzaSyBMblq-tpK59vV2zc4O3hoRVf6qy_8Up6c",
+  apiKeyAlt: "AIzaSyBMbIq-tpK59vV2zc403hoRVf6qy_8Up6c",
+  authDomain: "tm-bes.firebaseapp.com",
+  projectId: "tm-bes",
+  storageBucket: "tm-bes.firebasestorage.app",
+  messagingSenderId: "1043123612179",
+  appId: "1:1043123612179:web:b24e448c1199f3a83f2de6"
+};
+async function readFirebaseAnyKey(c){
+  try{ return await readFirebaseOnce(c); }
+  catch(e){
+    if(c.apiKeyAlt && /api[-_ ]?key/i.test(String(e.code||e.message))) return await readFirebaseOnce({ ...c, apiKey:c.apiKeyAlt });
+    throw e;
+  }
+}
 function firebaseCfg(){
   let c=null;
   try{ c = JSON.parse(localStorage.getItem('bes_cloud_cfg_firebase')); }catch(e){}
   if(!(c && c.apiKey)){ try{ c = JSON.parse(localStorage.getItem(CLOUD_CFG_KEY)); }catch(e){} }
   if(!(c && c.apiKey) && D.cloud && D.cloud.apiKey) c = D.cloud;
   if(c && c.apiKey){ try{ localStorage.setItem('bes_cloud_cfg_firebase', JSON.stringify(c)); }catch(e){} return c; }
-  return null;
+  return FB_DEFAULT_CFG;
 }
 
 function applyRemoteJson(json, updatedAt){
@@ -6128,7 +6147,7 @@ async function firstCloudSync(){
   if(fb){
     cloudStatus('Reprise des données Firebase…');
     try{
-      const r = await readFirebaseOnce(fb);
+      const r = await readFirebaseAnyKey(fb);
       if(r && r.json){ json = r.json; source='import-firebase'; }
     }catch(e){ fbErr=e; console.warn('Lecture Firebase impossible', e); }
   }
@@ -6204,10 +6223,11 @@ window.importFirebaseFromForm = async function(){
   });
   if(!cfg.apiKey || !cfg.projectId){ notify('Clés incomplètes : il faut au moins apiKey et projectId','err'); return; }
   if(!cfg.authDomain) cfg.authDomain = cfg.projectId+'.firebaseapp.com';
+  if(cfg.apiKey===FB_DEFAULT_CFG.apiKey) cfg.apiKeyAlt = FB_DEFAULT_CFG.apiKeyAlt;
   if(!sbc){ notify('Synchronisation pas encore prête — vérifie la connexion internet','err'); return; }
   cloudStatus('Lecture de la sauvegarde Firebase…');
   let r;
-  try{ r = await readFirebaseOnce(cfg); }
+  try{ r = await readFirebaseAnyKey(cfg); }
   catch(e){ cloudStatus('Lecture Firebase impossible : '+e.message, false); notify('Lecture Firebase impossible : '+e.message,'err'); return; }
   if(!r || !r.json){ cloudStatus('Aucune sauvegarde trouvée dans ce Firebase', false); notify('Aucune sauvegarde trouvée dans ce Firebase','err'); return; }
   let d; try{ d = JSON.parse(r.json); }catch(e){ notify('Sauvegarde Firebase illisible','err'); return; }
