@@ -723,6 +723,7 @@ window.__applyRemote = (remote) => {
  Object.assign(D, clean);
  ensureD();
  localStorage.setItem(STORE_KEY, JSON.stringify(D)); // met à jour le cache local SANS re-pousser au cloud
+ if (harmoniserNoms() > 0) save();
  rerender();
 };
 function ensureD() {
@@ -957,7 +958,7 @@ function situationContrat(k) {
  const loyer = +k.loyer || 0;
  const ech = [];
  for (let i = 0; i < 520; i++) { const d = _addPeriod(k.debut, k.frequence, i); if (d > td) break; ech.push({ date: d, du: loyer, paye: 0 }); }
- const pays = D.cafes.filter(c => _norm(c.locataire) === _norm(k.locataire) && (!k.cafe || _norm(c.nom) === _norm(k.cafe)) && (c.date || '') >= k.debut)
+ const pays = D.cafes.filter(c => _norm(c.locataire) === _norm(k.locataire) && (c.date || '') >= k.debut)
  .sort((a, b) => (a.date || '').localeCompare(b.date || ''));
  const totalPaye = _sum(pays, c => c.revenu);
  let pot = totalPaye;
@@ -992,6 +993,18 @@ function situationCardHtml(s, compact) {
  </div>
  </div>`;
 }
+// Met tout l'historique au nom du contrat (même locataire, peu importe majuscules) : nom du locataire et du café
+function harmoniserNoms() {
+ let n = 0;
+ (D.contrats || []).forEach(k => {
+ D.cafes.forEach(c => {
+ if (_norm(c.locataire) !== _norm(k.locataire)) return;
+ if (c.locataire !== k.locataire) { c.locataire = k.locataire; n++; }
+ if (k.cafe && c.nom !== k.cafe) { c.nom = k.cafe; n++; }
+ });
+ });
+ return n;
+}
 function openContratModal(id) {
  const k = (D.contrats || []).find(x => x.id === id);
  document.getElementById('k-id').value = k ? k.id : '';
@@ -1016,6 +1029,7 @@ function saveContrat() {
  const id = +document.getElementById('k-id').value;
  const k = D.contrats.find(x => x.id === id);
  if (k) Object.assign(k, obj); else D.contrats.push({ id: Date.now(), ...obj });
+ harmoniserNoms();
  save(); closeModal('modal-contrat'); notify('Contrat enregistré ✅', 'ok'); rerender();
 }
 function delContrat(id) {
