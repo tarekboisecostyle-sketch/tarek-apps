@@ -242,6 +242,63 @@ tbody td.r { text-align: right; font-weight: 600; }
 
 .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
 @media(max-width:600px){ .two-col { grid-template-columns: 1fr; } }
+
+/* ===== Tableau de bord v2 ===== */
+.dash { display:flex; flex-direction:column; gap:16px; }
+.hero { display:grid; grid-template-columns:1.6fr 1fr; gap:0; background:var(--card); border-radius:14px; box-shadow:var(--shadow); overflow:hidden; }
+.hero-main { padding:22px 24px; background:linear-gradient(160deg,#1A3A5C,#24507c); color:#fff; }
+.hero-k { font-size:13px; color:#BFD6EC; }
+.hero-v { font-size:44px; font-weight:800; letter-spacing:-.02em; margin:4px 0 16px; line-height:1.05; }
+.hero-v small { font-size:16px; font-weight:600; color:#BFD6EC; }
+.hero-v.neg { color:#FFB4A8; }
+.comp-row { display:grid; grid-template-columns:72px 1fr auto; gap:10px; align-items:center; font-size:12px; margin-bottom:8px; color:#DCE9F5; }
+.comp-row b { font-size:13px; color:#fff; }
+.comp-bar { height:12px; background:rgba(255,255,255,.12); border-radius:6px; overflow:hidden; display:flex; }
+.comp-bar i { display:block; height:100%; }
+.legend { display:flex; flex-wrap:wrap; gap:6px 14px; font-size:11px; margin-top:8px; }
+.legend i { display:inline-block; width:9px; height:9px; border-radius:2px; margin-right:5px; vertical-align:-1px; }
+.hero-main .legend { color:#DCE9F5; }
+.hero-side { padding:18px 20px; display:flex; flex-direction:column; gap:12px; }
+.mini { display:grid; grid-template-columns:1fr auto; gap:0 8px; align-items:baseline; border-bottom:1px solid var(--border); padding-bottom:10px; }
+.mini span { font-size:12px; color:var(--text2); grid-column:1/-1; }
+.mini b { font-size:20px; }
+.mini em { font-size:11px; color:var(--text2); font-style:normal; }
+.dx { font-size:11px; font-weight:700; } .dx.up { color:var(--accent); } .dx.down { color:var(--danger); }
+.quick { display:flex; flex-wrap:wrap; gap:6px; margin-top:auto; }
+.kpis { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; }
+.kpi { background:var(--card); border-radius:var(--radius); box-shadow:var(--shadow); padding:14px 16px; cursor:pointer; border:1px solid transparent; }
+.kpi:hover { border-color:var(--primary-light); }
+.kpi span { display:block; font-size:12px; color:var(--text2); }
+.kpi b { display:block; font-size:20px; margin:4px 0 2px; color:var(--primary); }
+.kpi b.amt-neg { color:var(--danger); } .kpi b.amt-pos { color:var(--accent); }
+.kpi em { font-size:11px; color:var(--text2); font-style:normal; }
+.dash-grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+.dash-grid .card { margin-bottom:0; }
+.dash-grid .span2 { grid-column:1/-1; }
+.hbar { display:grid; grid-template-columns:110px 1fr auto; gap:10px; align-items:center; font-size:12px; margin-bottom:8px; }
+.hbar div { height:9px; background:var(--lighter-blue); border-radius:5px; overflow:hidden; }
+.hbar i { display:block; height:100%; background:var(--danger); border-radius:5px; }
+.hbar b { color:var(--danger); }
+.debt { display:grid; grid-template-columns:1fr auto; gap:2px 10px; margin-bottom:12px; }
+.debt b { font-size:13px; } .debt span { display:block; font-size:11px; color:var(--text2); }
+.debt .progress-bar-wrap { grid-column:1/-1; height:6px; margin-top:4px; }
+.mv > div { display:grid; grid-template-columns:44px 1fr auto; gap:10px; align-items:center; padding:7px 0; border-bottom:1px solid var(--border); font-size:13px; }
+.mv > div:last-child { border-bottom:0; }
+.mv .d { color:var(--text2); font-size:12px; }
+.mv .l small { display:block; font-size:11px; color:var(--text2); }
+/* Situation locataires */
+.sit { border:1px solid var(--border); border-left:4px solid #6F4E37; border-radius:10px; padding:12px 14px; margin-bottom:12px; }
+.sit-head { display:flex; justify-content:space-between; gap:12px; align-items:flex-start; flex-wrap:wrap; }
+.sit-head b { font-size:15px; text-transform:capitalize; } .sit-head span { display:block; font-size:12px; color:var(--text2); }
+.sit-reste { font-size:20px; font-weight:800; text-align:right; } .sit-reste small { font-size:11px; font-weight:600; }
+.sit-reste.neg { color:var(--danger); } .sit-reste.pos { color:var(--accent); }
+.strip { display:flex; flex-wrap:wrap; gap:3px; margin:10px 0 8px; }
+i.wk { display:inline-block; width:14px; height:14px; border-radius:3px; vertical-align:-2px; }
+i.wk.ok { background:var(--accent); } i.wk.part { background:var(--warn); } i.wk.no { background:#E6B0AA; outline:1px solid var(--danger); outline-offset:-1px; }
+.sit-foot { display:flex; flex-direction:column; gap:2px; font-size:11px; color:var(--text2); }
+.sit-actions { display:flex; gap:6px; margin-top:10px; flex-wrap:wrap; }
+@media (max-width:900px) { .hero { grid-template-columns:1fr; } .kpis { grid-template-columns:1fr 1fr; } .dash-grid { grid-template-columns:1fr; } }
+@media (max-width:480px) { .hero-v { font-size:34px; } .kpis { grid-template-columns:1fr; } }
 </style>
 </head>
 <body>
@@ -605,6 +662,32 @@ tbody td.r { text-align: right; font-weight: 600; }
  </div>
 </div>
 
+<!-- MODAL CONTRAT CAFE -->
+<div class="modal-overlay" id="modal-contrat">
+ <div class="modal">
+ <div class="modal-header">
+ <div class="modal-title" id="k-title">📝 Nouveau contrat de location</div>
+ <input type="hidden" id="k-id" value="">
+ <button class="modal-close" onclick="closeModal('modal-contrat')">✕</button>
+ </div>
+ <div class="form-row">
+ <div class="form-group" style="flex:2"><label>Locataire</label><input id="k-locataire" placeholder="Ex: Yassine"></div>
+ <div class="form-group"><label>Café / emplacement</label><input id="k-cafe" placeholder="Ex: Medina"></div>
+ </div>
+ <div class="form-row">
+ <div class="form-group"><label>Loyer (MAD)</label><input id="k-loyer" type="number" min="0" step="0.01" placeholder="420"></div>
+ <div class="form-group"><label>Fréquence</label><select id="k-frequence"><option>Hebdomadaire</option><option>Mensuel</option></select></div>
+ <div class="form-group"><label>1re échéance</label><input id="k-debut" type="date"></div>
+ </div>
+ <div class="form-row"><div class="form-group"><label>Note</label><input id="k-note" placeholder="Ex: compte remis à zéro après accord"></div></div>
+ <label style="display:flex;gap:8px;align-items:center;font-size:13px"><input type="checkbox" id="k-actif" checked> Contrat en cours</label>
+ <div class="modal-footer">
+ <button class="btn btn-outline" onclick="closeModal('modal-contrat')">Annuler</button>
+ <button class="btn btn-success" onclick="saveContrat()">✅ Enregistrer le contrat</button>
+ </div>
+ </div>
+</div>
+
 <!-- IMPORT FILE -->
 <input type="file" id="import-file" accept=".json" style="display:none" onchange="handleImport(event)">
 
@@ -613,7 +696,7 @@ tbody td.r { text-align: right; font-weight: 600; }
 const STORE_KEY = 'gestionpro_v1';
 let D = {
  revenus: [], depenses: [], budgets: [],
- epargnes: [], dettes: [], pod: [], cafes: [],
+ epargnes: [], dettes: [], pod: [], cafes: [], contrats: [],
  editIdx: { revenu: -1, depense: -1, epargne: -1 }
 };
 
@@ -638,9 +721,14 @@ window.__applyRemote = (remote) => {
  // on remplace le contenu de D par les données du cloud
  Object.keys(D).forEach(k => { if (!(k in clean)) delete D[k]; });
  Object.assign(D, clean);
+ ensureD();
  localStorage.setItem(STORE_KEY, JSON.stringify(D)); // met à jour le cache local SANS re-pousser au cloud
  rerender();
 };
+function ensureD() {
+ ['revenus','depenses','budgets','epargnes','dettes','pod','cafes','contrats'].forEach(k => { if (!Array.isArray(D[k])) D[k] = []; });
+ if (!D.editIdx) D.editIdx = { revenu: -1, depense: -1, epargne: -1 };
+}
 function rerender() { showPage(currentPage); }
 window.rerender = rerender;
 
@@ -700,154 +788,258 @@ function showPage(page) {
  updateTopBar();
 }
 
-// ================== DASHBOARD ==================
+// ================== DASHBOARD (v2) ==================
+function _sum(arr, f) { return arr.reduce((s, x) => s + (+f(x) || 0), 0); }
+function _ym(d) { return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`; }
+function _monthTotals(key) {
+ const rev = _sum(D.revenus.filter(r => (r.date||'').startsWith(key)), r => r.montant);
+ const caf = _sum(D.cafes.filter(c => (c.date||'').startsWith(key)), c => +c.revenu - +c.charges);
+ const pod = _sum(D.pod.filter(p => (p.periode||'').startsWith(key)), p => +p.brut * +p.taux);
+ const dep = _sum(D.depenses.filter(d => (d.date||'').startsWith(key)), d => d.montant);
+ return { rev, caf, pod, dep, entrees: rev + caf + pod, solde: rev + caf + pod - dep };
+}
+function _pctDelta(now, prev, lowerIsBetter) {
+ if (!prev) return '';
+ const p = (now - prev) / Math.abs(prev) * 100;
+ const up = p >= 0;
+ const good = lowerIsBetter ? !up : up;
+ return `<span class="dx ${good ? 'up' : 'down'}" title="par rapport au mois dernier">${up ? '▲' : '▼'} ${Math.abs(p).toFixed(0)}%</span>`;
+}
+function _esc(s) { return String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+
 function renderDashboard() {
- const totalRev = D.revenus.reduce((s, r) => s + (+r.montant), 0);
- const totalDep = D.depenses.reduce((s, d) => s + (+d.montant), 0);
- const totalEpargne = D.epargnes.reduce((s, e) => s + (+e.solde), 0);
- const totalDettes = D.dettes.filter(d => d.type === 'À payer').reduce((s, d) => s + (+d.total - +d.paye), 0);
- const totalCreances = D.dettes.filter(d => d.type === 'À recevoir').reduce((s, d) => s + (+d.total - +d.paye), 0);
- const podTotal = D.pod.reduce((s, p) => s + (+p.brut * +p.taux), 0);
- const cafeTotal = D.cafes.reduce((s, c) => s + (+c.revenu - +c.charges), 0);
- // Revenus totaux = salaires/autres + cafés (net) + POD ; Solde net = tout ça - dépenses
- const incomeTotal = totalRev + cafeTotal + podTotal;
- const solde = incomeTotal - totalDep;
+ const totalRev = _sum(D.revenus, r => r.montant);
+ const totalDep = _sum(D.depenses, d => d.montant);
+ const cafeTotal = _sum(D.cafes, c => +c.revenu - +c.charges);
+ const podTotal = _sum(D.pod, p => +p.brut * +p.taux);
+ const income = totalRev + cafeTotal + podTotal;
+ const solde = income - totalDep;
+ const totalEpargne = _sum(D.epargnes, e => e.solde);
+ const objEpargne = _sum(D.epargnes, e => e.objectif);
+ const aPayer = D.dettes.filter(d => d.type === 'À payer');
+ const aRecevoir = D.dettes.filter(d => d.type === 'À recevoir');
+ const totalDettes = _sum(aPayer, d => Math.max(0, +d.total - +d.paye));
+ const totalCreances = _sum(aRecevoir, d => Math.max(0, +d.total - +d.paye));
 
- // Monthly
- const mon = nowMonth();
- const revMois = D.revenus.filter(r => r.date && r.date.startsWith(mon)).reduce((s, r) => s + (+r.montant), 0);
- const depMois = D.depenses.filter(d => d.date && d.date.startsWith(mon)).reduce((s, d) => s + (+d.montant), 0);
- const cafeMois = D.cafes.filter(c => c.date && c.date.startsWith(mon)).reduce((s, c) => s + (+c.revenu - +c.charges), 0);
- const podMois = D.pod.filter(p => p.periode && p.periode.startsWith(mon)).reduce((s, p) => s + (+p.brut * +p.taux), 0);
- const incomeMois = revMois + cafeMois + podMois;
+ const now = new Date();
+ const mon = _ym(now), prev = _ym(new Date(now.getFullYear(), now.getMonth() - 1, 1));
+ const M = _monthTotals(mon), P = _monthTotals(prev);
+ const moisLabel = now.toLocaleString('fr-FR', { month: 'long' });
 
- // Last 6 months chart
- const chartData = getLast6Months();
+ // Composition des entrées (barre empilée)
+ const parts = [
+ { k: 'Revenus', v: totalRev, c: 'var(--accent)' },
+ { k: 'Loyers cafés', v: cafeTotal, c: '#6F4E37' },
+ { k: 'POD', v: podTotal, c: 'var(--accent2)' }
+ ].filter(p => p.v > 0);
+ const compTotal = Math.max(income, totalDep, 1);
 
- let html = `
- <div class="stats-grid">
- <div class="stat-card green">
- <div class="stat-label">Revenus Totaux </div>
- <div class="stat-val">${fmt(incomeTotal)}</div>
- <div class="stat-sub">MAD (dont cafés & POD) — Ce mois: ${fmt(incomeMois)}</div>
- </div>
- <div class="stat-card red">
- <div class="stat-label">Dépenses Totales </div>
- <div class="stat-val">${fmt(totalDep)}</div>
- <div class="stat-sub">MAD — Ce mois: ${fmt(depMois)}</div>
- </div>
- <div class="stat-card${solde >= 0 ? ' green' : ' red'}">
- <div class="stat-label">Solde Net </div>
- <div class="stat-val" style="color:${solde>=0?'var(--accent)':'var(--danger)'}">${fmt(solde)}</div>
- <div class="stat-sub">MAD — Revenus + Cafés + POD − Dépenses</div>
- </div>
- <div class="stat-card blue">
- <div class="stat-label">Épargne & Invest. </div>
- <div class="stat-val">${fmt(totalEpargne)}</div>
- <div class="stat-sub">MAD — ${D.epargnes.length} compte(s)</div>
- </div>
- <div class="stat-card orange">
- <div class="stat-label">Revenus POD </div>
- <div class="stat-val">${fmt(podTotal)}</div>
- <div class="stat-sub">MAD — ${D.pod.length} entrée(s)</div>
- </div>
- <div class="stat-card" style="border-left-color:#6F4E37">
- <div class="stat-label">Loyers Cafés Encaissés ☕</div>
- <div class="stat-val" style="color:#6F4E37">${fmt(cafeTotal)}</div>
- <div class="stat-sub">MAD net — ${D.cafes.length} encaissement(s)</div>
- </div>
- <div class="stat-card red">
- <div class="stat-label">Dettes à payer </div>
- <div class="stat-val">${fmt(totalDettes)}</div>
- <div class="stat-sub">MAD restant</div>
- </div>
- <div class="stat-card purple">
- <div class="stat-label">Créances à recevoir </div>
- <div class="stat-val">${fmt(totalCreances)}</div>
- <div class="stat-sub">MAD à encaisser</div>
- </div>
- </div>
+ // Loyers des cafés
+ const sits = (D.contrats || []).filter(c => c.actif !== false).map(situationContrat);
+ const resteCafes = _sum(sits, s => Math.max(0, s.reste));
 
- <div class="two-col">
- <div class="card">
- <div class="card-title">📈 Évolution 6 derniers mois</div>
- <div id="chart-area"></div>
- <div style="display:flex;gap:16px;margin-top:8px;font-size:11px;">
- <span style="color:var(--accent)">■ Revenus</span>
- <span style="color:var(--danger)">■ Dépenses</span>
+ // Dépenses du mois par catégorie
+ const catMois = {};
+ D.depenses.filter(d => (d.date||'').startsWith(mon)).forEach(d => { catMois[d.cat] = (catMois[d.cat] || 0) + (+d.montant); });
+ const cats = Object.entries(catMois).sort((a, b) => b[1] - a[1]);
+ const catMax = cats.length ? cats[0][1] : 1;
+
+ // Derniers mouvements (toutes sources)
+ const mv = [
+ ...D.revenus.map(r => ({ date: r.date, lib: r.desc, tag: r.cat, m: +r.montant })),
+ ...D.depenses.map(d => ({ date: d.date, lib: d.desc, tag: d.cat, m: -d.montant })),
+ ...D.cafes.map(c => ({ date: c.date, lib: `Loyer ${c.nom}${c.locataire ? ' — ' + c.locataire : ''}`, tag: 'Café', m: +c.revenu - +c.charges })),
+ ...D.pod.map(p => ({ date: (p.periode || '') + '-01', lib: `POD ${p.platform || ''}`, tag: 'POD', m: +p.brut * +p.taux }))
+ ].filter(x => x.date).sort((a, b) => b.date.localeCompare(a.date)).slice(0, 8);
+
+ const html = `
+ <div class="dash">
+ <section class="hero">
+ <div class="hero-main">
+ <div class="hero-k">Solde net au ${now.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}</div>
+ <div class="hero-v ${solde >= 0 ? 'pos' : 'neg'}">${fmt(solde)} <small>MAD</small></div>
+ <div class="comp">
+ <div class="comp-row"><span>Entrées</span><div class="comp-bar">${parts.map(p => `<i style="width:${(p.v / compTotal * 100).toFixed(1)}%;background:${p.c}" title="${p.k} : ${fmt(p.v)} MAD"></i>`).join('')}</div><b>${fmt(income)}</b></div>
+ <div class="comp-row"><span>Dépenses</span><div class="comp-bar"><i style="width:${(totalDep / compTotal * 100).toFixed(1)}%;background:var(--danger)"></i></div><b>${fmt(totalDep)}</b></div>
+ <div class="legend">${parts.map(p => `<span><i style="background:${p.c}"></i>${p.k} ${fmt(p.v)}</span>`).join('')}</div>
  </div>
  </div>
- <div class="card">
- <div class="card-title">🗓️ Ce mois </div>
- <div style="margin-bottom:10px;">
- <div style="display:flex;justify-content:space-between;margin-bottom:4px;">
- <span>Revenus</span><span class="amt-pos">${fmt(revMois)} MAD</span>
- </div>
- ${cafeMois !== 0 ? `<div style="display:flex;justify-content:space-between;margin-bottom:4px;">
- <span>Loyers cafés ☕</span><span class="amt-pos">${fmt(cafeMois)} MAD</span>
- </div>` : ''}
- ${podMois !== 0 ? `<div style="display:flex;justify-content:space-between;margin-bottom:4px;">
- <span>Revenus POD 🛍️</span><span class="amt-pos">${fmt(podMois)} MAD</span>
- </div>` : ''}
- <div style="display:flex;justify-content:space-between;margin-bottom:4px;">
- <span>Dépenses</span><span class="amt-neg">${fmt(depMois)} MAD</span>
- </div>
- <div style="display:flex;justify-content:space-between;border-top:1px solid var(--border);padding-top:8px;margin-top:8px;">
- <strong>Solde du mois</strong><strong class="${incomeMois-depMois>=0?'amt-pos':'amt-neg'}">${fmt(incomeMois-depMois)} MAD</strong>
- </div>
- ${incomeMois > 0 ? `
- <div class="progress-bar-wrap" style="margin-top:10px">
- <div class="progress-bar ${depMois/incomeMois>0.8?'progress-red':'progress-green'}" style="width:${Math.min(100,depMois/incomeMois*100).toFixed(0)}%"></div>
- </div>
- <div style="font-size:10px;color:var(--text2);margin-top:3px">Taux de dépenses: ${(depMois/incomeMois*100).toFixed(0)}%</div>
- ` : ''}
- </div>
- <div class="card-title" style="margin-top:14px;">⚡ Accès rapide </div>
- <div style="display:flex;gap:8px;flex-wrap:wrap;">
+ <div class="hero-side">
+ <div class="mini"><span>Entrées en ${moisLabel}</span><b class="amt-pos">${fmt(M.entrees)}</b>${_pctDelta(M.entrees, P.entrees)}</div>
+ <div class="mini"><span>Dépenses en ${moisLabel}</span><b class="amt-neg">${fmt(M.dep)}</b>${_pctDelta(M.dep, P.dep, true)}</div>
+ <div class="mini"><span>Solde du mois</span><b class="${M.solde >= 0 ? 'amt-pos' : 'amt-neg'}">${fmt(M.solde)}</b><em>mois dernier : ${fmt(P.solde)}</em></div>
+ <div class="quick">
  <button class="btn btn-success btn-sm" onclick="openRevenuModal()">+ Revenu</button>
  <button class="btn btn-danger btn-sm" onclick="openModal('modal-depense');document.getElementById('d-date').value=today()">+ Dépense</button>
- <button class="btn btn-sm" style="background:#6F4E37;color:#fff" onclick="openCafeModal()">+ Café ☕</button>
- <button class="btn btn-primary btn-sm" onclick="openModal('modal-pod');document.getElementById('p-periode').value=nowMonth()">+ POD 🛍️</button>
+ <button class="btn btn-sm" style="background:#6F4E37;color:#fff" onclick="openCafeModal()">+ Loyer café</button>
+ <button class="btn btn-primary btn-sm" onclick="openModal('modal-pod');document.getElementById('p-periode').value=nowMonth()">+ POD</button>
  </div>
  </div>
+ </section>
+
+ <div class="kpis">
+ <div class="kpi" onclick="showPage('cafes')"><span>Loyers cafés à encaisser</span><b class="${resteCafes > 0 ? 'amt-neg' : 'amt-pos'}">${fmt(resteCafes)}</b><em>${sits.length} contrat(s) suivi(s)</em></div>
+ <div class="kpi" onclick="showPage('epargne')"><span>Épargne</span><b>${fmt(totalEpargne)}</b><em>${objEpargne > 0 ? (totalEpargne / objEpargne * 100).toFixed(0) + '% de l\'objectif' : D.epargnes.length + ' compte(s)'}</em></div>
+ <div class="kpi" onclick="showPage('dettes')"><span>Dettes à payer</span><b class="${totalDettes > 0 ? 'amt-neg' : ''}">${fmt(totalDettes)}</b><em>${aPayer.length} dette(s)</em></div>
+ <div class="kpi" onclick="showPage('dettes')"><span>Créances à recevoir</span><b>${fmt(totalCreances)}</b><em>${aRecevoir.length} créance(s)</em></div>
  </div>
 
- <div class="two-col">
+ <div class="dash-grid">
+ <div class="card span2">
+ <div class="card-title">☕ Loyers des cafés <button class="btn btn-outline btn-sm" style="margin-left:auto" onclick="showPage('cafes')">Voir tout</button></div>
+ ${sits.length ? sits.map(s => situationCardHtml(s, true)).join('') :
+ `<div class="empty-state" style="padding:18px"><p>Ajoute le contrat de chaque locataire (café, loyer, date de début) : l'appli calcule toute seule les semaines payées et le reste à payer.</p>
+ <button class="btn btn-sm" style="background:#6F4E37;color:#fff;margin-top:10px" onclick="openContratModal()">+ Ajouter un contrat</button></div>`}
+ </div>
+
  <div class="card">
- <div class="card-title">💰 Derniers Revenus</div>
- ${D.revenus.length === 0 ? '<div class="empty-state"><div class="big">💰</div><p>Aucun revenu enregistré</p></div>' :
- `<div class="tbl-wrap"><table>
- <thead><tr><th>Date</th><th>Description</th><th>Catégorie</th><th class="r">Montant</th></tr></thead>
- <tbody>
- ${D.revenus.slice().reverse().slice(0,5).map(r => `
- <tr>
- <td>${r.date || '-'}</td>
- <td>${r.desc}</td>
- <td><span class="badge badge-green">${r.cat}</span></td>
- <td class="r amt-pos">${fmt(r.montant)} MAD</td>
- </tr>`).join('')}
- </tbody></table></div>`}
+ <div class="card-title">📈 6 derniers mois</div>
+ <div id="chart-area"></div>
  </div>
+
  <div class="card">
- <div class="card-title">💸 Dernières Dépenses</div>
- ${D.depenses.length === 0 ? '<div class="empty-state"><div class="big">💸</div><p>Aucune dépense enregistrée</p></div>' :
- `<div class="tbl-wrap"><table>
- <thead><tr><th>Date</th><th>Description</th><th>Catégorie</th><th class="r">Montant</th></tr></thead>
- <tbody>
- ${D.depenses.slice().reverse().slice(0,5).map(d => `
- <tr>
- <td>${d.date || '-'}</td>
- <td>${d.desc}</td>
- <td><span class="badge badge-red">${d.cat}</span></td>
- <td class="r amt-neg">${fmt(d.montant)} MAD</td>
- </tr>`).join('')}
- </tbody></table></div>`}
+ <div class="card-title">💸 Dépenses de ${moisLabel}</div>
+ ${cats.length ? cats.map(([c, v]) => `<div class="hbar"><span>${_esc(c)}</span><div><i style="width:${(v / catMax * 100).toFixed(0)}%"></i></div><b>${fmt(v)}</b></div>`).join('') :
+ '<div class="empty-state" style="padding:18px"><p>Aucune dépense ce mois-ci.</p></div>'}
+ </div>
+
+ <div class="card">
+ <div class="card-title">⚖️ Dettes et créances</div>
+ ${[...aPayer, ...aRecevoir].filter(d => +d.total - +d.paye > 0).slice(0, 5).map(d => {
+ const pct = d.total > 0 ? Math.min(100, d.paye / d.total * 100) : 0;
+ const pay = d.type === 'À payer';
+ return `<div class="debt"><div><b>${_esc(d.desc)}</b><span>${pay ? 'Je dois' : 'On me doit'}${d.qui ? ' · ' + _esc(d.qui) : ''}${d.echeance ? ' · échéance ' + d.echeance : ''}</span></div>
+ <strong class="${pay ? 'amt-neg' : 'amt-pos'}">${fmt(+d.total - +d.paye)}</strong>
+ <div class="progress-bar-wrap"><div class="progress-bar ${pay ? 'progress-orange' : 'progress-green'}" style="width:${pct.toFixed(0)}%"></div></div></div>`;
+ }).join('') || '<div class="empty-state" style="padding:18px"><p>Rien en cours.</p></div>'}
+ </div>
+
+ <div class="card">
+ <div class="card-title">🕑 Derniers mouvements</div>
+ ${mv.length ? `<div class="mv">${mv.map(x => `<div><span class="d">${x.date.slice(8, 10)}/${x.date.slice(5, 7)}</span><span class="l">${_esc(x.lib)}<small>${_esc(x.tag)}</small></span><b class="${x.m >= 0 ? 'amt-pos' : 'amt-neg'}">${x.m >= 0 ? '+' : '−'}${fmt(Math.abs(x.m))}</b></div>`).join('')}</div>` :
+ '<div class="empty-state" style="padding:18px"><p>Aucun mouvement enregistré.</p></div>'}
  </div>
  </div>
- `;
+ </div>`;
 
  document.getElementById('content').innerHTML = html;
- renderChart(chartData);
+ renderChart(getLast6Months());
+}
+
+function renderChart(data) {
+ const el = document.getElementById('chart-area');
+ if (!el) return;
+ const max = Math.max(...data.map(d => Math.max(d.rev, d.dep)), 1);
+ const W = 320, H = 150, pad = 18, bw = 14, step = (W - pad * 2) / data.length;
+ const y = v => H - 22 - (v / max) * (H - 40);
+ let bars = '', labels = '';
+ data.forEach((d, i) => {
+ const x = pad + i * step + step / 2;
+ bars += `<rect x="${x - bw - 1}" y="${y(d.rev)}" width="${bw}" height="${H - 22 - y(d.rev)}" rx="3" fill="var(--accent)"><title>${d.label} — entrées ${fmt(d.rev)} MAD</title></rect>`;
+ bars += `<rect x="${x + 1}" y="${y(d.dep)}" width="${bw}" height="${H - 22 - y(d.dep)}" rx="3" fill="var(--danger)" opacity=".85"><title>${d.label} — dépenses ${fmt(d.dep)} MAD</title></rect>`;
+ labels += `<text x="${x}" y="${H - 6}" text-anchor="middle" font-size="11" fill="var(--text2)">${d.label}</text>`;
+ });
+ el.innerHTML = `<svg viewBox="0 0 ${W} ${H}" width="100%" role="img" aria-label="Entrées et dépenses des 6 derniers mois">
+ <line x1="${pad}" x2="${W - pad}" y1="${H - 22}" y2="${H - 22}" stroke="var(--border)"/>${bars}${labels}</svg>
+ <div class="legend" style="margin-top:6px"><span><i style="background:var(--accent)"></i>Entrées</span><span><i style="background:var(--danger)"></i>Dépenses</span></div>`;
+}
+
+// ================== CONTRATS CAFÉS (situation automatique) ==================
+function _norm(s) { return String(s || '').trim().toLowerCase(); }
+function _addPeriod(dateStr, freq, n) {
+ const d = new Date(dateStr + 'T12:00:00');
+ if (freq === 'Mensuel') d.setMonth(d.getMonth() + n); else d.setDate(d.getDate() + 7 * n);
+ return d.toISOString().slice(0, 10);
+}
+// Calcule les échéances depuis la date de début et répartit les loyers encaissés (du plus ancien au plus récent)
+function situationContrat(k) {
+ const td = today();
+ const loyer = +k.loyer || 0;
+ const ech = [];
+ for (let i = 0; i < 520; i++) { const d = _addPeriod(k.debut, k.frequence, i); if (d > td) break; ech.push({ date: d, du: loyer, paye: 0 }); }
+ const pays = D.cafes.filter(c => _norm(c.locataire) === _norm(k.locataire) && (!k.cafe || _norm(c.nom) === _norm(k.cafe)) && (c.date || '') >= k.debut)
+ .sort((a, b) => (a.date || '').localeCompare(b.date || ''));
+ const totalPaye = _sum(pays, c => c.revenu);
+ let pot = totalPaye;
+ ech.forEach(e => { const x = Math.min(pot, e.du); e.paye = x; pot -= x; });
+ const du = ech.length * loyer;
+ const prochaine = _addPeriod(k.debut, k.frequence, ech.length);
+ const last = pays[pays.length - 1];
+ return { k, ech, du, totalPaye, reste: du - totalPaye, avance: Math.max(0, pot), prochaine, last,
+ nbImpayes: ech.filter(e => e.paye < e.du).length };
+}
+function situationCardHtml(s, compact) {
+ const k = s.k;
+ const unit = k.frequence === 'Mensuel' ? 'mois' : 'sem.';
+ const strip = s.ech.slice(compact ? -26 : 0).map(e => {
+ const st = e.paye >= e.du ? 'ok' : e.paye > 0 ? 'part' : 'no';
+ return `<i class="wk ${st}" title="${e.date} : ${fmt(e.paye)} / ${fmt(e.du)} MAD"></i>`;
+ }).join('');
+ return `<div class="sit">
+ <div class="sit-head">
+ <div><b>${_esc(k.locataire)}</b><span>☕ ${_esc(k.cafe || '—')} · ${fmt(k.loyer)} MAD / ${k.frequence === 'Mensuel' ? 'mois' : 'semaine'} · depuis le ${k.debut}</span></div>
+ <div class="sit-reste ${s.reste > 0 ? 'neg' : 'pos'}">${s.reste > 0 ? fmt(s.reste) + ' <small>MAD à payer</small>' : (s.avance > 0 ? 'Avance ' + fmt(s.avance) : 'À jour ✓')}</div>
+ </div>
+ <div class="strip">${strip || '<em>Première échéance le ' + k.debut + '</em>'}</div>
+ <div class="sit-foot">
+ <span>${s.ech.length} ${unit} échue(s) · ${fmt(s.du)} dû · ${fmt(s.totalPaye)} encaissé · ${s.nbImpayes} ${unit} non soldée(s)</span>
+ <span>Dernier paiement : ${s.last ? s.last.date + ' (' + fmt(s.last.revenu) + ')' : 'aucun'} · Prochaine échéance : ${s.prochaine}</span>
+ </div>
+ <div class="sit-actions">
+ <button class="btn btn-success btn-sm" onclick="versementContrat(${k.id})">+ Versement reçu</button>
+ ${compact ? '' : `<button class="btn btn-outline btn-sm" onclick="openContratModal(${k.id})">✏️ Modifier</button>
+ <button class="btn btn-outline btn-sm" onclick="delContrat(${k.id})">🗑️</button>`}
+ </div>
+ </div>`;
+}
+function openContratModal(id) {
+ const k = (D.contrats || []).find(x => x.id === id);
+ document.getElementById('k-id').value = k ? k.id : '';
+ document.getElementById('k-title').textContent = k ? '✏️ Modifier le contrat' : '📝 Nouveau contrat de location';
+ document.getElementById('k-locataire').value = k ? k.locataire : '';
+ document.getElementById('k-cafe').value = k ? k.cafe : '';
+ document.getElementById('k-loyer').value = k ? k.loyer : '';
+ document.getElementById('k-frequence').value = k ? k.frequence : 'Hebdomadaire';
+ document.getElementById('k-debut').value = k ? k.debut : today();
+ document.getElementById('k-note').value = k ? (k.note || '') : '';
+ document.getElementById('k-actif').checked = k ? k.actif !== false : true;
+ openModal('modal-contrat');
+}
+function saveContrat() {
+ const v = id => document.getElementById(id).value.trim();
+ const obj = { locataire: v('k-locataire'), cafe: v('k-cafe'), loyer: parseFloat(v('k-loyer')) || 0,
+ frequence: v('k-frequence'), debut: v('k-debut'), note: v('k-note'), actif: document.getElementById('k-actif').checked };
+ if (!obj.locataire) { notify('Nom du locataire requis', 'err'); return; }
+ if (obj.loyer <= 0) { notify('Loyer requis', 'err'); return; }
+ if (!obj.debut) { notify('Date de début requise', 'err'); return; }
+ D.contrats = D.contrats || [];
+ const id = +document.getElementById('k-id').value;
+ const k = D.contrats.find(x => x.id === id);
+ if (k) Object.assign(k, obj); else D.contrats.push({ id: Date.now(), ...obj });
+ save(); closeModal('modal-contrat'); notify('Contrat enregistré ✅', 'ok'); rerender();
+}
+function delContrat(id) {
+ if (!confirm('Supprimer ce contrat ? Les loyers déjà encaissés restent dans l\'historique.')) return;
+ D.contrats = (D.contrats || []).filter(x => x.id !== id); save(); rerender();
+}
+function versementContrat(id) {
+ const k = (D.contrats || []).find(x => x.id === id);
+ if (!k) return;
+ openCafeModal();
+ document.getElementById('c-nom').value = k.cafe || '';
+ document.getElementById('c-locataire').value = k.locataire;
+ document.getElementById('c-periode').value = k.frequence;
+ document.getElementById('c-loyer-convenu').value = k.loyer;
+ document.getElementById('c-revenu').value = k.loyer;
+}
+function contratsSectionHtml() {
+ const list = (D.contrats || []);
+ return `<div class="card">
+ <div class="card-title">📝 Situation par locataire <button class="btn btn-sm" style="margin-left:auto;background:#6F4E37;color:#fff" onclick="openContratModal()">+ Contrat</button></div>
+ <div style="font-size:12px;color:var(--text2);margin-bottom:12px">Chaque case = une échéance : <i class="wk ok"></i> payée · <i class="wk part"></i> en partie · <i class="wk no"></i> impayée. Pour repartir de zéro après un arrêt des comptes, modifie la date de début du contrat.</div>
+ ${list.length ? list.map(k => situationCardHtml(situationContrat(k), false)).join('') :
+ '<div class="empty-state" style="padding:18px"><p>Aucun contrat. Ajoute le contrat de chaque locataire pour suivre ce qu\'il doit.</p></div>'}
+ </div>`;
 }
 
 function getLast6Months() {
@@ -864,22 +1056,6 @@ function getLast6Months() {
  months.push({ label, rev, dep });
  }
  return months;
-}
-
-function renderChart(data) {
- const el = document.getElementById('chart-area');
- if (!el) return;
- const max = Math.max(...data.map(d => Math.max(d.rev, d.dep)), 1);
- el.innerHTML = `<div style="display:flex;gap:8px;align-items:flex-end;height:80px;">
- ${data.map(d => `
- <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:2px">
- <div style="display:flex;gap:2px;align-items:flex-end;height:60px">
- <div title="Revenus: ${fmt(d.rev)} MAD" style="width:12px;height:${Math.max(4,(d.rev/max*60)).toFixed(0)}px;background:var(--accent);border-radius:3px 3px 0 0"></div>
- <div title="Dépenses: ${fmt(d.dep)} MAD" style="width:12px;height:${Math.max(4,(d.dep/max*60)).toFixed(0)}px;background:var(--danger);border-radius:3px 3px 0 0"></div>
- </div>
- <div style="font-size:10px;color:var(--text2)">${d.label}</div>
- </div>`).join('')}
- </div>`;
 }
 
 // ================== REVENUS ==================
@@ -1517,6 +1693,7 @@ function renderCafes() {
  <div class="stat-card" style="border-left-color:#6F4E37"><div class="stat-label">Nb. Cafés</div><div class="stat-val">${Object.keys(byCafe).length}</div><div class="stat-sub">emplacements</div></div>
  </div>
 
+ ${contratsSectionHtml()}
  <div class="two-col">
  <div class="card">
  <div class="card-title">☕ Par Café / Emplacement</div>
@@ -1627,6 +1804,7 @@ function initDates() {
 }
 
 load();
+ensureD();
 initDates();
 showPage('dashboard');
 </script>
