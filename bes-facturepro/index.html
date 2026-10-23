@@ -1345,7 +1345,7 @@ function prixSortieHT(s){
 // ── Prix de référence (achats TTC, base de prix BES) ──
 // Appliqués uniquement aux articles qui n'ont encore aucun prix (PU et PMP à 0).
 // Pour ajouter des prix : compléter la liste et augmenter PRIX_REF_VERSION.
-const PRIX_REF_VERSION = 1;
+const PRIX_REF_VERSION = 2;
 const PRIX_REF_TTC = {
   'PAN-001':800,  // Mdf L31 18 mm
   'PAN-002':630,  // Mdf L31 8 mm
@@ -1359,8 +1359,29 @@ const PRIX_REF_TTC = {
   'QUI-012':23,   // Visses 4/30
   'QUI-014':32,   // Visses 4/50
   'QUI-022':80,   // Canon
-  'QUI-023':85    // Serrure
+  'QUI-023':85,   // Serrure
+  'FIN-009':330   // Colle blanche bidon 20 L (16,50 DH le litre)
 };
+// Fusion d'articles en double : la référence en double est rattachée à la référence gardée
+const FUSIONS_STOCK = [ {de:'QUI-034', vers:'QUI-018'} ]; // Visses 4/50 noir
+function fusionnerDoublonsStock(){
+  if((D._fusionV||0) >= FUSIONS_STOCK.length) return;
+  FUSIONS_STOCK.slice(D._fusionV||0).forEach(f=>{
+    const de=(D.stock||[]).find(p=>p.ref===f.de), vers=(D.stock||[]).find(p=>p.ref===f.vers);
+    if(!de || !vers) return;
+    const qD=Number(de.qty)||0, qV=Number(vers.qty)||0;
+    if((Number(de.pmp)||0)>0 && (Number(vers.pmp)||0)>0 && qD+qV>0) vers.pmp=(qV*vers.pmp+qD*de.pmp)/(qD+qV);
+    else if(!(Number(vers.pmp)>0) && Number(de.pmp)>0) vers.pmp=de.pmp;
+    if(!(Number(vers.pu)>0) && Number(de.pu)>0) vers.pu=de.pu;
+    vers.qty=qV+qD;
+    const repoint=o=>{ if(o && o.produitRef===f.de){ o.produitRef=f.vers; o.produitDes=vers.des; } if(o && o.ref===f.de) o.ref=f.vers; };
+    ['entrees','sorties'].forEach(k=>(D[k]||[]).forEach(repoint));
+    (D.commandes||[]).forEach(c=>(c.lignes||c.items||[]).forEach(repoint));
+    D.stock=D.stock.filter(p=>p!==de);
+  });
+  D._fusionV=FUSIONS_STOCK.length;
+  save();
+}
 function appliquerPrixRef(){
   if((D._prixRefV||0) >= PRIX_REF_VERSION) return;
   let n=0;
@@ -1375,7 +1396,7 @@ function appliquerPrixRef(){
   save();
   if(n && typeof notify==='function') setTimeout(()=>notify('💰 '+n+' prix de référence appliqués au stock','ok'),1200);
 }
-window.addEventListener('load',()=>setTimeout(()=>{ try{ appliquerPrixRef(); if(typeof renderStock==='function') renderStock(); }catch(e){ console.error(e); } },600));
+window.addEventListener('load',()=>setTimeout(()=>{ try{ fusionnerDoublonsStock(); appliquerPrixRef(); if(typeof renderStock==='function') renderStock(); }catch(e){ console.error(e); } },600));
 // Calcule HT + TTC d'un produit (qty × pu_ht)
 function valeurProduit(prod){
   const qty = prod.qty || 0;
