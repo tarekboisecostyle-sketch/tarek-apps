@@ -504,7 +504,7 @@ tr:last-child td{border-bottom:none;} tbody tr:hover td{background:#f8faff;}
               <button class="btn btn-sm" id="fi-mode-c" onclick="setFicheMode('chantier')">🏗️ Tous les chantiers</button>
               <input class="search-inp" id="fi-q" placeholder="🔍 Chef, chantier, ouvrier" oninput="renderFiches()" style="width:190px;">
               <div class="mois-filter"><select id="fi-mois" onchange="renderFiches()"><option value="">Tous mois</option></select></div>
-              <label style="font-size:11px;display:flex;gap:4px;align-items:center;cursor:pointer;"><input type="checkbox" id="fi-val" onchange="renderFiches()"> Valeurs (PMP)</label>
+              <label style="font-size:11px;display:flex;gap:4px;align-items:center;cursor:pointer;"><input type="checkbox" id="fi-val"> Prix sur la fiche imprimée</label>
             </div>
           </div>
           <div id="fi-body" style="padding:14px;"></div>
@@ -1335,6 +1335,47 @@ function tauxTvaProduit(prod){
 function ht2ttc(ht, taux){
   return Number(ht||0) * (1 + Number(taux||0)/100);
 }
+// Prix HT d'une sortie : PMP figé s'il est connu (>0), sinon PMP / PU actuel du produit
+// (les anciennes sorties ont été figées à 0 car le stock n'avait pas encore de prix)
+function prixSortieHT(s){
+  if(Number(s&&s.pmpSortie)>0) return Number(s.pmpSortie);
+  const p=(D.stock||[]).find(x=>x.ref===(s&&s.produitRef))||{};
+  return Number(p.pmp)||Number(p.pu)||0;
+}
+// ── Prix de référence (achats TTC, base de prix BES) ──
+// Appliqués uniquement aux articles qui n'ont encore aucun prix (PU et PMP à 0).
+// Pour ajouter des prix : compléter la liste et augmenter PRIX_REF_VERSION.
+const PRIX_REF_VERSION = 1;
+const PRIX_REF_TTC = {
+  'PAN-001':800,  // Mdf L31 18 mm
+  'PAN-002':630,  // Mdf L31 8 mm
+  'PAN-005':700,  // Mdf blanc 18 mm
+  'PAN-006':580,  // Mdf blanc 8 mm
+  'PAN-010':1400, // Mdf chêne rouge 18 mm
+  'PAN-011':900,  // Mdf chêne rouge 8 mm
+  'FIN-003':450,  // Bande de chant blanc 2 cm (rouleau 150 m × 3 DH)
+  'FIN-004':525,  // Bande de chant L31 2 cm (rouleau 150 m × 3,50 DH)
+  'FIN-012':50,   // Montage fix
+  'QUI-012':23,   // Visses 4/30
+  'QUI-014':32,   // Visses 4/50
+  'QUI-022':80,   // Canon
+  'QUI-023':85    // Serrure
+};
+function appliquerPrixRef(){
+  if((D._prixRefV||0) >= PRIX_REF_VERSION) return;
+  let n=0;
+  (D.stock||[]).forEach(p=>{
+    const ttc=PRIX_REF_TTC[p.ref];
+    if(!ttc || Number(p.pu)>0 || Number(p.pmp)>0) return;
+    p.pu = Math.round(ttc/(1+tauxTvaProduit(p)/100)*10000)/10000;
+    p.prixRefTTC = ttc;
+    n++;
+  });
+  D._prixRefV = PRIX_REF_VERSION;
+  save();
+  if(n && typeof notify==='function') setTimeout(()=>notify('💰 '+n+' prix de référence appliqués au stock','ok'),1200);
+}
+window.addEventListener('load',()=>setTimeout(()=>{ try{ appliquerPrixRef(); if(typeof renderStock==='function') renderStock(); }catch(e){ console.error(e); } },600));
 // Calcule HT + TTC d'un produit (qty × pu_ht)
 function valeurProduit(prod){
   const qty = prod.qty || 0;
@@ -1466,7 +1507,7 @@ function renderDashboard() {
   // Sorties : valorisées au PMP figé (ou actuel), HT puis TTC
   const valSor = (D.sorties||[]).filter(s=>(s.date||'').startsWith(moisCourant)).reduce((acc,s)=>{
     const prod = D.stock.find(p=>p.ref===s.produitRef);
-    const pmp  = s.pmpSortie!=null ? s.pmpSortie : (prod ? (prod.pmp||prod.pu||0) : 0);
+    const pmp  = prixSortieHT(s);
     const ht   = (s.qty||0)*pmp;
     const taux = prod ? tauxTvaProduit(prod) : tauxG;
     acc.ht  += ht;
@@ -4210,7 +4251,7 @@ function renderSorties(){
   tb.innerHTML=list.map(s=>{
     const ri=D.sorties.indexOf(s);
     const prod=D.stock.find(p=>p.ref===s.produitRef);
-    const pmp=s.pmpSortie!=null?s.pmpSortie:(prod?(prod.pmp||prod.pu||0):0);
+    const pmp=prixSortieHT(s);
     const taux=prod?tauxTvaProduit(prod):tauxTvaGlobal();
     const valHT=(s.qty||0)*pmp;
     const valTTC=ht2ttc(valHT,taux);
@@ -4341,9 +4382,7 @@ function renderRecapSorties(list,mo,fD){
   }
   // Helpers : PMP figé/actuel et taux TVA du produit
   const pmpDe=(s)=>{
-    if(s.pmpSortie!=null) return s.pmpSortie;
-    const p=D.stock.find(x=>x.ref===s.produitRef);
-    return p?(p.pmp||p.pu||0):0;
+    return prixSortieHT(s);
   };
   const tauxDe=(s)=>{
     const p=D.stock.find(x=>x.ref===s.produitRef);
@@ -4463,7 +4502,7 @@ function sorCatDe(s){
   return FICHE_CATS.some(x=>x.k===c)?c:'_';
 }
 function sorProd(s){ return D.stock.find(x=>x.ref===s.produitRef)||{}; }
-function sorPmp(s){ if(s.pmpSortie!=null) return s.pmpSortie; const p=sorProd(s); return p.pmp||p.pu||0; }
+function sorPmp(s){ return prixSortieHT(s); }
 
 function chefDe(s){ return sorNormNom(s.chef||''); }
 const SANS_CHEF='(SANS CHEF D\'ÉQUIPE)', SANS_CH='(CHANTIER NON PRÉCISÉ)';
@@ -4474,8 +4513,9 @@ function grouperPar(list,keyFn){
   const g={};
   list.forEach(s=>{
     const k=keyFn(s);
-    if(!g[k]) g[k]={nom:k,lignes:[],refs:new Set(),chantiers:new Set(),ouvriers:new Set(),chefs:new Set(),last:''};
+    if(!g[k]) g[k]={nom:k,lignes:[],refs:new Set(),chantiers:new Set(),ouvriers:new Set(),chefs:new Set(),last:'',val:0};
     const x=g[k]; x.lignes.push(s); x.refs.add(s.produitRef);
+    const pr=sorProd(s); x.val+=ht2ttc((Number(s.qty)||0)*prixSortieHT(s), tauxTvaProduit(pr.ref?pr:null));
     x.chantiers.add(chOf(s)); x.chefs.add(chefOf(s));
     const p=sorNormNom(personneDe(s)); if(p) x.ouvriers.add(p);
     if((s.date||'')>x.last) x.last=s.date||'';
@@ -4494,7 +4534,7 @@ function carteHTML(g,onclick,ico,sous){
       '<span style="background:#e8f0fc;color:#1F497D;padding:2px 8px;border-radius:8px;font-weight:700;">'+g.refs.size+' article(s)</span>'+
       '<span style="background:#f1f5f9;padding:2px 8px;border-radius:8px;">'+g.lignes.length+' sortie(s)</span>'+
       '<span style="color:var(--muted);margin-left:auto;">'+dFrS(g.last)+'</span>'+
-    '</div></div>';
+    '</div><div style="margin-top:8px;font-size:13px;font-weight:800;color:#1F497D;">💰 '+fmt(g.val)+' MAD TTC</div></div>';
 }
 function liste3(arr,n){ arr=[...arr].filter(x=>!x.startsWith('(')); return escSor(arr.slice(0,n).join(', '))+(arr.length>n?'…':''); }
 function grilleHTML(cards){ return '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px;">'+cards.join('')+'</div>'; }
@@ -4566,9 +4606,11 @@ function ficheData(){
     const key=s.produitRef+'|'+autreDe(s);
     cats[c]=cats[c]||{};
     const p=sorProd(s);
-    if(!cats[c][key]) cats[c][key]={des:s.produitDes||p.des||'',ref:s.produitRef||'',unit:p.unit||'',qty:0,val:0,dates:[],autre:autreDe(s)};
+    if(!cats[c][key]) cats[c][key]={des:s.produitDes||p.des||'',ref:s.produitRef||'',unit:p.unit||'',qty:0,val:0,manque:false,dates:[],autre:autreDe(s)};
     const a=cats[c][key];
-    a.qty+=Number(s.qty)||0; a.val+=(Number(s.qty)||0)*sorPmp(s);
+    const pu=sorPmp(s);
+    a.qty+=Number(s.qty)||0; a.val+=ht2ttc((Number(s.qty)||0)*pu, tauxTvaProduit(p.ref?p:null));
+    if(!(pu>0)) a.manque=true;
     if(s.date&&!a.dates.includes(s.date)) a.dates.push(s.date);
   });
   const g=grouperPar(lignes,()=>'x')[0];
@@ -4583,8 +4625,8 @@ function dCourt(d){ const p=String(d).split('-'); return p.length===3?p[2]+'/'+p
 function renderFicheDetail(box){
   const fd=ficheData();
   if(!fd){ fiCh=null; renderFiches(); return; }
-  const showVal=(document.getElementById('fi-val')||{}).checked;
   const autreLbl=fd.global?'Chantier':'Pris par';
+  const puTxt=x=>x.manque?'<span style="color:#b91c1c;font-weight:700;" title="Prix manquant dans le stock">⚠️ prix ?</span>':fmt(x.qty?x.val/x.qty:0);
   let html=filArianeHTML()+'<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:12px;padding:10px 12px;background:#f1f6fc;border-radius:8px;">'+
     '<button class="btn btn-sm" onclick="fiNav(fiChef,null)">← Retour</button>'+
     '<div><div style="font-size:16px;font-weight:800;color:#1F497D;">'+(fd.global?'📋 Fiche globale':'🏗️ '+escSor(fd.chantier))+'</div>'+
@@ -4596,12 +4638,15 @@ function renderFicheDetail(box){
     const items=Object.values(fd.cats[c.k]||{});
     if(!items.length) return;
     const st=items.reduce((a,x)=>a+x.val,0); tot+=st;
-    html+='<div class="card" style="margin-bottom:12px;"><div class="card-hdr" style="background:#2E5A8E;"><div class="card-title" style="color:#fff;">'+c.fr+' <span style="font-weight:400;opacity:.85;">— '+c.ar+'</span></div><span style="color:#cfe2f3;font-size:11px;">'+items.length+' article(s)'+(showVal?' • '+fmt(st)+' MAD HT':'')+'</span></div>'+
-      '<table><thead><tr><th style="width:30px;">N°</th><th>Désignation</th><th>Unité</th><th style="text-align:center;">Qté totale</th><th>Dates</th><th>'+autreLbl+'</th>'+(showVal?'<th style="text-align:right;">Valeur HT</th>':'')+'</tr></thead><tbody>'+
-      items.map((x,i)=>'<tr><td style="text-align:center;">'+(i+1)+'</td><td><strong>'+escSor(x.des)+'</strong><br><span style="font-size:10px;color:var(--muted);">'+escSor(x.ref)+'</span></td><td>'+escSor(x.unit||'-')+'</td><td style="text-align:center;font-weight:800;font-size:14px;color:#1F497D;background:#CFE2F3;">'+x.qty+'</td><td style="font-size:11px;">'+x.dates.map(dCourt).join(', ')+'</td><td style="font-size:11px;">'+escSor(x.autre||'-')+'</td>'+(showVal?'<td style="text-align:right;font-family:var(--mono);">'+fmt(x.val)+'</td>':'')+'</tr>').join('')+
+    html+='<div class="card" style="margin-bottom:12px;"><div class="card-hdr" style="background:#2E5A8E;"><div class="card-title" style="color:#fff;">'+c.fr+' <span style="font-weight:400;opacity:.85;">— '+c.ar+'</span></div><span style="color:#fff;font-size:12px;font-weight:700;">'+items.length+' article(s) • '+fmt(st)+' MAD TTC</span></div>'+
+      '<table><thead><tr><th style="width:30px;">N°</th><th>Désignation</th><th>Unité</th><th style="text-align:center;">Qté totale</th><th>Dates</th><th>'+autreLbl+'</th><th style="text-align:right;">P.U TTC</th><th style="text-align:right;">Valeur TTC</th></tr></thead><tbody>'+
+      items.map((x,i)=>'<tr><td style="text-align:center;">'+(i+1)+'</td><td><strong>'+escSor(x.des)+'</strong><br><span style="font-size:10px;color:var(--muted);">'+escSor(x.ref)+'</span></td><td>'+escSor(x.unit||'-')+'</td><td style="text-align:center;font-weight:800;font-size:14px;color:#1F497D;background:#CFE2F3;">'+x.qty+'</td><td style="font-size:11px;">'+x.dates.map(dCourt).join(', ')+'</td><td style="font-size:11px;">'+escSor(x.autre||'-')+'</td><td style="text-align:right;font-family:var(--mono);">'+puTxt(x)+'</td><td style="text-align:right;font-family:var(--mono);font-weight:700;background:#D6EAF8;">'+fmt(x.val)+'</td></tr>').join('')+
       '</tbody></table></div>';
   });
-  if(showVal) html+='<div style="text-align:right;font-weight:800;font-size:14px;color:#1F497D;padding:6px 4px;">Total (au PMP) : '+fmt(tot)+' MAD HT</div>';
+  const nbManque=Object.values(fd.cats).reduce((a,c)=>a+Object.values(c).filter(x=>x.manque).length,0);
+  html+='<div style="display:flex;justify-content:flex-end;align-items:center;gap:14px;padding:10px 12px;background:#1F497D;color:#fff;border-radius:8px;font-weight:800;font-size:15px;">'+
+    (nbManque?'<span style="font-size:11px;font-weight:600;color:#fde68a;">⚠️ '+nbManque+' article(s) sans prix — total incomplet</span>':'')+
+    '<span>💰 Valeur des sorties : '+fmt(tot)+' MAD TTC</span></div>';
   box.innerHTML=html;
 }
 
@@ -4610,14 +4655,15 @@ function imprimerFiche(){
   const showVal=(document.getElementById('fi-val')||{}).checked;
   const autreLbl=fd.global?'Chantier / الورش':'Pris par / المستلم';
   const e=escSor;
-  let sections='';
+  let sections='', totP=0;
   FICHE_CATS.forEach((c,ci)=>{
     const items=Object.values(fd.cats[c.k]||{});
     if(!items.length) return;
-    sections+='<div class="sec"><div class="bar"><span>'+c.fr+'</span><span dir="rtl">'+c.ar+'</span></div>'+
+    const st=items.reduce((a,x)=>a+x.val,0); totP+=st;
+    sections+='<div class="sec"><div class="bar"><span>'+c.fr+(showVal?' — '+fmt(st)+' MAD TTC':'')+'</span><span dir="rtl">'+c.ar+'</span></div>'+
       '<table><thead><tr><th style="width:24px">N°</th><th class="l">Désignation<br><small>البيان</small></th><th style="width:48px">Unité<br><small>الوحدة</small></th><th style="width:52px">Qté<br><small>الكمية</small></th><th style="width:96px">Dates<br><small>التواريخ</small></th><th style="width:105px">'+autreLbl.replace(' / ','<br><small>')+'</small></th>'+
-      (showVal?'<th style="width:70px">Valeur HT</th>':'')+'<th style="width:40px">Reçu<br><small>مسلم</small></th><th style="width:110px">Reste / Remarques<br><small>ملاحظات</small></th></tr></thead><tbody>'+
-      items.map((x,i)=>'<tr><td>'+(i+1)+'</td><td class="l"><b>'+e(x.des)+'</b></td><td>'+e(x.unit||'')+'</td><td class="q">'+x.qty+'</td><td class="sm">'+x.dates.map(dCourt).join(', ')+'</td><td class="sm">'+e(x.autre||'')+'</td>'+(showVal?'<td class="r">'+fmt(x.val)+'</td>':'')+'<td><span class="ck"></span></td><td></td></tr>').join('')+
+      (showVal?'<th style="width:62px">P.U TTC</th><th style="width:72px">Valeur TTC</th>':'')+'<th style="width:40px">Reçu<br><small>مسلم</small></th><th style="width:110px">Reste / Remarques<br><small>ملاحظات</small></th></tr></thead><tbody>'+
+      items.map((x,i)=>'<tr><td>'+(i+1)+'</td><td class="l"><b>'+e(x.des)+'</b></td><td>'+e(x.unit||'')+'</td><td class="q">'+x.qty+'</td><td class="sm">'+x.dates.map(dCourt).join(', ')+'</td><td class="sm">'+e(x.autre||'')+'</td>'+(showVal?'<td class="r">'+(x.manque?'?':fmt(x.qty?x.val/x.qty:0))+'</td><td class="r"><b>'+fmt(x.val)+'</b></td>':'')+'<td><span class="ck"></span></td><td></td></tr>').join('')+
       '</tbody></table></div>';
   });
   const reste='<div class="sec"><div class="bar alt"><span>Reste à fournir / besoins restants</span><span dir="rtl">الباقي المطلوب</span></div><table><thead><tr><th style="width:24px">N°</th><th class="l">Désignation<br><small>البيان</small></th><th style="width:90px">Dimensions<br><small>الأبعاد</small></th><th style="width:52px">Qté<br><small>الكمية</small></th><th style="width:150px">Remarques<br><small>ملاحظات</small></th></tr></thead><tbody>'+
@@ -4641,7 +4687,7 @@ function imprimerFiche(){
     '<div><span><small>'+(fd.global?'Chantiers':'Chantier')+'</small> <b>'+e(fd.chantier)+'</b></span><span dir="rtl"><small>الورش</small></span></div>'+
     '<div><span><small>Ouvriers</small> <b>'+e([...fd.g.ouvriers].join(', ')||'—')+'</b></span><span dir="rtl"><small>العمال</small></span></div>'+
     '<div><span><small>Période</small> <b>'+dFrS(fd.du)+(fd.au&&fd.au!==fd.du?' → '+dFrS(fd.au):'')+' — '+fd.g.lignes.length+' sortie(s)</b></span><span dir="rtl"><small>الفترة</small></span></div>'+
-  '</div>'+sections+reste+
+  '</div>'+sections+(showVal?'<div style="text-align:right;background:#1F497D;color:#fff;font-weight:800;font-size:13px;padding:7px 10px;border-radius:4px;margin-bottom:12px;">Valeur totale des sorties : '+fmt(totP)+' MAD TTC</div>':'')+reste+
   '<div class="sig"><div><span>Signature du chef d\'équipe</span><span dir="rtl">توقيع رئيس الفريق</span></div><div><span>Responsable administratif</span><span dir="rtl">المسؤول</span></div></div>'+
   '<div class="ft">BOIS ECO-STYLE SARL.AU — Sidi Abdellah Ghiate, El Haouz, Marrakech · ICE 003485652000094 · RC Marrakech 149.327</div>'+
   '</body></html>';
@@ -6407,7 +6453,7 @@ window.renderMarge = function(){
     const ca = D.encaissements.filter(e=>(e.date||'').startsWith(m)).reduce((s,e)=>s+(e.montant||0),0);
     const charges = D.decaissements.filter(e=>(e.date||'').startsWith(m)).reduce((s,e)=>s+(e.montant||0),0);
     const coutSorties = (D.sorties||[]).filter(s=>(s.date||'').startsWith(m)).reduce((s,so)=>{
-      const pmp = so.pmpSortie!=null ? so.pmpSortie : 0;
+      const pmp = prixSortieHT(so);
       return s+(so.qty||0)*pmp;
     },0);
     const marge = ca - charges - coutSorties;
@@ -8073,7 +8119,7 @@ function sortiesOf(ch){
 }
 function htmlDocs(ch){
   const sorties = sortiesOf(ch);
-  const valS = sorties.reduce((a, s) => a + (Number(s.qty)||0)*(Number(s.pmpSortie)||0), 0);
+  const valS = sorties.reduce((a, s) => a + (Number(s.qty)||0)*prixSortieHT(s), 0);
   const devis = ch.devis.map(l => docById(l.docId)).filter(Boolean);
   const facs = allFactures(ch);
   const docRow = (d, extra) => { const i = D.docs.indexOf(d); return `<tr><td><span class="bes-badge" style="${d.type==='FACTURE'?'background:#7c3aed;':''}">${d.type}</span></td><td class="ch-num"><strong>${esc(d.num)}</strong></td><td>${dFr(d.date)}</td><td class="ch-num">${fmt(d.ht)}</td><td class="ch-num">${fmt(d.ttc)}</td><td style="font-size:11px;">${extra||''}</td><td style="white-space:nowrap;"><button class="btn-ghost" onclick="openDocModal(${i})">✏️</button> <button class="btn-ghost" style="color:#C0392B;" onclick="exportPDF(${i})">PDF</button></td></tr>`; };
@@ -8089,7 +8135,7 @@ function htmlDocs(ch){
   <div class="card">
     <div class="card-hdr"><div class="card-title">Sorties de stock vers ce chantier (${sorties.length})</div><span style="font-size:11px;color:var(--muted);">Valeur (PMP) : <b class="ch-num" style="color:var(--txt);">${fmt(valS)} MAD HT</b></span></div>
     ${sorties.length?`<table><thead><tr><th>Date</th><th>N° BS</th><th>Produit</th><th>Qté</th><th>Valeur PMP</th><th>Détail saisi</th></tr></thead><tbody>
-      ${sorties.map(s => `<tr><td>${dFr(s.date)}</td><td class="ch-num">${esc(s.bs||'-')}</td><td>${esc(s.produitDes||s.produitRef||'')}</td><td>${s.qty}</td><td class="ch-num">${fmt((Number(s.qty)||0)*(Number(s.pmpSortie)||0))}</td><td style="font-size:11px;">${esc(s.detail||'')}</td></tr>`).join('')}
+      ${sorties.map(s => `<tr><td>${dFr(s.date)}</td><td class="ch-num">${esc(s.bs||'-')}</td><td>${esc(s.produitDes||s.produitRef||'')}</td><td>${s.qty}</td><td class="ch-num">${fmt((Number(s.qty)||0)*prixSortieHT(s))}</td><td style="font-size:11px;">${esc(s.detail||'')}</td></tr>`).join('')}
     </tbody></table>`:`<div class="ch-empty">Aucune sortie de stock trouvée.<br><span style="font-size:11px;">Les sorties sont reconnues quand le champ « Nom du chantier » de la sortie contient le nom du chantier (« ${esc(ch.nom)} ») ou le nom du client.</span></div>`}
   </div>`;
 }
@@ -8101,7 +8147,7 @@ const COUT_CATS = ['Marchandise','Quincaillerie','Main-d\'œuvre','Sous-traitanc
 function pmpTTC(x){
   const prod = (D.stock||[]).find(p => p.ref && p.ref === x.produitRef);
   const t = typeof tauxTvaProduit === 'function' ? tauxTvaProduit(prod) : 20;
-  return (Number(x.pmpSortie)||0) * (1 + t/100);
+  return prixSortieHT(x) * (1 + t/100);
 }
 const sortieTTC = x => (Number(x.qty)||0) * pmpTTC(x);
 function coutsOf(ch){
