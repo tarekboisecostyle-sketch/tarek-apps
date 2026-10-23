@@ -8988,7 +8988,7 @@ function squelette(){
   ['ds-nb-fac','ds-nb-dev','ds-att','ds-al'].forEach(id=>{ const c=(document.getElementById(id)||{}).closest&&document.getElementById(id).closest('.stat-card'); if(c) c.style.display='none'; });
   const caEl=document.getElementById('ds-ca'), caCard=caEl&&caEl.closest('.stat-card');
   if(caCard){
-    const grid=caCard.parentElement; grid.style.gridTemplateColumns='repeat(4,1fr)';
+    const grid=caCard.parentElement; grid.style.gridTemplateColumns='repeat(3,1fr)';
     caCard.querySelector('.stat-label').textContent='Total encaissements';
     caCard.style.cursor='pointer'; caCard.onclick=()=>go('tresorerie');
     const mk=(id,label,cls,bcls)=>{ const d=document.createElement('div'); d.className='stat-card '+cls; d.style.cursor='pointer'; d.onclick=()=>go('tresorerie');
@@ -8998,8 +8998,14 @@ function squelette(){
   }
   // On ne garde que les chiffres (finances + stock) : documents, revenus, alertes, commandes → retirés
   Array.from(old.children).forEach(el=>{ if(el.tagName!=='SUMMARY' && !el.classList.contains('stats-grid')) el.style.display='none'; });
+  old.querySelectorAll('.card').forEach(c=>{ if(/Revenus|Commandes en cours|Derniers documents|Alertes stock/i.test((c.querySelector('.card-title')||{}).textContent||'')) c.style.display='none'; });
   const cmdEl=document.getElementById('ds-cmd'), cmdCard=cmdEl&&cmdEl.closest('.stat-card');
-  if(cmdCard){ cmdCard.style.cursor='pointer'; cmdCard.title='Voir les commandes'; cmdCard.onclick=()=>go('commandes'); }
+  if(cmdCard){
+    cmdCard.style.cursor='pointer'; cmdCard.title='Voir les commandes'; cmdCard.onclick=()=>go('commandes');
+    // Commandes ouvertes → avec les valeurs de stock (ligne 2 : 4 cases)
+    const vs=document.getElementById('ds-val-stock-ht'), row2=vs&&vs.closest('.stats-grid');
+    if(row2){ row2.appendChild(cmdCard); row2.style.gridTemplateColumns='repeat(4,1fr)'; }
+  }
 }
 function finances(){
   const sum=a=>(a||[]).reduce((t,e)=>t+(Number(e.montant)||0),0);
