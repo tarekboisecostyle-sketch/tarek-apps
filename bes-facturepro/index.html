@@ -1005,8 +1005,8 @@ tr:last-child td{border-bottom:none;} tbody tr:hover td{background:#f8faff;}
     </div>
     <div class="fg" id="so-chef-wrap">
       <label>👷 Chef d'équipe (maâlem)</label>
-      <input id="so-chef" placeholder="Ex: Abdelkrim Marrakchi" list="chef-datalist">
-      <datalist id="chef-datalist"></datalist>
+      <div style="display:flex;gap:6px;"><select id="so-chef" style="flex:1;"><option value="">— Aucun —</option></select>
+      <button type="button" class="btn btn-sm" title="Gérer la liste des chefs d'équipe" onclick="ouvrirGestionChefs()">⚙️</button></div>
     </div>
     <div class="fg" id="so-pers-wrap">
       <label>Pris par (ouvrier)</label>
@@ -4019,7 +4019,7 @@ function openSortieModal(){
   document.getElementById('so-date').value=today();
   document.getElementById('so-dest').value='Chantier';
   document.getElementById('so-detail').value='';
-  document.getElementById('so-chef').value='';
+  remplirSelectChefs('');
   document.getElementById('so-pers').value='';
   populatePersDatalist();
   document.getElementById('so-note').value='';
@@ -4043,7 +4043,7 @@ function openSortieEditModal(idx){
   document.getElementById('so-date').value=s.date||today();
   document.getElementById('so-dest').value=s.destination||'Chantier';
   document.getElementById('so-detail').value=chantierDe(s);
-  document.getElementById('so-chef').value=s.chef||'';
+  remplirSelectChefs(s.chef||'');
   document.getElementById('so-pers').value=personneDe(s);
   populatePersDatalist();
   document.getElementById('so-note').value=s.note||'';
@@ -4069,7 +4069,7 @@ function dupliquerSortie(idx){
   document.getElementById('so-date').value=today();
   document.getElementById('so-dest').value=s.destination||'Chantier';
   document.getElementById('so-detail').value=chantierDe(s);
-  document.getElementById('so-chef').value=s.chef||'';
+  remplirSelectChefs(s.chef||'');
   document.getElementById('so-pers').value=personneDe(s);
   populatePersDatalist();
   document.getElementById('so-note').value=s.note||'';
@@ -4582,9 +4582,14 @@ function renderFiches(){
   const match=g=>!q||(g.nom+' '+[...g.chantiers,...g.ouvriers,...g.chefs].join(' ')).toLowerCase().includes(q);
   let html=filArianeHTML();
   if(ficheMode==='chef' && fiChef==null){
-    const list=grouperPar(sorActives(),chefOf).filter(match);
-    html+= list.length ? grilleHTML(list.map(g=>carteHTML(g,'fiOpenChef(\''+encodeURIComponent(g.nom)+'\')','👷',
-      '🏗️ '+g.chantiers.size+' chantier(s)'+(g.ouvriers.size?' • 👥 '+liste3(g.ouvriers,3):'')))) : '<div style="text-align:center;padding:30px;color:var(--muted);">Aucune sortie trouvée</div>';
+    const list=grouperPar(sorActives(),chefOf);
+    chefsListe().forEach(n=>{ const k=sorNormNom(n); if(!list.some(g=>g.nom===k)) list.push({nom:k,lignes:[],refs:new Set(),chantiers:new Set(),ouvriers:new Set(),chefs:new Set([k]),last:'',val:0}); });
+    const sansChef=list.filter(g=>g.nom===SANS_CHEF);
+    const autres=list.filter(g=>g.nom!==SANS_CHEF).sort((a,b)=>(b.lignes.length>0)-(a.lignes.length>0)||b.last.localeCompare(a.last)||a.nom.localeCompare(b.nom));
+    const listF=autres.concat(sansChef).filter(match);
+    html='<div style="display:flex;justify-content:space-between;align-items:center;">'+html+'<button class="btn btn-sm" style="margin-bottom:12px;" onclick="ouvrirGestionChefs()">⚙️ Gérer les chefs ('+chefsListe().length+')</button></div>';
+    html+= listF.length ? grilleHTML(listF.map(g=>carteHTML(g,'fiOpenChef(\''+encodeURIComponent(g.nom)+'\')','👷',
+      g.lignes.length?'🏗️ '+g.chantiers.size+' chantier(s)'+(g.ouvriers.size?' • 👥 '+liste3(g.ouvriers,3):''):'Aucune sortie pour l\'instant'))) : '<div style="text-align:center;padding:30px;color:var(--muted);">Aucun chef trouvé</div>';
   } else {
     const base=sorActives().filter(s=>fiChef==null||chefOf(s)===fiChef);
     const list=grouperPar(base,chOf).filter(match);
@@ -4605,7 +4610,7 @@ function setFicheMode(m){ ficheMode=m; fiChef=null; fiCh=null; renderFiches(); }
 function attribuerChefFiche(){
   const lignes=ficheLignes(); if(!lignes.length) return;
   const actuel=fiChef&&fiChef!==SANS_CHEF?fiChef:'';
-  const nom=prompt('Chef d\'équipe pour ces '+lignes.length+' sortie(s) :',actuel);
+  const nom=prompt('Chef d\'équipe pour ces '+lignes.length+' sortie(s) :\n('+chefsListe().join(', ')+')',actuel);
   if(nom==null) return;
   const n=nom.trim();
   lignes.forEach(s=>{ if(n) s.chef=n; else delete s.chef; });
@@ -4717,21 +4722,81 @@ function imprimerFiche(){
   w.document.open(); w.document.write(html); w.document.close();
 }
 
+// ── Liste des chefs d'équipe (modifiable : ajouter / renommer / supprimer) ──
+const CHEFS_DEFAUT=['Abdelkrim Marrakchi','Abdelkrim Chamali','Younes','Abdellatif','Tarek Hanafi','Hicham','Said','Zouhair','Abdelouafi','Abderrazak'];
+function chefsListe(){
+  if(!Array.isArray(D.chefs)){ D.chefs=CHEFS_DEFAUT.slice(); save(); }
+  return D.chefs;
+}
+function remplirSelectChefs(val){
+  const sel=document.getElementById('so-chef'); if(!sel) return;
+  const noms=chefsListe().slice();
+  if(val && !noms.some(n=>sorNormNom(n)===sorNormNom(val))) noms.push(val);
+  sel.innerHTML='<option value="">— Aucun —</option>'+noms.map(n=>'<option value="'+escSor(n)+'">'+escSor(n)+'</option>').join('');
+  const m=noms.find(n=>sorNormNom(n)===sorNormNom(val));
+  sel.value=m||'';
+}
+function ouvrirGestionChefs(){
+  let ov=document.getElementById('modal-chefs'); if(ov) ov.remove();
+  ov=document.createElement('div'); ov.className='modal-overlay open'; ov.id='modal-chefs'; ov.style.display='flex'; ov.style.zIndex='3000';
+  ov.innerHTML='<div class="modal modal-sm"><div class="modal-hdr"><div class="modal-title">👷 Chefs d\'équipe</div><button class="modal-close" onclick="fermerGestionChefs()">&times;</button></div>'+
+    '<div class="modal-body" style="padding:16px;"><div style="display:flex;gap:6px;margin-bottom:12px;"><input id="chef-new" class="search-inp" style="flex:1;" placeholder="Nom du nouveau chef" onkeydown="if(event.key===\'Enter\')ajouterChef()"><button class="btn btn-primary btn-sm" onclick="ajouterChef()">+ Ajouter</button></div>'+
+    '<div id="chefs-list" style="border:1px solid var(--border,#ddd);border-radius:8px;max-height:360px;overflow:auto;"></div>'+
+    '<div style="font-size:11px;color:var(--muted);margin-top:8px;">Supprimer un chef le retire de la liste ; ses anciennes sorties gardent son nom.</div></div>'+
+    '<div class="modal-foot"><button class="btn btn-sm" onclick="fermerGestionChefs()">Fermer</button></div></div>';
+  document.body.appendChild(ov);
+  renderListeChefs();
+}
+function fermerGestionChefs(){
+  const ov=document.getElementById('modal-chefs'); if(ov) ov.remove();
+  const sel=document.getElementById('so-chef'); if(sel) remplirSelectChefs(sel.value);
+  if(typeof renderFiches==='function') renderFiches();
+}
+function renderListeChefs(){
+  const box=document.getElementById('chefs-list'); if(!box) return;
+  const nb=n=>(D.sorties||[]).filter(s=>chefDe(s)===sorNormNom(n)).length;
+  const L=chefsListe();
+  box.innerHTML=L.length?L.map((n,i)=>'<div style="display:flex;align-items:center;gap:8px;padding:8px 12px;border-bottom:1px solid #eee;">'+
+    '<span style="flex:1;font-weight:700;">👷 '+escSor(n)+'</span><span style="font-size:11px;color:var(--muted);">'+nb(n)+' sortie(s)</span>'+
+    '<button class="btn-icon" title="Renommer" onclick="renommerChef('+i+')">✏️</button>'+
+    '<button class="btn-icon" style="color:var(--red);" title="Supprimer" onclick="supprimerChef('+i+')">🗑</button></div>').join('')
+    :'<div style="padding:14px;text-align:center;color:var(--muted);">Aucun chef</div>';
+}
+function ajouterChef(){
+  const el=document.getElementById('chef-new'); const n=(el.value||'').replace(/\s+/g,' ').trim();
+  if(!n) return;
+  if(chefsListe().some(x=>sorNormNom(x)===sorNormNom(n))){ notify('Ce chef existe déjà','err'); return; }
+  D.chefs.push(n); save(); el.value=''; renderListeChefs(); notify('✅ Chef ajouté : '+n,'ok');
+}
+function renommerChef(i){
+  const L=chefsListe(), ancien=L[i];
+  const n=(prompt('Nouveau nom pour « '+ancien+' » :',ancien)||'').replace(/\s+/g,' ').trim();
+  if(!n || n===ancien) return;
+  const k=sorNormNom(ancien); let m=0;
+  (D.sorties||[]).forEach(s=>{ if(chefDe(s)===k){ s.chef=n; m++; } });
+  L[i]=n; save(); renderListeChefs();
+  notify('✏️ Renommé'+(m?' — '+m+' sortie(s) mises à jour':''),'ok');
+}
+function supprimerChef(i){
+  const L=chefsListe(), n=L[i];
+  if(!confirm('Retirer « '+n+' » de la liste des chefs d\'équipe ?\n\nSes sorties déjà enregistrées gardent son nom.')) return;
+  L.splice(i,1); save(); renderListeChefs(); notify('🗑 '+n+' retiré de la liste','ok');
+}
+
 // Suggestions des ouvriers déjà saisis
 function populatePersDatalist(){
   const fill=(id,arr)=>{ const dl=document.getElementById(id); if(dl) dl.innerHTML=[...new Set(arr.filter(Boolean))].sort().map(n=>'<option value="'+escSor(n)+'">').join(''); };
   const S=D.sorties||[];
   fill('pers-datalist',S.map(s=>sorNormNom(personneDe(s))));
-  fill('chef-datalist',S.map(s=>chefDe(s)));
   fill('chantier-datalist',S.map(s=>sorNormCh(chantierDe(s))).concat((D.chantiers||[]).map(c=>c.nom)));
 }
 // Quand on tape un chantier déjà connu, on propose son chef d'équipe
 function soAutoChef(){
   const ch=sorNormCh((document.getElementById('so-detail')||{}).value);
   const chefEl=document.getElementById('so-chef');
-  if(!ch||!chefEl||chefEl.value.trim()) return;
+  if(!ch||!chefEl||chefEl.value) return;
   const s=(D.sorties||[]).find(x=>x.chef&&sorNormCh(chantierDe(x))===ch);
-  if(s) chefEl.value=s.chef;
+  if(s) remplirSelectChefs(s.chef);
 }
 
 const BES_LOGO_SOR='data:image/jpeg;base64,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';
