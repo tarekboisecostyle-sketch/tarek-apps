@@ -8981,6 +8981,30 @@ function squelette(){
   while(pg.firstChild) old.appendChild(pg.firstChild);
   const acc=document.createElement('div'); acc.id='acc';
   pg.appendChild(acc); pg.appendChild(old);
+  old.open=true;
+  old.querySelector('summary').textContent='Finances et stock';
+  // Ligne 1 : encaissements / décaissements / résultat + commandes ouvertes
+  ['ds-nb-fac','ds-nb-dev','ds-att','ds-al'].forEach(id=>{ const c=(document.getElementById(id)||{}).closest&&document.getElementById(id).closest('.stat-card'); if(c) c.style.display='none'; });
+  const caEl=document.getElementById('ds-ca'), caCard=caEl&&caEl.closest('.stat-card');
+  if(caCard){
+    const grid=caCard.parentElement; grid.style.gridTemplateColumns='repeat(4,1fr)';
+    caCard.querySelector('.stat-label').textContent='Total encaissements';
+    caCard.style.cursor='pointer'; caCard.onclick=()=>go('tresorerie');
+    const mk=(id,label,cls,bcls)=>{ const d=document.createElement('div'); d.className='stat-card '+cls; d.style.cursor='pointer'; d.onclick=()=>go('tresorerie');
+      d.innerHTML='<div class="stat-label">'+label+'</div><div class="stat-value" id="'+id+'" style="font-size:16px;">0,00</div><span class="badge '+bcls+'">MAD</span>'; return d; };
+    const dec=mk('acc-dec','Total décaissements','red','br'), res=mk('acc-res','Résultat financier','blue','bb');
+    caCard.after(dec); dec.after(res);
+  }
+  // Doublons de l'accueil : anciens « Derniers documents » et « Alertes stock »
+  old.querySelectorAll('.card').forEach(c=>{ const t=(c.querySelector('.card-title')||{}).textContent||''; if(/Derniers documents|Alertes stock/i.test(t)){ c.style.display='none'; if(c.parentElement && c.parentElement!==old) c.parentElement.style.gridTemplateColumns='1fr'; } });
+  const cmdEl=document.getElementById('ds-cmd'), cmdCard=cmdEl&&cmdEl.closest('.stat-card');
+  if(cmdCard){ cmdCard.style.cursor='pointer'; cmdCard.title='Voir les commandes'; cmdCard.onclick=()=>go('commandes'); }
+}
+function finances(){
+  const sum=a=>(a||[]).reduce((t,e)=>t+(Number(e.montant)||0),0);
+  const enc=sum(D.encaissements), dec=sum(D.decaissements), res=enc-dec;
+  const set=(id,v,col)=>{ const el=document.getElementById(id); if(el){ el.textContent=fmtM(v); if(col) el.style.color=col; } };
+  set('ds-ca',enc,'#1F6B45'); set('acc-dec',dec,'#8E2A1E'); set('acc-res',res,res<0?'#8E2A1E':'#1F3F66');
 }
 
 const fmtM=n=>(Number(n)||0).toLocaleString('fr-FR',{minimumFractionDigits:2,maximumFractionDigits:2});
@@ -9051,6 +9075,7 @@ function renderAccueil(){
   h+='<section class="acc-box" aria-labelledby="acc-av"><div class="acc-box-h"><h2 id="acc-av">Avancement des chantiers</h2><button class="acc-link" onclick="go_(\'chantiers\')">Tous les chantiers ('+chEnCours.length+')</button></div>'+
     (cartes?'<div class="acc-av">'+cartes+'</div>':'<div style="padding:16px 18px;color:var(--muted);">Aucun chantier en cours</div>')+'</section>';
   box.innerHTML=h;
+  try{ finances(); }catch(e){ console.error(e); }
 }
 
 window.go_=go;
