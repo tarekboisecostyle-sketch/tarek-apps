@@ -394,6 +394,7 @@ tr:last-child td{border-bottom:none;} tbody tr:hover td{background:#f8faff;}
         <div class="tab" onclick="stTab('entrees',1)">⬇️ Entrées</div>
         <div class="tab" onclick="stTab('sorties',2)">⬆️ Sorties</div>
         <div class="tab" onclick="stTab('inventaire',3)">🔍 Inventaire</div>
+        <div class="tab" onclick="stTab('fiches',4)">📋 Fiches chefs / chantiers</div>
       </div>
       <!-- PRODUITS -->
       <div class="tab-pane active" id="stp-produits">
@@ -491,6 +492,22 @@ tr:last-child td{border-bottom:none;} tbody tr:hover td{background:#f8faff;}
             <div style="color:#fde68a;font-size:11px;" id="rec-sor-periode">Sur la période filtrée</div>
           </div>
           <div id="rec-sor-body" style="padding:14px;"></div>
+        </div>
+      </div>
+      <!-- FICHES SORTIES PAR CHEF / CHANTIER -->
+      <div class="tab-pane" id="stp-fiches">
+        <div class="card">
+          <div class="card-hdr">
+            <div class="card-title">📋 Fiches des sorties — chefs d'équipe & chantiers</div>
+            <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
+              <button class="btn btn-sm" id="fi-mode-p" onclick="setFicheMode('chef')">👷 Par chef d'équipe</button>
+              <button class="btn btn-sm" id="fi-mode-c" onclick="setFicheMode('chantier')">🏗️ Tous les chantiers</button>
+              <input class="search-inp" id="fi-q" placeholder="🔍 Chef, chantier, ouvrier" oninput="renderFiches()" style="width:190px;">
+              <div class="mois-filter"><select id="fi-mois" onchange="renderFiches()"><option value="">Tous mois</option></select></div>
+              <label style="font-size:11px;display:flex;gap:4px;align-items:center;cursor:pointer;"><input type="checkbox" id="fi-val" onchange="renderFiches()"> Valeurs (PMP)</label>
+            </div>
+          </div>
+          <div id="fi-body" style="padding:14px;"></div>
         </div>
       </div>
       <!-- INVENTAIRE -->
@@ -983,7 +1000,18 @@ tr:last-child td{border-bottom:none;} tbody tr:hover td{background:#f8faff;}
     </div>
     <div class="fg" id="so-detail-wrap">
       <label id="so-detail-lbl">Nom du chantier (optionnel)</label>
-      <input id="so-detail" placeholder="Ex: Chantier Hay Riad…">
+      <input id="so-detail" placeholder="Ex: Chantier Hay Riad…" list="chantier-datalist" onchange="soAutoChef()">
+      <datalist id="chantier-datalist"></datalist>
+    </div>
+    <div class="fg" id="so-chef-wrap">
+      <label>👷 Chef d'équipe (maâlem)</label>
+      <input id="so-chef" placeholder="Ex: Abdelkrim Marrakchi" list="chef-datalist">
+      <datalist id="chef-datalist"></datalist>
+    </div>
+    <div class="fg" id="so-pers-wrap">
+      <label>Pris par (ouvrier)</label>
+      <input id="so-pers" placeholder="Ex: Abdellatif" list="pers-datalist">
+      <datalist id="pers-datalist"></datalist>
     </div>
     <div class="fg">
       <label>N° BS <span style="font-size:10px;color:var(--muted);">(vide = auto BS-XXX)</span></label>
@@ -2505,13 +2533,14 @@ function delClient(i) {
 
 // ═══════════════════════════ STOCK ═══════════════════════════
 function stTab(tab, idx) {
-  ['produits','entrees','sorties','inventaire'].forEach(t => {
+  ['produits','entrees','sorties','inventaire','fiches'].forEach(t => {
     document.getElementById('stp-'+t).classList.toggle('active', t===tab);
   });
   document.querySelectorAll('#pg-stock .tab').forEach((t,i) => t.classList.toggle('active', i===idx));
   if(tab==='entrees') { fillMoisSelect('flt-mois-ent', D.entrees.map(e=>e.date)); updateFourFilter(); renderEntrees(); }
   if(tab==='sorties') { fillMoisSelect('flt-mois-sor', D.sorties.map(s=>s.date)); renderSorties(); }
   if(tab==='inventaire') { renderInventaireStats(); renderInvHistList(); initInvDates(); }
+  if(tab==='fiches') renderFiches();
 }
 
 // ═══════════════════════════ INVENTAIRE ═══════════════════════════
@@ -3928,6 +3957,9 @@ function openSortieModal(){
   document.getElementById('so-date').value=today();
   document.getElementById('so-dest').value='Chantier';
   document.getElementById('so-detail').value='';
+  document.getElementById('so-chef').value='';
+  document.getElementById('so-pers').value='';
+  populatePersDatalist();
   document.getElementById('so-note').value='';
   document.getElementById('sortie-edit-id').value='';
   document.getElementById('sortie-modal-title').textContent='⬆️ Sortie de stock';
@@ -3948,7 +3980,10 @@ function openSortieEditModal(idx){
   if(!s){notify('Sortie introuvable','err');return;}
   document.getElementById('so-date').value=s.date||today();
   document.getElementById('so-dest').value=s.destination||'Chantier';
-  document.getElementById('so-detail').value=s.detail||'';
+  document.getElementById('so-detail').value=chantierDe(s);
+  document.getElementById('so-chef').value=s.chef||'';
+  document.getElementById('so-pers').value=personneDe(s);
+  populatePersDatalist();
   document.getElementById('so-note').value=s.note||'';
   document.getElementById('sortie-edit-id').value=String(s.id||'');
   document.getElementById('sortie-modal-title').textContent='✏️ Modifier sortie';
@@ -3971,7 +4006,10 @@ function dupliquerSortie(idx){
   if(!s){notify('Sortie introuvable','err');return;}
   document.getElementById('so-date').value=today();
   document.getElementById('so-dest').value=s.destination||'Chantier';
-  document.getElementById('so-detail').value=s.detail||'';
+  document.getElementById('so-detail').value=chantierDe(s);
+  document.getElementById('so-chef').value=s.chef||'';
+  document.getElementById('so-pers').value=personneDe(s);
+  populatePersDatalist();
   document.getElementById('so-note').value=s.note||'';
   document.getElementById('sortie-edit-id').value='';
   document.getElementById('sortie-modal-title').textContent='⧉ Dupliquer sortie';
@@ -4001,6 +4039,7 @@ function toggleDestDetail(){
   if(dest==='Chantier'){lbl.textContent='Nom du chantier (optionnel)';wrap.style.display='flex';}
   else if(dest==='Atelier'){lbl.textContent="Nom de l\'atelier (optionnel)";wrap.style.display='flex';}
   else{wrap.style.display='none';}
+  ['so-chef-wrap','so-pers-wrap'].forEach(id=>{const w=document.getElementById(id); if(w) w.style.display=(dest==='Autres'?'none':'flex');});
 }
 
 function renderSortieLignes(){
@@ -4047,6 +4086,8 @@ function saveSortieGroupe(){
   const dest=document.getElementById('so-dest').value;
   const detail=document.getElementById('so-detail').value;
   const note=document.getElementById('so-note').value;
+  const chef=((document.getElementById('so-chef')||{}).value||'').trim();
+  const personne=((document.getElementById('so-pers')||{}).value||'').trim();
   const bsInput=(document.getElementById('so-bs')||{}).value||'';
   const bsManuel=bsInput.trim();
   const editId=document.getElementById('sortie-edit-id').value;
@@ -4083,6 +4124,8 @@ function saveSortieGroupe(){
     old.destination = dest;
     old.detail = detail;
     old.note = note;
+    old.personne = personne;
+    if(chef) old.chef = chef; else delete old.chef;
     // Gérer le N° BS : si l'utilisateur l'a modifié, on update
     if(bsManuel){
       old.bs = bsManuel;
@@ -4126,7 +4169,7 @@ function saveSortieGroupe(){
       id:Date.now()+i,
       date, produitRef:prod.ref, produitDes:prod.des, produitIdx:idx,
       qty:l.qty, pmpSortie,
-      destination:dest, detail, note,
+      destination:dest, detail, note, personne, ...(chef?{chef}:{}),
       bs, bsAuto
     });
     D.stock[idx].qty=(D.stock[idx].qty||0)-l.qty; // stock négatif autorisé
@@ -4202,7 +4245,7 @@ function renderSorties(){
       '<td style="text-align:center;font-size:11px;color:var(--muted);">'+taux+'%</td>'+
       '<td style="font-family:var(--mono);font-weight:700;color:#1F497D;background:#e8f0fc;">'+fmt(valTTC)+'</td>'+
       '<td><span class="status" style="background:'+(dBg[s.destination]||'#f1f5f9')+';color:'+(dCol[s.destination]||'#333')+';"> '+(s.destination||'-')+'</span></td>'+
-      '<td style="font-size:11px;">'+(s.detail||'-')+chBadge+'</td>'+
+      '<td style="font-size:11px;">'+(escSor(chantierDe(s))||'-')+(personneDe(s)?'<br><span style="color:var(--muted);">👤 '+escSor(personneDe(s))+'</span>':'')+(s.chef?'<br><span style="color:#1F497D;font-weight:700;">👷 '+escSor(s.chef)+'</span>':'')+chBadge+'</td>'+
       '<td style="font-size:11px;color:var(--muted);">'+(s.note||'-')+'</td>'+
       '<td style="white-space:nowrap;">'+
         '<button class="btn-icon" style="color:#1F497D;" title="Modifier" onclick="openSortieEditModal('+ri+')">✏️</button>'+
@@ -4366,6 +4409,265 @@ function renderRecapSorties(list,mo,fD){
   html+='</tr></tfoot></table>';
   body.innerHTML=html;
 }
+
+
+// ═══════════ FICHES SORTIES PAR OUVRIER / PAR CHANTIER (imprimables) ═══════════
+// Regroupe toutes les sorties d'un ouvrier (ou d'un chantier) en une fiche,
+// articles cumulés et séparés par catégorie (bois/panneaux, quincaillerie…).
+var ficheMode = 'chef';      // 'chef' | 'chantier'
+var fiChef = null;            // chef d'équipe ouvert (null = liste des chefs)
+var fiCh = null;              // chantier ouvert ('*' = fiche globale du chef)
+function sorNormCh(t){ return String(t||'').replace(/\s+/g,' ').trim().toUpperCase(); }
+function sorNormNom(t){
+  t=sorNormCh(t);
+  if(!t) return '';
+  const parts=t.split(/\s+(?:ET|&|\+|\/|و)\s+|\s*[,&+\/]\s*/).map(x=>x.trim()).filter(Boolean);
+  return parts.length>1 ? parts.sort().join(' & ') : t;
+}
+function sorSplitDetail(d){
+  const m=String(d||'').split(/\s+[—–-]\s+/);
+  return m.length>1 ? {g:m[0].trim(), d:m.slice(1).join(' - ').trim()} : null;
+}
+// Ouvrier qui a pris la marchandise
+function personneDe(s){
+  if(s.personne!=null) return String(s.personne).trim();
+  if(s.typeMvt==='AJUSTEMENT_INV') return '';
+  const sp=sorSplitDetail(s.detail);
+  if(sp) return sp.g;
+  return String(s.detail||'').trim();   // anciennes sorties : le champ contenait le nom de l'ouvrier
+}
+// Chantier concerné
+function chantierDe(s){
+  if(s.chantierId){ const c=(D.chantiers||[]).find(x=>x.id===s.chantierId); if(c) return c.nom; if(s.chantierNom) return s.chantierNom; }
+  if(s.personne!=null) return String(s.detail||'').trim();
+  const sp=sorSplitDetail(s.detail);
+  if(sp) return sp.d;
+  const m=String(s.note||'').match(/chantier\s*:\s*([^—\-\n]+)/i);
+  return m ? m[1].trim() : '';
+}
+function sorCle(s,mode){ return sorNormNom(mode==='chantier'?chantierDe(s):personneDe(s)); }
+function sorPeriodeOk(s){
+  const mo=(document.getElementById('fi-mois')||{}).value||'';
+  return !mo || (s.date||'').startsWith(mo);
+}
+const FICHE_CATS=[
+  {k:'Panneaux',fr:'Bois & panneaux',ar:'الخشب والألواح'},
+  {k:'Quincaillerie',fr:'Quincaillerie',ar:'الخردوات'},
+  {k:'Finition',fr:'Finition',ar:'مواد التشطيب'},
+  {k:'Outillage',fr:'Outillage & consommables',ar:'الأدوات'},
+  {k:'_',fr:'Autres',ar:'أخرى'}
+];
+function sorCatDe(s){
+  const p=D.stock.find(x=>x.ref===s.produitRef);
+  const c=p&&p.cat?p.cat:'';
+  return FICHE_CATS.some(x=>x.k===c)?c:'_';
+}
+function sorProd(s){ return D.stock.find(x=>x.ref===s.produitRef)||{}; }
+function sorPmp(s){ if(s.pmpSortie!=null) return s.pmpSortie; const p=sorProd(s); return p.pmp||p.pu||0; }
+
+function chefDe(s){ return sorNormNom(s.chef||''); }
+const SANS_CHEF='(SANS CHEF D\'ÉQUIPE)', SANS_CH='(CHANTIER NON PRÉCISÉ)';
+function chOf(s){ return sorNormCh(chantierDe(s))||SANS_CH; }
+function chefOf(s){ return chefDe(s)||SANS_CHEF; }
+function sorActives(){ return (D.sorties||[]).filter(s=>s.typeMvt!=='AJUSTEMENT_INV' && sorPeriodeOk(s)); }
+function grouperPar(list,keyFn){
+  const g={};
+  list.forEach(s=>{
+    const k=keyFn(s);
+    if(!g[k]) g[k]={nom:k,lignes:[],refs:new Set(),chantiers:new Set(),ouvriers:new Set(),chefs:new Set(),last:''};
+    const x=g[k]; x.lignes.push(s); x.refs.add(s.produitRef);
+    x.chantiers.add(chOf(s)); x.chefs.add(chefOf(s));
+    const p=sorNormNom(personneDe(s)); if(p) x.ouvriers.add(p);
+    if((s.date||'')>x.last) x.last=s.date||'';
+  });
+  return Object.values(g).sort((a,b)=>(a.nom.startsWith('(')-b.nom.startsWith('('))||b.last.localeCompare(a.last)||a.nom.localeCompare(b.nom));
+}
+// Sorties de la fiche ouverte
+function ficheLignes(){
+  return sorActives().filter(s=>(fiChef==null||chefOf(s)===fiChef)&&(fiCh==null||fiCh==='*'||chOf(s)===fiCh));
+}
+function carteHTML(g,onclick,ico,sous){
+  return '<div onclick="'+onclick+'" style="cursor:pointer;border:1px solid #d0d9e6;border-left:4px solid '+(g.nom.startsWith('(')?'#94a3b8':'#2E5A8E')+';border-radius:10px;padding:12px 14px;background:#fff;" onmouseover="this.style.background=\'#f1f6fc\'" onmouseout="this.style.background=\'#fff\'">'+
+    '<div style="font-weight:800;font-size:14px;color:#1F497D;">'+ico+' '+escSor(g.nom)+'</div>'+
+    '<div style="font-size:11px;color:var(--muted);margin-top:4px;">'+sous+'</div>'+
+    '<div style="display:flex;gap:8px;margin-top:8px;font-size:11px;flex-wrap:wrap;">'+
+      '<span style="background:#e8f0fc;color:#1F497D;padding:2px 8px;border-radius:8px;font-weight:700;">'+g.refs.size+' article(s)</span>'+
+      '<span style="background:#f1f5f9;padding:2px 8px;border-radius:8px;">'+g.lignes.length+' sortie(s)</span>'+
+      '<span style="color:var(--muted);margin-left:auto;">'+dFrS(g.last)+'</span>'+
+    '</div></div>';
+}
+function liste3(arr,n){ arr=[...arr].filter(x=>!x.startsWith('(')); return escSor(arr.slice(0,n).join(', '))+(arr.length>n?'…':''); }
+function grilleHTML(cards){ return '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px;">'+cards.join('')+'</div>'; }
+function filArianeHTML(){
+  let h='<div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-bottom:12px;font-size:13px;">';
+  if(ficheMode==='chef'){
+    h+='<a href="#" onclick="fiNav(null,null);return false;" style="color:#2E5A8E;font-weight:700;">👷 Chefs d\'équipe</a>';
+    if(fiChef!=null) h+=' › <a href="#" onclick="fiNav(fiChef,null);return false;" style="color:#2E5A8E;font-weight:700;">'+escSor(fiChef)+'</a>';
+  } else h+='<a href="#" onclick="fiNav(null,null);return false;" style="color:#2E5A8E;font-weight:700;">🏗️ Tous les chantiers</a>';
+  if(fiCh!=null) h+=' › <b>'+(fiCh==='*'?'Fiche globale':escSor(fiCh))+'</b>';
+  return h+'</div>';
+}
+function fiNav(chef,ch){ fiChef=chef; fiCh=ch; renderFiches(); window.scrollTo(0,0); }
+function fiOpenChef(k){ fiNav(decodeURIComponent(k),null); }
+function fiOpenCh(k){ fiNav(fiChef,decodeURIComponent(k)); }
+
+function renderFiches(){
+  const box=document.getElementById('fi-body'); if(!box) return;
+  fillMoisSelect('fi-mois',(D.sorties||[]).map(s=>s.date));
+  document.getElementById('fi-mode-p').classList.toggle('btn-primary',ficheMode==='chef');
+  document.getElementById('fi-mode-c').classList.toggle('btn-primary',ficheMode==='chantier');
+  if(fiCh!=null){ renderFicheDetail(box); return; }
+  const q=((document.getElementById('fi-q')||{}).value||'').toLowerCase().trim();
+  const match=g=>!q||(g.nom+' '+[...g.chantiers,...g.ouvriers,...g.chefs].join(' ')).toLowerCase().includes(q);
+  let html=filArianeHTML();
+  if(ficheMode==='chef' && fiChef==null){
+    const list=grouperPar(sorActives(),chefOf).filter(match);
+    html+= list.length ? grilleHTML(list.map(g=>carteHTML(g,'fiOpenChef(\''+encodeURIComponent(g.nom)+'\')','👷',
+      '🏗️ '+g.chantiers.size+' chantier(s)'+(g.ouvriers.size?' • 👥 '+liste3(g.ouvriers,3):'')))) : '<div style="text-align:center;padding:30px;color:var(--muted);">Aucune sortie trouvée</div>';
+  } else {
+    const base=sorActives().filter(s=>fiChef==null||chefOf(s)===fiChef);
+    const list=grouperPar(base,chOf).filter(match);
+    if(fiChef!=null){
+      html+='<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:12px;padding:10px 12px;background:#f1f6fc;border-radius:8px;">'+
+        '<div style="font-size:16px;font-weight:800;color:#1F497D;">👷 '+escSor(fiChef)+'</div>'+
+        '<span style="font-size:11px;color:var(--muted);">'+list.length+' chantier(s) • '+base.length+' sortie(s)</span>'+
+        '<button class="btn btn-sm" style="margin-left:auto;" onclick="fiNav(fiChef,\'*\')">📋 Fiche globale du chef</button></div>';
+    }
+    html+= list.length ? grilleHTML(list.map(g=>carteHTML(g,'fiOpenCh(\''+encodeURIComponent(g.nom)+'\')','🏗️',
+      (ficheMode==='chantier'?'👷 '+liste3(g.chefs,2)+(g.ouvriers.size?' • ':''):'')+(g.ouvriers.size?'👥 '+liste3(g.ouvriers,3):(ficheMode==='chef'?'Ouvrier non précisé':''))))) : '<div style="text-align:center;padding:30px;color:var(--muted);">Aucune sortie trouvée</div>';
+  }
+  box.innerHTML=html;
+}
+function setFicheMode(m){ ficheMode=m; fiChef=null; fiCh=null; renderFiches(); }
+
+// Attribuer (ou changer) le chef d'équipe de toutes les sorties de la fiche ouverte
+function attribuerChefFiche(){
+  const lignes=ficheLignes(); if(!lignes.length) return;
+  const actuel=fiChef&&fiChef!==SANS_CHEF?fiChef:'';
+  const nom=prompt('Chef d\'équipe pour ces '+lignes.length+' sortie(s) :',actuel);
+  if(nom==null) return;
+  const n=nom.trim();
+  lignes.forEach(s=>{ if(n) s.chef=n; else delete s.chef; });
+  save();
+  notify('✅ Chef d\'équipe '+(n?'« '+n.toUpperCase()+' » attribué':'retiré')+' ('+lignes.length+' sortie(s))','ok');
+  if(ficheMode==='chef') fiNav(n?sorNormNom(n):SANS_CHEF, fiCh); else renderFiches();
+}
+
+// Construit les données d'une fiche : articles cumulés par catégorie
+function ficheData(){
+  const lignes=ficheLignes();
+  if(!lignes.length) return null;
+  const global=fiCh==='*';
+  // Colonne « autre » : chantier sur la fiche globale d'un chef, sinon l'ouvrier qui a pris
+  const autreDe=s=>global?chOf(s):sorNormNom(personneDe(s));
+  const cats={};
+  lignes.slice().sort((a,b)=>(a.date||'').localeCompare(b.date||'')).forEach(s=>{
+    const c=sorCatDe(s);
+    const key=s.produitRef+'|'+autreDe(s);
+    cats[c]=cats[c]||{};
+    const p=sorProd(s);
+    if(!cats[c][key]) cats[c][key]={des:s.produitDes||p.des||'',ref:s.produitRef||'',unit:p.unit||'',qty:0,val:0,dates:[],autre:autreDe(s)};
+    const a=cats[c][key];
+    a.qty+=Number(s.qty)||0; a.val+=(Number(s.qty)||0)*sorPmp(s);
+    if(s.date&&!a.dates.includes(s.date)) a.dates.push(s.date);
+  });
+  const g=grouperPar(lignes,()=>'x')[0];
+  const dates=lignes.map(s=>s.date).filter(Boolean).sort();
+  return {g,cats,global,du:dates[0]||'',au:dates[dates.length-1]||'',
+    chef: fiChef!=null?fiChef:[...g.chefs].join(', '),
+    chantier: global?[...g.chantiers].join(', '):fiCh};
+}
+function dFrS(d){ if(!d) return ''; const p=d.split('-'); return p.length===3?p[2]+'/'+p[1]+'/'+p[0]:d; }
+function dCourt(d){ const p=String(d).split('-'); return p.length===3?p[2]+'/'+p[1]:d; }
+
+function renderFicheDetail(box){
+  const fd=ficheData();
+  if(!fd){ fiCh=null; renderFiches(); return; }
+  const showVal=(document.getElementById('fi-val')||{}).checked;
+  const autreLbl=fd.global?'Chantier':'Pris par';
+  let html=filArianeHTML()+'<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:12px;padding:10px 12px;background:#f1f6fc;border-radius:8px;">'+
+    '<button class="btn btn-sm" onclick="fiNav(fiChef,null)">← Retour</button>'+
+    '<div><div style="font-size:16px;font-weight:800;color:#1F497D;">'+(fd.global?'📋 Fiche globale':'🏗️ '+escSor(fd.chantier))+'</div>'+
+    '<div style="font-size:11px;color:var(--muted);">👷 Chef : <b>'+escSor(fd.chef)+'</b>'+(fd.g.ouvriers.size?' • 👥 '+escSor([...fd.g.ouvriers].join(', ')):'')+' • '+dFrS(fd.du)+(fd.au&&fd.au!==fd.du?' → '+dFrS(fd.au):'')+' • '+fd.g.lignes.length+' sortie(s)</div></div>'+
+    '<div style="margin-left:auto;display:flex;gap:6px;">'+(fd.global?'':'<button class="btn btn-sm" onclick="attribuerChefFiche()">👷 '+(fd.chef===SANS_CHEF?'Attribuer un chef':'Changer de chef')+'</button>')+
+    '<button class="btn btn-primary btn-sm" onclick="imprimerFiche()">🖨️ Imprimer la fiche</button></div></div>';
+  let tot=0;
+  FICHE_CATS.forEach(c=>{
+    const items=Object.values(fd.cats[c.k]||{});
+    if(!items.length) return;
+    const st=items.reduce((a,x)=>a+x.val,0); tot+=st;
+    html+='<div class="card" style="margin-bottom:12px;"><div class="card-hdr" style="background:#2E5A8E;"><div class="card-title" style="color:#fff;">'+c.fr+' <span style="font-weight:400;opacity:.85;">— '+c.ar+'</span></div><span style="color:#cfe2f3;font-size:11px;">'+items.length+' article(s)'+(showVal?' • '+fmt(st)+' MAD HT':'')+'</span></div>'+
+      '<table><thead><tr><th style="width:30px;">N°</th><th>Désignation</th><th>Unité</th><th style="text-align:center;">Qté totale</th><th>Dates</th><th>'+autreLbl+'</th>'+(showVal?'<th style="text-align:right;">Valeur HT</th>':'')+'</tr></thead><tbody>'+
+      items.map((x,i)=>'<tr><td style="text-align:center;">'+(i+1)+'</td><td><strong>'+escSor(x.des)+'</strong><br><span style="font-size:10px;color:var(--muted);">'+escSor(x.ref)+'</span></td><td>'+escSor(x.unit||'-')+'</td><td style="text-align:center;font-weight:800;font-size:14px;color:#1F497D;background:#CFE2F3;">'+x.qty+'</td><td style="font-size:11px;">'+x.dates.map(dCourt).join(', ')+'</td><td style="font-size:11px;">'+escSor(x.autre||'-')+'</td>'+(showVal?'<td style="text-align:right;font-family:var(--mono);">'+fmt(x.val)+'</td>':'')+'</tr>').join('')+
+      '</tbody></table></div>';
+  });
+  if(showVal) html+='<div style="text-align:right;font-weight:800;font-size:14px;color:#1F497D;padding:6px 4px;">Total (au PMP) : '+fmt(tot)+' MAD HT</div>';
+  box.innerHTML=html;
+}
+
+function imprimerFiche(){
+  const fd=ficheData(); if(!fd) return;
+  const showVal=(document.getElementById('fi-val')||{}).checked;
+  const autreLbl=fd.global?'Chantier / الورش':'Pris par / المستلم';
+  const e=escSor;
+  let sections='';
+  FICHE_CATS.forEach((c,ci)=>{
+    const items=Object.values(fd.cats[c.k]||{});
+    if(!items.length) return;
+    sections+='<div class="sec"><div class="bar"><span>'+c.fr+'</span><span dir="rtl">'+c.ar+'</span></div>'+
+      '<table><thead><tr><th style="width:24px">N°</th><th class="l">Désignation<br><small>البيان</small></th><th style="width:48px">Unité<br><small>الوحدة</small></th><th style="width:52px">Qté<br><small>الكمية</small></th><th style="width:96px">Dates<br><small>التواريخ</small></th><th style="width:105px">'+autreLbl.replace(' / ','<br><small>')+'</small></th>'+
+      (showVal?'<th style="width:70px">Valeur HT</th>':'')+'<th style="width:40px">Reçu<br><small>مسلم</small></th><th style="width:110px">Reste / Remarques<br><small>ملاحظات</small></th></tr></thead><tbody>'+
+      items.map((x,i)=>'<tr><td>'+(i+1)+'</td><td class="l"><b>'+e(x.des)+'</b></td><td>'+e(x.unit||'')+'</td><td class="q">'+x.qty+'</td><td class="sm">'+x.dates.map(dCourt).join(', ')+'</td><td class="sm">'+e(x.autre||'')+'</td>'+(showVal?'<td class="r">'+fmt(x.val)+'</td>':'')+'<td><span class="ck"></span></td><td></td></tr>').join('')+
+      '</tbody></table></div>';
+  });
+  const reste='<div class="sec"><div class="bar alt"><span>Reste à fournir / besoins restants</span><span dir="rtl">الباقي المطلوب</span></div><table><thead><tr><th style="width:24px">N°</th><th class="l">Désignation<br><small>البيان</small></th><th style="width:90px">Dimensions<br><small>الأبعاد</small></th><th style="width:52px">Qté<br><small>الكمية</small></th><th style="width:150px">Remarques<br><small>ملاحظات</small></th></tr></thead><tbody>'+
+    [1,2,3,4,5,6].map(i=>'<tr class="blank"><td>'+i+'</td><td></td><td></td><td></td><td></td></tr>').join('')+'</tbody></table></div>';
+  const titre=fd.global?'Fiche globale des sorties — chef d\'équipe':'Fiche des sorties — chantier';
+  const html='<!DOCTYPE html><html><head><meta charset="utf-8"><title>'+e(titre+' - '+(fd.global?fd.chef:fd.chantier))+'</title><style>'+
+  '@page{size:A4;margin:12mm 11mm 16mm}*{box-sizing:border-box}body{font-family:Arial,Helvetica,sans-serif;font-size:11px;color:#1b2a3a;margin:0}'+
+  '.hd{display:flex;align-items:center;justify-content:space-between;border-bottom:2.5px solid #2E5A8E;padding-bottom:8px}.hd img{height:62px}.hd .t{text-align:center;flex:1}.hd .t .ar{font-size:19px;font-weight:800;color:#1F497D}.hd .t .fr{font-size:13px;font-weight:700;color:#2E5A8E;margin-top:2px}.hd .n{font-size:10px;text-align:right;color:#555;width:130px}'+
+  '.inf{display:grid;grid-template-columns:1fr 1fr;gap:6px 14px;margin:10px 0 12px}.inf div{border:1px solid #9fb6d3;border-radius:5px;padding:5px 8px;display:flex;justify-content:space-between;gap:8px}.inf b{color:#1F497D}.inf small{color:#64748b}'+
+  '.sec{margin-bottom:12px;page-break-inside:auto}.bar{background:#2E5A8E;color:#fff;font-weight:700;padding:5px 9px;display:flex;justify-content:space-between;border-radius:4px 4px 0 0;font-size:12px}.bar.alt{background:#64748b}'+
+  'table{width:100%;border-collapse:collapse}th{background:#CFE2F3;color:#1F497D;font-size:10px;padding:4px 3px;border:1px solid #9fb6d3}th small{font-weight:400;color:#475569}td{border:1px solid #bbb;padding:5px 4px;text-align:center;vertical-align:middle}tr{page-break-inside:avoid}'+
+  '.l{text-align:left}.r{text-align:right}.q{font-weight:800;font-size:13px;background:#eaf2fb}.sm{font-size:9.5px}.ck{display:inline-block;width:13px;height:13px;border:1.5px solid #475569;border-radius:2px}.blank td{height:22px}'+
+  '.sig{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-top:16px}.sig div{border:1px dashed #9fb6d3;border-radius:6px;height:70px;padding:6px 8px;font-size:10px;color:#475569;display:flex;justify-content:space-between}'+
+  '.ft{position:fixed;bottom:0;left:0;right:0;text-align:center;font-size:8.5px;color:#666;border-top:1px solid #2E5A8E;padding-top:3px}'+
+  '.np{text-align:center;margin:10px}@media print{.np{display:none}}'+
+  '</style></head><body>'+
+  '<div class="np"><button onclick="window.print()" style="padding:9px 22px;font-size:14px;background:#2E5A8E;color:#fff;border:none;border-radius:6px;cursor:pointer;">🖨️ Imprimer</button></div>'+
+  '<div class="hd"><img src="'+BES_LOGO_SOR+'"><div class="t"><div class="ar" dir="rtl">'+'استمارة تتبع السلع المسلمة'+'</div><div class="fr">'+titre+'</div></div><div class="n">Imprimée le<br><b>'+dFrS(today())+'</b></div></div>'+
+  '<div class="inf">'+
+    '<div><span><small>Chef d\'équipe</small> <b>'+e(fd.chef)+'</b></span><span dir="rtl"><small>رئيس الفريق</small></span></div>'+
+    '<div><span><small>'+(fd.global?'Chantiers':'Chantier')+'</small> <b>'+e(fd.chantier)+'</b></span><span dir="rtl"><small>الورش</small></span></div>'+
+    '<div><span><small>Ouvriers</small> <b>'+e([...fd.g.ouvriers].join(', ')||'—')+'</b></span><span dir="rtl"><small>العمال</small></span></div>'+
+    '<div><span><small>Période</small> <b>'+dFrS(fd.du)+(fd.au&&fd.au!==fd.du?' → '+dFrS(fd.au):'')+' — '+fd.g.lignes.length+' sortie(s)</b></span><span dir="rtl"><small>الفترة</small></span></div>'+
+  '</div>'+sections+reste+
+  '<div class="sig"><div><span>Signature du chef d\'équipe</span><span dir="rtl">توقيع رئيس الفريق</span></div><div><span>Responsable administratif</span><span dir="rtl">المسؤول</span></div></div>'+
+  '<div class="ft">BOIS ECO-STYLE SARL.AU — Sidi Abdellah Ghiate, El Haouz, Marrakech · ICE 003485652000094 · RC Marrakech 149.327</div>'+
+  '</body></html>';
+  const w=window.open('','_blank','width=900,height=1100,scrollbars=yes');
+  if(!w){ notify('Autorise les fenêtres pop-up pour imprimer','err'); return; }
+  w.document.open(); w.document.write(html); w.document.close();
+}
+
+// Suggestions des ouvriers déjà saisis
+function populatePersDatalist(){
+  const fill=(id,arr)=>{ const dl=document.getElementById(id); if(dl) dl.innerHTML=[...new Set(arr.filter(Boolean))].sort().map(n=>'<option value="'+escSor(n)+'">').join(''); };
+  const S=D.sorties||[];
+  fill('pers-datalist',S.map(s=>sorNormNom(personneDe(s))));
+  fill('chef-datalist',S.map(s=>chefDe(s)));
+  fill('chantier-datalist',S.map(s=>sorNormCh(chantierDe(s))).concat((D.chantiers||[]).map(c=>c.nom)));
+}
+// Quand on tape un chantier déjà connu, on propose son chef d'équipe
+function soAutoChef(){
+  const ch=sorNormCh((document.getElementById('so-detail')||{}).value);
+  const chefEl=document.getElementById('so-chef');
+  if(!ch||!chefEl||chefEl.value.trim()) return;
+  const s=(D.sorties||[]).find(x=>x.chef&&sorNormCh(chantierDe(x))===ch);
+  if(s) chefEl.value=s.chef;
+}
+
+const BES_LOGO_SOR='data:image/jpeg;base64,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';
 
 function delSortie(i) {
   const s=D.sorties[i];
