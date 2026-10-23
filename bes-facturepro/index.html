@@ -189,6 +189,70 @@ tr:last-child td{border-bottom:none;} tbody tr:hover td{background:#f8faff;}
   .tab{flex-shrink:0;white-space:nowrap;}
 }
 </style>
+<!-- ═══ DESIGN A (oct. 2026) — en-tête horizontal, accueil clair ═══ -->
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&family=IBM+Plex+Mono:wght@500;600&display=swap">
+<style>
+:root{--font:'Manrope','DM Sans',sans-serif;--mono:'IBM Plex Mono','DM Mono',monospace;--bg:#F4F6FA;--border:#DDE3EC;--txt:#18222F;--muted:#5B6778;}
+body{flex-direction:column;}
+/* Barre latérale → en-tête horizontal */
+.sidebar{width:100%;flex-direction:row;align-items:center;background:#fff;border-bottom:1px solid var(--border);flex-shrink:0;gap:14px;padding:10px 20px;box-sizing:border-box;flex-wrap:wrap;}
+.logo{padding:0;border:none;display:flex;align-items:center;gap:10px;flex-shrink:0;}
+.logo .bes-mark{width:36px;height:36px;border-radius:9px;background:#2E5A8E;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:13px;}
+.logo-name{color:var(--txt);font-size:16px;font-weight:800;}
+.logo-sub{color:var(--muted);font-size:10px;letter-spacing:.08em;margin-top:0;}
+.nav{display:flex;flex-wrap:wrap;flex:1 1 520px;gap:2px;padding:0;overflow:visible;}
+.nav-sec{display:none;}
+.nav-item{border-left:none;padding:8px 10px;border-radius:8px;color:#3D4A5C;font-size:13px;font-weight:600;white-space:nowrap;}
+.nav-item:hover{background:#EEF2F7;color:#1F3F66;}
+.nav-item.active{background:#E8EFF8;color:#1F3F66;border-left-color:transparent;font-weight:800;}
+.sidebar-foot{display:none;}
+.hdr-search{display:flex;align-items:center;gap:8px;border:1px solid #CBD3DF;border-radius:10px;padding:8px 12px;background:#fff;flex:0 1 230px;}
+.hdr-search input{border:0;outline:0;font:inherit;font-size:14px;width:100%;background:transparent;color:var(--txt);}
+.main{width:100%;}
+.topbar{height:auto;min-height:50px;padding:6px 20px;}
+.card,.stat-card{border-radius:14px;}
+.btn{border-radius:9px;}
+/* Accueil */
+#acc{max-width:1200px;margin:0 auto 22px;display:flex;flex-direction:column;gap:20px;font-size:14px;}
+#acc h1{margin:0;font-size:28px;font-weight:800;}
+#acc .acc-date{margin:4px 0 0;color:var(--muted);font-size:15px;}
+.acc-actions,.acc-kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;}
+.acc-act{font:inherit;text-align:left;cursor:pointer;border:1px solid #CBD3DF;border-radius:14px;padding:18px;background:#fff;color:var(--txt);display:flex;flex-direction:column;gap:8px;min-height:104px;}
+.acc-act:hover{border-color:#2E5A8E;}
+.acc-act.main-act{background:#2E5A8E;color:#fff;border-color:#2E5A8E;}
+.acc-act b{font-size:17px;font-weight:800;}
+.acc-act span{font-size:13px;color:var(--muted);}
+.acc-act.main-act span{color:#fff;opacity:.85;}
+.acc-kpi{background:#fff;border:1px solid var(--border);border-radius:14px;padding:16px 18px;font:inherit;text-align:left;color:var(--txt);}
+.acc-kpi .l{font-size:13px;color:var(--muted);font-weight:600;}
+.acc-kpi .v{font-family:var(--mono);font-size:28px;font-weight:600;margin-top:6px;}
+.acc-kpi.rupt{background:#FDECEA;border-color:#F2C2BC;color:#8E2A1E;cursor:pointer;}
+.acc-kpi.rupt .l{color:#8E2A1E;font-weight:700;}
+.acc-row{display:flex;flex-wrap:wrap;gap:18px;align-items:flex-start;}
+.acc-box{background:#fff;border:1px solid var(--border);border-radius:14px;overflow:hidden;min-width:0;}
+.acc-box-h{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:14px 18px;border-bottom:1px solid #E7EBF1;}
+.acc-box-h h2{margin:0;font-size:17px;font-weight:800;}
+.acc-link{font-size:14px;font-weight:700;color:#2E5A8E;background:none;border:0;cursor:pointer;font-family:inherit;padding:4px;}
+.acc-tbl{width:100%;border-collapse:collapse;font-size:14px;}
+.acc-tbl th{text-align:left;color:var(--muted);font-size:11.5px;text-transform:uppercase;letter-spacing:.05em;padding:10px 8px;font-weight:700;}
+.acc-tbl td{padding:11px 8px;border-top:1px solid #EEF1F5;}
+.acc-tbl tr.cl{cursor:pointer;} .acc-tbl tr.cl:hover td{background:#F7F9FC;}
+.acc-tbl td:first-child,.acc-tbl th:first-child{padding-left:18px;} .acc-tbl td:last-child,.acc-tbl th:last-child{padding-right:18px;text-align:right;}
+.acc-chip{border-radius:999px;padding:3px 10px;font-size:12px;font-weight:700;white-space:nowrap;}
+.acc-li{display:flex;justify-content:space-between;gap:10px;padding:13px 18px;border-top:1px solid #EEF1F5;cursor:pointer;}
+.acc-li:hover{background:#F7F9FC;}
+.acc-av{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));}
+.acc-av-c{padding:16px 18px;border-top:1px solid #EEF1F5;border-right:1px solid #EEF1F5;display:flex;flex-direction:column;gap:8px;cursor:pointer;}
+.acc-av-c:hover{background:#F7F9FC;}
+.acc-bar{height:10px;border-radius:5px;background:#E3E9F2;overflow:hidden;}
+.acc-bar div{height:10px;border-radius:5px;background:#2E5A8E;}
+.acc-pct{font-family:var(--mono);font-weight:600;font-size:16px;color:#2E5A8E;background:none;border:0;cursor:pointer;padding:2px 4px;border-radius:6px;}
+.acc-pct:hover{background:#E8EFF8;}
+.acc-sub{display:flex;justify-content:space-between;gap:8px;font-size:12.5px;color:var(--muted);}
+#acc-old>summary{cursor:pointer;color:var(--muted);font-weight:700;margin:6px 0 12px;font-size:13px;}
+@media (max-width:768px){.sidebar{padding:8px 10px;gap:8px;}.nav{flex-wrap:nowrap;overflow-x:auto;flex:1 1 100%;-webkit-overflow-scrolling:touch;}.logo-sub{display:none;}}
+@media (max-width:900px){.acc-actions,.acc-kpis{grid-template-columns:repeat(2,minmax(0,1fr));}.acc-av{grid-template-columns:repeat(1,minmax(0,1fr));}.hdr-search{flex:1 1 100%;}}
+</style>
 </head>
 <body>
 
@@ -8789,6 +8853,8 @@ window.chPrintSituationMulti = function(ids, mode, detail){
   printShell((admin?'Situation admin — ':'Situation — ') + (multiCl ? nb : clients[0]), `<div class="t">${titre}</div><div class="d">DATE : ${dFr(today())}</div>${admin?INTERNE:''}`, clBlock, body);
 };
 
+// Exposé pour l'accueil (avancement / encaissé des chantiers)
+window.chSituation = situation;
 // ─────────────────────────── INIT ───────────────────────────
 if(!D.chantiers) D.chantiers = [];
 injectDomCh();
@@ -8864,5 +8930,185 @@ function docSyncClients(){
   };
 })();
 </script>
+<script>
+/* ════════════════════════════════════════════════════════════════
+   ACCUEIL — design A (oct. 2026)
+   En-tête horizontal + page d'accueil : actions rapides, chiffres,
+   derniers documents, chefs d'équipe, avancement des chantiers.
+   L'ancien tableau de bord reste disponible (« Détails financiers »).
+   ════════════════════════════════════════════════════════════════ */
+(function(){
+const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const navEl=p=>Array.from(document.querySelectorAll('.nav-item')).find(el=>(el.getAttribute('onclick')||'').includes("nav('"+p+"'"));
+const go=p=>nav(p,navEl(p));
+const LABELS={dashboard:'Accueil',factures:'Devis & factures',chantiers:'Chantiers',clients:'Clients',stock:'Stock',commandes:'Achats',tresorerie:'Trésorerie',fournisseurs:'Fournisseurs',historique:'Historique',import:'Import/Export',parametres:'Paramètres'};
+const ORDRE=['dashboard','factures','chantiers','clients','stock','commandes','tresorerie','fournisseurs','historique','import','parametres'];
+
+function enTete(){
+  const logo=document.querySelector('.sidebar .logo');
+  if(logo && !logo.querySelector('.bes-mark')){
+    logo.innerHTML='<div class="bes-mark">BES</div><div><div class="logo-name">FacturePro</div><div class="logo-sub">BOIS ECO-STYLE</div></div>';
+  }
+  const navBox=document.querySelector('.sidebar .nav');
+  if(navBox){
+    ORDRE.forEach(p=>{ const el=navEl(p); if(el){ el.textContent=LABELS[p]; navBox.appendChild(el); } });
+    const pr=navEl('parametres');
+    if(pr){ pr.title='Paramètres'; pr.setAttribute('aria-label','Paramètres'); pr.innerHTML='<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"></path></svg>'; }
+    document.querySelectorAll('.nav-item').forEach(el=>{
+      const m=(el.getAttribute('onclick')||'').match(/nav\('(\w+)'/);
+      if(m && !LABELS[m[1]]) el.textContent=el.textContent.replace(/^[^\wÀ-ÿ]+/,'');
+    });
+  }
+  const sb=document.querySelector('.sidebar');
+  if(sb && !document.getElementById('hdr-q')){
+    const lab=document.createElement('label'); lab.className='hdr-search';
+    lab.innerHTML='<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#5B6778" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="M20 20l-3.5-3.5"></path></svg><input id="hdr-q" aria-label="Rechercher" placeholder="Client, devis, chantier…">';
+    sb.appendChild(lab);
+    document.getElementById('hdr-q').addEventListener('keydown',e=>{
+      if(e.key!=='Enter') return;
+      const q=e.target.value.trim(); if(!q) return;
+      go('factures');
+      const f=document.getElementById('flt-q-docs'); if(f){ f.value=q; renderDocs(); }
+    });
+  }
+}
+
+function squelette(){
+  const pg=document.getElementById('pg-dashboard');
+  if(!pg || document.getElementById('acc')) return;
+  const old=document.createElement('details'); old.id='acc-old';
+  old.innerHTML='<summary>Détails financiers et stock (ancien tableau de bord)</summary>';
+  while(pg.firstChild) old.appendChild(pg.firstChild);
+  const acc=document.createElement('div'); acc.id='acc';
+  pg.appendChild(acc); pg.appendChild(old);
+}
+
+const fmtM=n=>(Number(n)||0).toLocaleString('fr-FR',{minimumFractionDigits:2,maximumFractionDigits:2});
+const dCourt=d=>{ if(!d) return ''; const p=String(d).split('-'); return p.length===3?p[2]+'/'+p[1]:d; };
+const STATUT={brouillon:['Brouillon','#EEF1F5','#3D4A5C'],envoye:['Envoyé','#E8EFF8','#1F3F66'],envoyee:['Envoyée','#E8EFF8','#1F3F66'],accepte:['Accepté','#E3F4EA','#1F6B45'],valide:['Validé','#E3F4EA','#1F6B45'],payee:['Payée','#E3F4EA','#1F6B45'],annule:['Annulé','#FDECEA','#8E2A1E'],refuse:['Refusé','#FDECEA','#8E2A1E']};
+const ICO={
+  devis:'<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"></path><path d="M14 3v6h6M12 12v6M9 15h6"></path></svg>',
+  fact:'<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#2E5A8E" stroke-width="2" aria-hidden="true"><path d="M6 3h12v18l-3-2-3 2-3-2-3 2z"></path><path d="M9 8h6M9 12h6"></path></svg>',
+  sor:'<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#2E5A8E" stroke-width="2" aria-hidden="true"><path d="M3 7l9-4 9 4-9 4z"></path><path d="M3 7v10l9 4 9-4V7M12 11v10"></path></svg>',
+  ch:'<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#2E5A8E" stroke-width="2" aria-hidden="true"><path d="M3 21h18M5 21V10l7-5 7 5v11"></path><path d="M9 21v-6h6v6"></path></svg>'
+};
+
+function avancementDe(ch){
+  let s=null; try{ s=window.chSituation?window.chSituation(ch):null; }catch(e){}
+  const auto=s?s.pctLiv:0;
+  const manuel=(ch.avancement!=null && ch.avancement!=='');
+  const pct=Math.max(0,Math.min(100,Math.round(manuel?Number(ch.avancement):auto)));
+  const enc=s&&s.accTot>0?Math.round(s.paye*100/s.accTot):null;
+  return {pct,manuel,enc,nbLiv:s?s.nbLiv:0,nbTot:s?s.nbTot:0};
+}
+
+function renderAccueil(){
+  squelette();
+  const box=document.getElementById('acc'); if(!box) return;
+  const docs=(D.docs||[]).slice().sort((a,b)=>(b.date||'').localeCompare(a.date||'')||(b.id||0)-(a.id||0));
+  const chEnCours=(D.chantiers||[]).filter(c=>(c.statut||'en_cours')==='en_cours');
+  const rupt=(D.stock||[]).filter(p=>(Number(p.qty)||0)<=0);
+  const d=new Date();
+  let h='<div><h1>Bonjour Tarek</h1><p class="acc-date">'+esc(d.toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long',year:'numeric'}))+'</p></div>';
+  h+='<section class="acc-actions" aria-label="Actions rapides">'+
+    '<button class="acc-act main-act" onclick="accNouveau(\'DEVIS\')">'+ICO.devis+'<b>Nouveau devis</b><span>Client tapé directement</span></button>'+
+    '<button class="acc-act" onclick="accNouveau(\'FACTURE\')">'+ICO.fact+'<b>Nouvelle facture</b><span>Numéro automatique</span></button>'+
+    '<button class="acc-act" onclick="accSortie()">'+ICO.sor+'<b>Sortie de stock</b><span>Chef, chantier, articles</span></button>'+
+    '<button class="acc-act" onclick="accChantier()">'+ICO.ch+'<b>Nouveau chantier</b><span>Client + montant accordé</span></button></section>';
+  h+='<section class="acc-kpis" aria-label="Chiffres">'+
+    '<div class="acc-kpi"><div class="l">Documents</div><div class="v">'+docs.length+'</div></div>'+
+    '<div class="acc-kpi"><div class="l">Chantiers en cours</div><div class="v">'+chEnCours.length+'</div></div>'+
+    '<div class="acc-kpi"><div class="l">Clients</div><div class="v">'+(D.clients||[]).length+'</div></div>'+
+    '<button class="acc-kpi rupt" onclick="accRuptures()"><div class="l">Articles en rupture</div><div style="display:flex;justify-content:space-between;align-items:baseline;gap:8px;"><span class="v">'+rupt.length+'</span><span style="font-size:13px;font-weight:700;">Voir la liste →</span></div></button></section>';
+  // Derniers documents
+  const rows=docs.slice(0,6).map(doc=>{
+    const st=STATUT[doc.statut]||[doc.statut||'—','#EEF1F5','#3D4A5C'];
+    const i=D.docs.indexOf(doc);
+    return '<tr class="cl" onclick="openDocModal('+i+')"><td style="font-family:var(--mono);font-weight:600;'+(doc.type==='FACTURE'?'color:#1F6B45;':'')+'">'+esc(doc.num)+'</td><td><b>'+esc(doc.clientNom||'')+'</b>'+(doc.chantierNom?'<br><span style="font-size:12px;color:var(--muted);">'+esc(doc.chantierNom)+'</span>':'')+'</td><td style="color:var(--muted);">'+dCourt(doc.date)+'</td><td><span class="acc-chip" style="background:'+st[1]+';color:'+st[2]+';">'+esc(st[0])+'</span></td><td style="font-family:var(--mono);font-weight:600;">'+fmtM(doc.ttc)+'</td></tr>';
+  }).join('');
+  // Chefs d'équipe
+  let chefsH='';
+  try{
+    const sor=(D.sorties||[]).filter(s=>s.typeMvt!=='AJUSTEMENT_INV');
+    const g=grouperPar(sor,chefOf).filter(x=>x.lignes.length).slice(0,6);
+    chefsH=g.map(x=>'<div class="acc-li" onclick="accChef(\''+encodeURIComponent(x.nom)+'\')"><span><b>'+esc(x.nom)+'</b><br><span style="font-size:13px;color:var(--muted);">'+esc([...x.chantiers].filter(c=>!c.startsWith('(')).slice(0,2).join(', ')||'—')+([...x.ouvriers].length?' · '+esc([...x.ouvriers].slice(0,2).join(', ')):'')+'</span></span><span style="font-family:var(--mono);font-weight:600;white-space:nowrap;">'+fmtM(x.val)+'</span></div>').join('');
+  }catch(e){}
+  h+='<div class="acc-row">'+
+    '<section class="acc-box" style="flex:999 1 560px;" aria-labelledby="acc-docs"><div class="acc-box-h"><h2 id="acc-docs">Derniers documents</h2><button class="acc-link" onclick="go_(\'factures\')">Tout voir</button></div><div style="overflow-x:auto;"><table class="acc-tbl"><thead><tr><th>N°</th><th>Client</th><th>Date</th><th>Statut</th><th>Total TTC</th></tr></thead><tbody>'+(rows||'<tr><td colspan="5" style="text-align:center;color:var(--muted);">Aucun document</td></tr>')+'</tbody></table></div></section>'+
+    '<section class="acc-box" style="flex:1 1 320px;" aria-labelledby="acc-chefs"><div class="acc-box-h"><h2 id="acc-chefs">Chefs d\'équipe</h2><button class="acc-link" onclick="accChef(null)">Fiches</button></div>'+(chefsH||'<div style="padding:16px 18px;color:var(--muted);">Aucune sortie enregistrée</div>')+'</section></div>';
+  // Avancement des chantiers
+  const chL=chEnCours.slice().sort((a,b)=>(b.dateDebut||'').localeCompare(a.dateDebut||'')).slice(0,9);
+  const cartes=chL.map(ch=>{
+    const a=avancementDe(ch);
+    const col=a.pct>=90?'#1F6B45':'#2E5A8E';
+    return '<div class="acc-av-c" onclick="accOuvrirCh('+ch.id+')">'+
+      '<div style="display:flex;justify-content:space-between;gap:8px;align-items:baseline;"><b style="font-size:15px;">'+esc(ch.nom)+'</b><button class="acc-pct" title="Modifier l\'avancement" onclick="event.stopPropagation();accSetAv('+ch.id+')" style="color:'+col+';">'+a.pct+' %</button></div>'+
+      '<div class="acc-bar" role="img" aria-label="Avancement '+a.pct+' %"><div style="width:'+a.pct+'%;background:'+col+';"></div></div>'+
+      '<div class="acc-sub"><span>'+esc(ch.clientNom||'')+'</span><span>'+(a.enc!=null?'Encaissé '+a.enc+' %':'Montant non validé')+'</span></div>'+
+      '<div class="acc-sub" style="font-size:11.5px;"><span>'+(a.manuel?'Saisi à la main':(a.nbTot?a.nbLiv+'/'+a.nbTot+' lignes livrées':'Aucune livraison'))+'</span></div>'+
+    '</div>';
+  }).join('');
+  h+='<section class="acc-box" aria-labelledby="acc-av"><div class="acc-box-h"><h2 id="acc-av">Avancement des chantiers</h2><button class="acc-link" onclick="go_(\'chantiers\')">Tous les chantiers ('+chEnCours.length+')</button></div>'+
+    (cartes?'<div class="acc-av">'+cartes+'</div>':'<div style="padding:16px 18px;color:var(--muted);">Aucun chantier en cours</div>')+'</section>';
+  box.innerHTML=h;
+}
+
+window.go_=go;
+window.accNouveau=function(type){
+  openDocModal(-1);
+  const t=document.getElementById('d-type'); if(t){ t.value=type; }
+  const n=document.getElementById('d-num'); if(n && typeof genAutoNumDoc==='function') n.value=genAutoNumDoc(type);
+  setTimeout(()=>{ const q=document.getElementById('d-client-q'); if(q) q.focus(); },60);
+};
+window.accSortie=function(){ go('stock'); if(typeof stTab==='function') stTab('sorties',2); openSortieModal(); };
+window.accChantier=function(){ go('chantiers'); if(window.chOpenModal) chOpenModal(); };
+window.accOuvrirCh=function(id){ go('chantiers'); if(window.chOpenDetail) chOpenDetail(id); };
+window.accChef=function(k){
+  go('stock'); if(typeof stTab==='function') stTab('fiches',4);
+  if(typeof setFicheMode==='function'){ setFicheMode('chef'); if(k) fiNav(decodeURIComponent(k),null); }
+};
+window.accSetAv=function(id){
+  const ch=(D.chantiers||[]).find(c=>c.id===id); if(!ch) return;
+  const a=avancementDe(ch);
+  const v=prompt('Avancement du chantier « '+ch.nom+' » en % (0 à 100).\nLaisse vide pour le calcul automatique (lignes livrées : '+a.nbLiv+'/'+a.nbTot+').', a.manuel?String(a.pct):'');
+  if(v===null) return;
+  const t=v.trim().replace('%','');
+  if(t===''){ delete ch.avancement; }
+  else { const n=Number(t.replace(',','.')); if(!(n>=0 && n<=100)){ notify('Mets un nombre entre 0 et 100','err'); return; } ch.avancement=Math.round(n); }
+  save(); renderAccueil();
+};
+window.accRuptures=function(){
+  const L=(D.stock||[]).filter(p=>(Number(p.qty)||0)<=0).sort((a,b)=>(a.cat||'').localeCompare(b.cat||'')||(a.des||'').localeCompare(b.des||''));
+  let ov=document.getElementById('modal-rupt'); if(ov) ov.remove();
+  ov=document.createElement('div'); ov.className='modal-overlay open'; ov.id='modal-rupt'; ov.style.display='flex';
+  ov.innerHTML='<div class="modal"><div class="modal-hdr"><div class="modal-title">Articles en rupture ('+L.length+')</div><button class="modal-close" onclick="document.getElementById(\'modal-rupt\').remove()">&times;</button></div>'+
+    '<div class="modal-body" style="padding:0;max-height:62vh;overflow:auto;"><table class="acc-tbl"><thead><tr><th>Article</th><th>Catégorie</th><th>Stock</th></tr></thead><tbody>'+
+    (L.map(p=>'<tr><td><b>'+esc(p.des)+'</b><br><span style="font-size:11px;color:var(--muted);">'+esc(p.ref)+'</span></td><td>'+esc(p.cat||'')+'</td><td style="font-family:var(--mono);font-weight:700;color:#8E2A1E;">'+(Number(p.qty)||0)+' '+esc(p.unit||'')+'</td></tr>').join('')||'<tr><td colspan="3" style="text-align:center;color:var(--muted);">Aucun article en rupture</td></tr>')+
+    '</tbody></table></div><div class="modal-foot" style="display:flex;justify-content:space-between;gap:8px;"><button class="btn btn-sm" onclick="accImprRupt()">Imprimer</button><button class="btn btn-primary btn-sm" onclick="document.getElementById(\'modal-rupt\').remove();go_(\'stock\')">Ouvrir le stock</button></div></div>';
+  document.body.appendChild(ov);
+};
+window.accImprRupt=function(){
+  const L=(D.stock||[]).filter(p=>(Number(p.qty)||0)<=0).sort((a,b)=>(a.cat||'').localeCompare(b.cat||'')||(a.des||'').localeCompare(b.des||''));
+  const w=window.open('','_blank','width=850,height=1000'); if(!w){ notify('Autorise les pop-up pour imprimer','err'); return; }
+  w.document.write('<!DOCTYPE html><html><head><meta charset="utf-8"><title>Articles en rupture</title><style>body{font-family:Arial,sans-serif;font-size:12px;margin:14mm}h1{color:#1F497D;font-size:18px;margin:0 0 4px}table{width:100%;border-collapse:collapse;margin-top:10px}th{background:#2E5A8E;color:#fff;padding:6px;text-align:left}td{border:1px solid #bbb;padding:6px}td.q{width:120px}</style></head><body><h1>Articles en rupture — BOIS ECO-STYLE</h1><div>Imprimée le '+new Date().toLocaleDateString('fr-FR')+' · '+L.length+' article(s)</div><table><tr><th>Article</th><th>Catégorie</th><th>Stock</th><th>Qté à commander</th></tr>'+
+    L.map(p=>'<tr><td><b>'+esc(p.des)+'</b> <span style="color:#777">'+esc(p.ref)+'</span></td><td>'+esc(p.cat||'')+'</td><td>'+(Number(p.qty)||0)+' '+esc(p.unit||'')+'</td><td class="q"></td></tr>').join('')+'</table><script>setTimeout(function(){window.print()},300)<\/script></body></html>');
+  w.document.close();
+};
+
+// Brancher sur l'ancien tableau de bord
+const _rd=window.renderDashboard;
+window.renderDashboard=function(){ try{ _rd&&_rd.apply(this,arguments); }catch(e){ console.error(e); } try{ renderAccueil(); }catch(e){ console.error('Accueil',e); } };
+const _nav=window.nav;
+window.nav=function(page,el){
+  const r=_nav.apply(this,arguments);
+  if(page==='dashboard'){ const t=document.getElementById('ptitle'); if(t) t.textContent='Accueil'; }
+  return r;
+};
+function init(){ enTete(); squelette(); try{ renderAccueil(); }catch(e){ console.error('Accueil',e); } const t=document.getElementById('ptitle'); if(t&&t.textContent==='Tableau de bord') t.textContent='Accueil'; }
+if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',()=>setTimeout(init,50)); else setTimeout(init,50);
+window.addEventListener('load',()=>setTimeout(()=>{ enTete(); try{ renderAccueil(); }catch(e){} },900));
+})();
+</script>
+
 </body>
 </html>
