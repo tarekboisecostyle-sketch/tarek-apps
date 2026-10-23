@@ -780,7 +780,11 @@ tr:last-child td{border-bottom:none;} tbody tr:hover td{background:#f8faff;}
   <div class="form-grid" style="margin-bottom:12px;">
     <div class="fg"><label>Type</label><select id="d-type" onchange="if(document.getElementById('doc-edit-idx').value==='-1'){document.getElementById('d-num').value=genAutoNumDoc(this.value);}"><option value="DEVIS">DEVIS</option><option value="FACTURE">FACTURE</option></select></div>
     <div class="fg"><label>N° Document</label><input type="text" id="d-num" placeholder="01-2026"></div>
-    <div class="fg"><label>Client</label><select id="d-client" onchange="if(window.chFillDocChantiers)chFillDocChantiers()"></select></div>
+    <div class="fg"><label>Client <span style="font-weight:400;">(choisir ou taper un nouveau)</span></label>
+      <input id="d-client-q" list="dl-d-clients" placeholder="Nom du client…" autocomplete="off" oninput="docClientTape()" onchange="docClientTape()"><datalist id="dl-d-clients"></datalist>
+      <select id="d-client" style="display:none;" onchange="if(window.chFillDocChantiers)chFillDocChantiers()"></select>
+      <button type="button" id="d-client-add" class="btn btn-sm" style="display:none;margin-top:6px;background:#dcfce7;color:#166534;border:1px solid #22c55e;font-weight:700;" onclick="docAjouterClient()"></button>
+    </div>
     <div class="fg"><label>Chantier <span style="font-weight:400;">(choisir ou taper un nouveau)</span></label><input id="d-chantier" list="dl-d-chantiers" placeholder="Ex : Roma 1, Villa Amelkis 131…" autocomplete="off"><datalist id="dl-d-chantiers"></datalist></div>
     <div class="fg"><label>Date</label><input type="date" id="d-date"></div>
     <div class="fg"><label>TVA (%)</label><input type="number" id="d-tva" value="20" oninput="calcDoc()"></div>
@@ -8792,6 +8796,73 @@ try{ if(chSyncFromDocs()) save(); }catch(e){ console.error('Sync chantiers', e);
 
 })();
 
+
+// ═══════════ Client rapide dans Devis / Facture ═══════════
+// On tape le nom : s'il existe il est sélectionné, sinon un bouton « Ajouter comme client » apparaît.
+function docClientIdx(nom){
+  const k=String(nom||'').replace(/\s+/g,' ').trim().toLowerCase();
+  return k ? (D.clients||[]).findIndex(c=>String(c.nom||'').replace(/\s+/g,' ').trim().toLowerCase()===k) : -1;
+}
+function docClientTape(){
+  const q=document.getElementById('d-client-q'), sel=document.getElementById('d-client'), btn=document.getElementById('d-client-add');
+  if(!q||!sel) return;
+  const nom=q.value.replace(/\s+/g,' ').trim();
+  const i=docClientIdx(nom);
+  const avant=sel.value;
+  sel.value = i>=0 ? String(i) : '';
+  if(btn){
+    if(nom && i<0){ btn.style.display='inline-block'; btn.textContent='+ Ajouter « '+nom+' » comme client'; }
+    else btn.style.display='none';
+  }
+  if(sel.value!==avant && window.chFillDocChantiers) chFillDocChantiers();
+}
+function docAjouterClient(silencieux){
+  const q=document.getElementById('d-client-q');
+  const nom=(q&&q.value||'').replace(/\s+/g,' ').trim();
+  if(!nom) return -1;
+  let i=docClientIdx(nom);
+  if(i<0){
+    D.clients.push({nom,email:'',tel:'',ville:'',adresse:'',ice:'',type:'particulier'});
+    save();
+    i=D.clients.length-1;
+    if(typeof renderClients==='function') try{ renderClients(); }catch(e){}
+    if(!silencieux) notify('✅ Client « '+nom+' » ajouté (complète ses infos plus tard dans Clients)','ok');
+  }
+  docSyncClients();
+  document.getElementById('d-client').value=String(i);
+  docClientTape();
+  return i;
+}
+// Recharge la liste (select caché + suggestions) en gardant la sélection
+function docSyncClients(){
+  const sel=document.getElementById('d-client'); if(!sel) return;
+  const v=sel.value;
+  popSelect('d-client', D.clients.map(c=>c.nom));
+  sel.value=v;
+  const dl=document.getElementById('dl-d-clients');
+  if(dl) dl.innerHTML=(D.clients||[]).map(c=>'<option value="'+String(c.nom||'').replace(/"/g,'&quot;')+'">').join('');
+}
+(function(){
+  const _open=window.openDocModal;
+  window.openDocModal=function(idx){
+    const r=_open.apply(this,arguments);
+    docSyncClients();
+    const sel=document.getElementById('d-client'), q=document.getElementById('d-client-q');
+    if(q) q.value = sel && sel.value!=='' ? ((D.clients[parseInt(sel.value)]||{}).nom||'') : '';
+    docClientTape();
+    return r;
+  };
+  const _save=window.saveDoc;
+  window.saveDoc=function(){
+    const sel=document.getElementById('d-client'), q=document.getElementById('d-client-q');
+    const nom=(q&&q.value||'').trim();
+    if(sel && sel.value==='' && nom){
+      if(!confirm('« '+nom+' » n\'existe pas encore dans les clients.\n\nL\'ajouter comme nouveau client et enregistrer le document ?')) return;
+      docAjouterClient(true);
+    }
+    return _save.apply(this,arguments);
+  };
+})();
 </script>
 </body>
 </html>
