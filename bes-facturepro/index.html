@@ -249,6 +249,7 @@ body{flex-direction:column;}
 .acc-pct{font-family:var(--mono);font-weight:600;font-size:16px;color:#2E5A8E;background:none;border:0;cursor:pointer;padding:2px 4px;border-radius:6px;}
 .acc-pct:hover{background:#E8EFF8;}
 .acc-sub{display:flex;justify-content:space-between;gap:8px;font-size:12.5px;color:var(--muted);}
+#acc-old{max-width:1200px;margin:0 auto;}
 #acc-old>summary{cursor:pointer;color:var(--muted);font-weight:700;margin:6px 0 12px;font-size:13px;}
 @media (max-width:768px){.sidebar{padding:8px 10px;gap:8px;}.nav{flex-wrap:nowrap;overflow-x:auto;flex:1 1 100%;-webkit-overflow-scrolling:touch;}.logo-sub{display:none;}}
 @media (max-width:900px){.acc-actions,.acc-kpis{grid-template-columns:repeat(2,minmax(0,1fr));}.acc-av{grid-template-columns:repeat(1,minmax(0,1fr));}.hdr-search{flex:1 1 100%;}}
@@ -8995,8 +8996,8 @@ function squelette(){
     const dec=mk('acc-dec','Total décaissements','red','br'), res=mk('acc-res','Résultat financier','blue','bb');
     caCard.after(dec); dec.after(res);
   }
-  // Doublons de l'accueil : anciens « Derniers documents » et « Alertes stock »
-  old.querySelectorAll('.card').forEach(c=>{ const t=(c.querySelector('.card-title')||{}).textContent||''; if(/Derniers documents|Alertes stock/i.test(t)){ c.style.display='none'; if(c.parentElement && c.parentElement!==old) c.parentElement.style.gridTemplateColumns='1fr'; } });
+  // On ne garde que les chiffres (finances + stock) : documents, revenus, alertes, commandes → retirés
+  Array.from(old.children).forEach(el=>{ if(el.tagName!=='SUMMARY' && !el.classList.contains('stats-grid')) el.style.display='none'; });
   const cmdEl=document.getElementById('ds-cmd'), cmdCard=cmdEl&&cmdEl.closest('.stat-card');
   if(cmdCard){ cmdCard.style.cursor='pointer'; cmdCard.title='Voir les commandes'; cmdCard.onclick=()=>go('commandes'); }
 }
@@ -9126,10 +9127,18 @@ window.renderDashboard=function(){ try{ _rd&&_rd.apply(this,arguments); }catch(e
 const _nav=window.nav;
 window.nav=function(page,el){
   const r=_nav.apply(this,arguments);
-  if(page==='dashboard'){ const t=document.getElementById('ptitle'); if(t) t.textContent='Accueil'; }
+  accTopbar(page);
   return r;
 };
-function init(){ enTete(); squelette(); try{ renderAccueil(); }catch(e){ console.error('Accueil',e); } const t=document.getElementById('ptitle'); if(t&&t.textContent==='Tableau de bord') t.textContent='Accueil'; }
+// Sur l'accueil, la barre du haut ne montre que l'état de connexion à la base
+function accTopbar(page){
+  const t=document.getElementById('ptitle'), tb=document.getElementById('tbar');
+  const acc=page==='dashboard';
+  if(t){ t.style.display=acc?'none':''; if(acc) t.textContent='Accueil'; }
+  if(tb) tb.style.display=acc?'none':'';
+  const bar=document.querySelector('.topbar'); if(bar) bar.style.justifyContent=acc?'flex-end':'';
+}
+function init(){ enTete(); squelette(); accTopbar((document.querySelector('.page.active')||{}).id==='pg-dashboard'?'dashboard':''); try{ renderAccueil(); }catch(e){ console.error('Accueil',e); } const t=document.getElementById('ptitle'); if(t&&t.textContent==='Tableau de bord') t.textContent='Accueil'; }
 if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',()=>setTimeout(init,50)); else setTimeout(init,50);
 window.addEventListener('load',()=>setTimeout(()=>{ enTete(); try{ renderAccueil(); }catch(e){} },900));
 })();
