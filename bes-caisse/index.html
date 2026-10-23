@@ -148,6 +148,9 @@ td.montant-out{color:var(--red);font-weight:700;}
   body{background:#fff;}
 }
 @media (max-width:820px){
+  #content{padding:14px 12px;}
+  #content table{min-width:620px;}
+  #content div:has(> table){overflow-x:auto;-webkit-overflow-scrolling:touch;}
   #sidebar{width:64px;}
   #sidebar .brand .name,#sidebar .brand .sub,#sidebar nav a span.lbl{display:none;}
   #sidebar .foot{display:none;}
