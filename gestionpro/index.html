@@ -979,7 +979,7 @@ function situationCardHtml(s, compact) {
  }).join('');
  return `<div class="sit">
  <div class="sit-head">
- <div><b>${_esc(k.locataire)}</b><span>☕ ${_esc(k.cafe || '—')} · ${fmt(k.loyer)} MAD / ${k.frequence === 'Mensuel' ? 'mois' : 'semaine'} · depuis le ${k.debut}</span></div>
+ <div><b style="cursor:pointer;text-decoration:underline dotted" title="Voir tout l'historique" onclick="historiqueLocataire(${k.id})">${_esc(k.locataire)}</b><span>☕ ${_esc(k.cafe || '—')} · ${fmt(k.loyer)} MAD / ${k.frequence === 'Mensuel' ? 'mois' : 'semaine'} · depuis le ${k.debut}</span></div>
  <div class="sit-reste ${s.reste > 0 ? 'neg' : 'pos'}">${s.reste > 0 ? fmt(s.reste) + ' <small>MAD à payer</small>' : (s.avance > 0 ? 'Avance ' + fmt(s.avance) : 'À jour ✓')}</div>
  </div>
  <div class="strip">${strip || '<em>Première échéance le ' + k.debut + '</em>'}</div>
@@ -988,6 +988,7 @@ function situationCardHtml(s, compact) {
  <span>Dernier paiement : ${s.last ? s.last.date + ' (' + fmt(s.last.revenu) + ')' : 'aucun'} · Prochaine échéance : ${s.prochaine}</span>
  </div>
  <div class="sit-actions">
+ <button class="btn btn-sm" style="background:#2E5A8E;color:#fff" onclick="historiqueLocataire(${k.id})">📄 Historique / Situation</button>
  <button class="btn btn-success btn-sm" onclick="versementContrat(${k.id})">+ Versement reçu</button>
  ${compact ? '' : `<button class="btn btn-outline btn-sm" onclick="openContratModal(${k.id})">✏️ Modifier</button>
  <button class="btn btn-outline btn-sm" onclick="delContrat(${k.id})">🗑️</button>`}
@@ -1046,6 +1047,120 @@ function versementContrat(id) {
  document.getElementById('c-periode').value = k.frequence;
  document.getElementById('c-loyer-convenu').value = k.loyer;
  document.getElementById('c-revenu').value = k.loyer;
+}
+// ================== HISTORIQUE COMPLET D'UN LOCATAIRE (+ PDF) ==================
+function _dFr(s) { if (!s) return '—'; const [y, m, d] = s.split('-'); return d + '/' + m + '/' + y; }
+// Semaine visée par un loyer : d'abord la note (« du 13 au 19 septembre », « 1ère semaine de juillet »), sinon la date - 3 jours
+function _semaineVisee(x) {
+ const d0 = x.date || today(), note = String(x.note || '').toLowerCase();
+ let m = note.match(/(\d{1,2})\s*(?:\/\s*\d{1,2}\s*\/?)?\s*(?:au|a|à|-)\s*(\d{1,2})/);
+ if (m && +m[2] >= 1 && +m[2] <= 31) return d0.slice(0, 8) + String(+m[2]).padStart(2, '0');
+ if (/1\s*(ere|ère|er|re)\s+semaine/.test(note)) return d0.slice(0, 8) + '01';
+ const d = new Date(d0 + 'T12:00:00'); d.setDate(d.getDate() - 3); return d.toISOString().slice(0, 10);
+}
+function _histData(k) {
+ const s = situationContrat(k);
+ const unit = k.frequence === 'Mensuel' ? 'Mois' : 'Semaine';
+ const loyer = +k.loyer || 0;
+ const semaines = s.ech.map((e, i) => {
+ const fin = _addPeriod(k.debut, k.frequence, i + 1);
+ const finD = new Date(fin + 'T12:00:00'); finD.setDate(finD.getDate() - 1);
+ return { n: i + 1, du: e.date, au: finD.toISOString().slice(0, 10), montant: loyer, paye: 0, dates: [] };
+ });
+ const idxDe = d => { let i = semaines.findIndex(w => d >= w.du && d <= w.au); if (i < 0) i = d < k.debut ? 0 : semaines.length - 1; return i; };
+ const pays = [];
+ D.cafes.filter(x => _norm(x.locataire) === _norm(k.locataire) && (x.date || '') >= _addPeriod(k.debut, k.frequence, -1))
+ .sort((a, b) => (a.date || '').localeCompare(b.date || ''))
+ .forEach(x => {
+ let vs = Array.isArray(x.versements) && x.versements.length ? x.versements : [{ date: x.date, montant: +x.revenu }];
+ // Si les versements ne collent pas avec le montant encaissé, on garde le montant encaissé (date du dernier versement)
+ if (Math.abs(vs.reduce((a, v) => a + (+v.montant || 0), 0) - (+x.revenu || 0)) > 0.5) vs = [{ date: (vs[vs.length - 1] || {}).date || x.date, montant: +x.revenu }];
+ vs = vs.filter(v => +v.montant > 0.5);
+ vs.forEach(v => pays.push({ date: v.date || x.date, montant: +v.montant, ref: x.note || ('Loyer du ' + _dFr(x.date)), frais: 0 }));
+ if (+x.charges > 0) pays.push({ date: x.date, montant: 0, ref: (x.note || '') + ' — frais', frais: +x.charges });
+ // Répartition sur la semaine visée (le surplus passe aux semaines suivantes)
+ if (!semaines.length) return;
+ let amt = vs.reduce((a, v) => a + +v.montant, 0), i = idxDe(_semaineVisee(x));
+ const dates = vs.map(v => v.date || x.date);
+ while (amt > 0.5 && i < semaines.length) {
+ const w = semaines[i], part = Math.min(amt, Math.max(0, w.montant - w.paye));
+ if (part > 0) { w.paye += part; w.dates.push(...dates); amt -= part; }
+ i++;
+ }
+ if (amt > 0.5) { const w = semaines[semaines.length - 1]; w.paye += amt; w.dates.push(...dates); }
+ });
+ semaines.forEach(w => { w.dates = [...new Set(w.dates)]; w.st = w.paye >= w.montant - 0.01 ? 'Payée' : w.paye > 0.01 ? 'En partie' : 'Non payée'; });
+ pays.sort((a, b) => (a.date || '').localeCompare(b.date || ''));
+ return { s, unit, semaines, pays };
+}
+function _histHtml(k, forPrint) {
+ const { s, unit, semaines, pays } = _histData(k);
+ const totFrais = pays.reduce((a, p) => a + p.frais, 0);
+ const stCol = st => st === 'Payée' ? '#1E8449' : st === 'En partie' ? '#B9770E' : '#C0392B';
+ return `
+ <div class="hl-head">
+ <div><div class="hl-name">${_esc(k.locataire)}</div>
+ <div class="hl-sub">☕ ${_esc(k.cafe || '—')} · Loyer ${fmt(k.loyer)} MAD / ${unit.toLowerCase()} · Début du suivi : ${_dFr(k.debut)}</div></div>
+ <div class="hl-sub" style="text-align:right">Situation au ${_dFr(today())}</div>
+ </div>
+ <table class="hl-tot"><tr>
+ <td><span>${unit}s échues</span><b>${semaines.length}</b></td>
+ <td><span>Total dû</span><b>${fmt(s.du)} MAD</b></td>
+ <td><span>Total payé</span><b style="color:#1E8449">${fmt(s.totalPaye)} MAD</b></td>
+ <td><span>${s.reste > 0 ? 'Reste à payer' : 'Avance'}</span><b style="color:${s.reste > 0 ? '#C0392B' : '#1E8449'}">${fmt(Math.abs(s.reste))} MAD</b></td>
+ </tr></table>
+ <h3 class="hl-h">1. ${unit} par ${unit.toLowerCase()}</h3>
+ <table class="hl-tbl"><thead><tr><th>N°</th><th>Période</th><th class="r">Loyer</th><th class="r">Payé</th><th>Statut</th><th>Payée le</th>${forPrint ? '<th>Vérifié ✓</th>' : ''}</tr></thead><tbody>
+ ${semaines.map(w => `<tr><td>${w.n}</td><td>du ${_dFr(w.du)} au ${_dFr(w.au)}</td><td class="r">${fmt(w.montant)}</td><td class="r">${fmt(w.paye)}</td><td style="color:${stCol(w.st)};font-weight:700">${w.st}</td><td>${w.dates.map(_dFr).join(', ') || '—'}</td>${forPrint ? '<td class="box">☐</td>' : ''}</tr>`).join('') || '<tr><td colspan="7">Aucune échéance</td></tr>'}
+ </tbody></table>
+ <h3 class="hl-h">2. Paiements reçus (date réelle du paiement)</h3>
+ <table class="hl-tbl"><thead><tr><th>Date du paiement</th><th>Pour</th><th class="r">Montant</th>${totFrais ? '<th class="r">Frais</th>' : ''}</tr></thead><tbody>
+ ${pays.map(p => `<tr><td>${_dFr(p.date)}</td><td>${_esc(p.ref)}</td><td class="r">${p.montant ? fmt(p.montant) : '—'}</td>${totFrais ? `<td class="r">${p.frais ? fmt(p.frais) : ''}</td>` : ''}</tr>`).join('') || '<tr><td colspan="4">Aucun paiement</td></tr>'}
+ <tr class="hl-sum"><td colspan="2">Total payé</td><td class="r">${fmt(s.totalPaye)}</td>${totFrais ? `<td class="r">${fmt(totFrais)}</td>` : ''}</tr>
+ </tbody></table>
+ <p class="hl-note">Chaque paiement est placé sur la ${unit.toLowerCase()} indiquée dans sa note (sinon d'après sa date) ; un surplus passe à la ${unit.toLowerCase()} suivante. Total dû − total payé = reste à payer.${totFrais ? ' Les frais sont indiqués pour information (non déduits du loyer).' : ''}</p>`;
+}
+const _HL_CSS = `.hl-head{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;border-bottom:3px solid #2E5A8E;padding-bottom:8px;margin-bottom:10px}
+.hl-name{font-size:22px;font-weight:800;color:#2E5A8E}.hl-sub{font-size:12px;color:#555}
+.hl-tot{width:100%;border-collapse:separate;border-spacing:6px;margin:0 -6px 6px}.hl-tot td{background:#F2F6FB;border-radius:8px;padding:8px 10px}
+.hl-tot span{display:block;font-size:11px;color:#555}.hl-tot b{font-size:16px}
+.hl-h{font-size:14px;color:#2E5A8E;margin:14px 0 6px}
+.hl-tbl{width:100%;border-collapse:collapse;font-size:12px}.hl-tbl th{background:#2E5A8E;color:#fff;padding:6px;text-align:left}
+.hl-tbl td{padding:5px 6px;border-bottom:1px solid #ddd}.hl-tbl .r{text-align:right;white-space:nowrap}
+.hl-tbl tr:nth-child(even) td{background:#F7F9FC}.hl-sum td{font-weight:800;background:#D6EAF8!important}
+.hl-tbl .box{text-align:center;font-size:16px}.hl-tbl .line{min-width:80px;border-bottom:1px solid #999}
+.hl-note{font-size:11px;color:#666;margin-top:8px}`;
+function historiqueLocataire(id) {
+ const k = (D.contrats || []).find(x => x.id === id);
+ if (!k) return;
+ let ov = document.getElementById('modal-histo');
+ if (ov) ov.remove();
+ ov = document.createElement('div');
+ ov.id = 'modal-histo';
+ ov.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;display:flex;align-items:flex-start;justify-content:center;overflow:auto;padding:16px';
+ ov.innerHTML = `<style>${_HL_CSS}</style><div style="background:#fff;color:#222;max-width:820px;width:100%;border-radius:12px;padding:18px;margin:auto">
+ <div style="display:flex;gap:8px;justify-content:flex-end;margin-bottom:10px;flex-wrap:wrap">
+ <button class="btn btn-sm" style="background:#C0392B;color:#fff" onclick="imprimerHistorique(${k.id})">🖨️ PDF / Imprimer</button>
+ <button class="btn btn-outline btn-sm" onclick="document.getElementById('modal-histo').remove()">✕ Fermer</button></div>
+ ${_histHtml(k, false)}</div>`;
+ ov.addEventListener('click', e => { if (e.target === ov) ov.remove(); });
+ document.body.appendChild(ov);
+}
+function imprimerHistorique(id) {
+ const k = (D.contrats || []).find(x => x.id === id);
+ if (!k) return;
+ const doc = `<!doctype html><html><head><meta charset="utf-8"><title>Situation ${_esc(k.locataire)} ${today()}</title>
+ <style>@page{size:A4;margin:12mm}body{font-family:Segoe UI,Arial,sans-serif;color:#222;margin:0}${_HL_CSS}
+ .hl-tbl th,.hl-tot td,.hl-sum td,.hl-tbl tr:nth-child(even) td{-webkit-print-color-adjust:exact;print-color-adjust:exact}tr{page-break-inside:avoid}</style></head>
+ <body>${_histHtml(k, true)}</body></html>`;
+ let fr = document.getElementById('histo-print');
+ if (fr) fr.remove();
+ fr = document.createElement('iframe');
+ fr.id = 'histo-print';
+ fr.style.cssText = 'position:fixed;right:0;bottom:0;width:0;height:0;border:0';
+ document.body.appendChild(fr);
+ fr.contentDocument.open(); fr.contentDocument.write(doc); fr.contentDocument.close();
+ setTimeout(() => { fr.contentWindow.focus(); fr.contentWindow.print(); }, 300);
 }
 function contratsSectionHtml() {
  const list = (D.contrats || []);
