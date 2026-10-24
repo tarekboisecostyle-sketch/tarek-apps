@@ -157,6 +157,7 @@ tbody td.r { text-align: right; font-weight: 600; }
 .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; padding-bottom: 12px; border-bottom: 2px solid var(--light-blue); }
 .modal-title { font-size: 16px; font-weight: 700; color: var(--primary); }
 .modal-close { background: none; border: none; font-size: 20px; cursor: pointer; color: var(--text2); line-height: 1; }
+#modal-contrat, #modal-encaisser { z-index: 1001; }
 .modal-footer { display: flex; justify-content: flex-end; gap: 10px; margin-top: 18px; padding-top: 14px; border-top: 1px solid var(--border); }
 
 /* TABS */
@@ -1050,11 +1051,11 @@ function saveContrat() {
  const k = D.contrats.find(x => x.id === id);
  if (k) Object.assign(k, obj); else D.contrats.push({ id: Date.now(), ...obj });
  harmoniserNoms();
- save(); closeModal('modal-contrat'); notify('Contrat enregistré ✅', 'ok'); rerender();
+ save(); closeModal('modal-contrat'); notify('Contrat enregistré ✅', 'ok'); rerender(); _refreshContratsListe();
 }
 function delContrat(id) {
  if (!confirm('Supprimer ce contrat ? Les loyers déjà encaissés restent dans l\'historique.')) return;
- D.contrats = (D.contrats || []).filter(x => x.id !== id); save(); rerender();
+ D.contrats = (D.contrats || []).filter(x => x.id !== id); save(); rerender(); _refreshContratsListe();
 }
 function versementContrat(id) {
  const k = (D.contrats || []).find(x => x.id === id);
@@ -1181,13 +1182,37 @@ function imprimerHistorique(id) {
  fr.contentDocument.open(); fr.contentDocument.write(doc); fr.contentDocument.close();
  setTimeout(() => { fr.contentWindow.focus(); fr.contentWindow.print(); }, 300);
 }
+// Détail d'un contrat (clic sur le nom) : emplacement, loyer, note, situation
+function openContratDetail(id) {
+ const k = (D.contrats || []).find(x => x.id === id); if (!k) return;
+ const st = situationContrat(k);
+ let m = document.getElementById('modal-contrat-detail');
+ if (!m) { m = document.createElement('div'); m.className = 'modal-overlay'; m.id = 'modal-contrat-detail'; document.body.appendChild(m); }
+ const ligne = (l, v) => `<div style="display:flex;justify-content:space-between;gap:10px;padding:7px 0;border-bottom:1px solid var(--border)"><span style="color:var(--text2)">${l}</span><b style="text-align:right">${v}</b></div>`;
+ m.innerHTML = `<div class="modal"><div class="modal-header"><div class="modal-title">📝 ${_esc(k.locataire)}</div>
+ <button class="modal-close" onclick="closeModal('modal-contrat-detail')">✕</button></div>
+ ${ligne('Emplacement', '☕ ' + _esc(k.cafe || '—'))}
+ ${ligne('Loyer', fmt(k.loyer) + ' MAD / ' + (k.frequence === 'Mensuel' ? 'mois' : 'semaine'))}
+ ${ligne('Reste à payer', `<span style="color:${st.reste > 0 ? 'var(--danger)' : 'var(--accent)'}">${fmt(Math.max(0, st.reste))} MAD</span>`)}
+ ${ligne('Semaine en cours', fmt(st.prochaineMontant) + ' MAD prévisionnel — à payer le ' + _dFr(st.prochaine))}
+ ${k.note ? ligne('Note', _esc(k.note)) : ''}
+ <div class="modal-footer">
+ <button class="btn btn-outline btn-sm" onclick="delContrat(${k.id})">🗑️</button>
+ <button class="btn btn-outline btn-sm" onclick="closeModal('modal-contrat-detail');openContratModal(${k.id})">✏️ Modifier</button>
+ <button class="btn btn-success btn-sm" onclick="closeModal('modal-contrat-detail');versementContrat(${k.id})">+ Versement reçu</button>
+ <button class="btn btn-sm" style="background:#2E5A8E;color:#fff" onclick="historiqueLocataire(${k.id})">📄 Historique</button>
+ </div></div>`;
+ openModal('modal-contrat-detail');
+}
+function _refreshContratsListe() { closeModal && document.getElementById('modal-contrat-detail') && closeModal('modal-contrat-detail'); }
 function contratsSectionHtml() {
  const list = (D.contrats || []);
  return `<div class="card">
- <div class="card-title">📝 Situation par locataire <button class="btn btn-sm" style="margin-left:auto;background:#6F4E37;color:#fff" onclick="openContratModal()">+ Contrat</button></div>
- <div style="font-size:12px;color:var(--text2);margin-bottom:12px">Chaque case = une échéance : <i class="wk ok"></i> payée · <i class="wk part"></i> en partie · <i class="wk no"></i> impayée. Pour repartir de zéro après un arrêt des comptes, modifie la date de début du contrat.</div>
- ${list.length ? list.map(k => situationCardHtml(situationContrat(k), false)).join('') :
- '<div class="empty-state" style="padding:18px"><p>Aucun contrat. Ajoute le contrat de chaque locataire pour suivre ce qu\'il doit.</p></div>'}
+ <div class="card-title">📝 Contrats <button class="btn btn-sm" style="margin-left:auto;background:#6F4E37;color:#fff" onclick="openContratModal()">+ Contrat</button></div>
+ ${list.length ? list.map(k => `<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 4px;border-bottom:1px solid var(--border)">
+ <b style="font-size:15px;cursor:pointer;text-decoration:underline dotted" title="Voir le détail" onclick="openContratDetail(${k.id})">${_esc(k.locataire)}</b>
+ <button class="btn btn-sm" style="background:#2E5A8E;color:#fff" onclick="historiqueLocataire(${k.id})">📄 Historique</button>
+ </div>`).join('') : '<div class="empty-state" style="padding:18px"><p>Aucun contrat.</p></div>'}
  </div>`;
 }
 
@@ -1828,7 +1853,9 @@ function renderCafes() {
  let html = `
  <div class="section-header">
  <h2>☕ Cafés Mobiles — </h2>
+ <div style="display:flex;gap:8px;flex-wrap:wrap">
  <button class="btn btn-sm" style="background:#6F4E37;color:#fff" onclick="openCafeModal()">+ Loyer Encaissé</button>
+ </div>
  </div>
  <div style="background:#EAF7EA;border:1px solid #82E0AA;border-radius:8px;padding:10px 14px;margin-bottom:14px;font-size:13px;color:#1A5E20;">
  🏠 <strong>Tu es le propriétaire</strong> des cafés mobiles — tu encaisses les loyers des locataires/gérants.
