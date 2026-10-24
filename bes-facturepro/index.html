@@ -4328,7 +4328,7 @@ function renderSorties(){
       if(!t.includes(q))return false;
     }
     return true;
-  });
+  }).sort((a,b)=>(b.date||'').localeCompare(a.date||'')||(Number(b.id)||0)-(Number(a.id)||0)); // plus récentes en haut
   const tb=document.getElementById('list-sorties');
   if(!list.length){
     tb.innerHTML='<tr><td colspan="13" style="text-align:center;padding:22px;color:var(--muted);">Aucune sortie</td></tr>';
@@ -4594,7 +4594,12 @@ function sorCatDe(s){
 function sorProd(s){ return D.stock.find(x=>x.ref===s.produitRef)||{}; }
 function sorPmp(s){ return prixSortieHT(s); }
 
-function chefDe(s){ return sorNormNom(s.chef||''); }
+// Chef d'équipe : champ « chef » ; sinon, si la personne qui a pris est dans la liste des chefs, c'est elle
+function chefDe(s){
+  if(s.chef) return sorNormNom(s.chef);
+  const p=sorNormNom(personneDe(s)); if(!p) return '';
+  return chefsListe().some(n=>sorNormNom(n)===p) ? p : '';
+}
 const SANS_CHEF='(SANS CHEF D\'ÉQUIPE)', SANS_CH='(CHANTIER NON PRÉCISÉ)';
 function chOf(s){ return sorNormCh(chantierDe(s))||SANS_CH; }
 function chefOf(s){ return chefDe(s)||SANS_CHEF; }
