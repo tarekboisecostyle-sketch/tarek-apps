@@ -960,39 +960,50 @@ function _addPeriod(dateStr, freq, n) {
  if (freq === 'Mensuel') d.setMonth(d.getMonth() + n); else d.setDate(d.getDate() + 7 * n);
  return d.toISOString().slice(0, 10);
 }
+// Semaine offerte : une ligne loyer du locataire marquée « offert » (ou loyer convenu 0 + note OFFERT) dans la semaine qui finit à l'échéance
+function _offertPour(k, ech) {
+ const d0 = new Date(ech + 'T12:00:00'); d0.setDate(d0.getDate() - 6); const deb = d0.toISOString().slice(0, 10);
+ return D.cafes.find(c => _norm(c.locataire) === _norm(k.locataire) && (c.date || '') >= deb && (c.date || '') <= ech
+ && (c.offert === true || (+c.loyerConvenu === 0 && /offert/i.test(c.note || ''))));
+}
+// Loyer qui compte pour ce contrat : même locataire et visant une période à partir de la 1re échéance (période qui finit à la date de début)
+function _debutPeriode(k) { if (k.frequence === 'Mensuel') { const d = new Date(_addPeriod(k.debut, k.frequence, -1) + 'T12:00:00'); d.setDate(d.getDate() + 1); return d.toISOString().slice(0, 10); } const d = new Date(k.debut + 'T12:00:00'); d.setDate(d.getDate() - 6); return d.toISOString().slice(0, 10); }
+function _dansContrat(k, c) { const deb = _debutPeriode(k); return _norm(c.locataire) === _norm(k.locataire) && (c.date || '') >= deb && _semaineVisee(c) >= deb; }
 // Calcule les échéances depuis la date de début et répartit les loyers encaissés (du plus ancien au plus récent)
 function situationContrat(k) {
  const td = today();
  const loyer = +k.loyer || 0;
  const ech = [];
- for (let i = 0; i < 520; i++) { const d = _addPeriod(k.debut, k.frequence, i); if (d > td) break; ech.push({ date: d, du: loyer, paye: 0 }); }
- const pays = D.cafes.filter(c => _norm(c.locataire) === _norm(k.locataire) && (c.date || '') >= k.debut)
+ for (let i = 0; i < 520; i++) { const d = _addPeriod(k.debut, k.frequence, i); if (d > td) break; const off = _offertPour(k, d); ech.push({ date: d, du: off ? 0 : loyer, paye: 0, offert: !!off }); }
+ const pays = D.cafes.filter(c => _dansContrat(k, c))
  .sort((a, b) => (a.date || '').localeCompare(b.date || ''));
  const totalPaye = _sum(pays, c => c.revenu);
  let pot = totalPaye;
  ech.forEach(e => { const x = Math.min(pot, e.du); e.paye = x; pot -= x; });
- const du = ech.length * loyer;
+ const du = _sum(ech, e => e.du);
  const prochaine = _addPeriod(k.debut, k.frequence, ech.length);
+ const prochaineMontant = _offertPour(k, prochaine) ? 0 : loyer;
  const last = pays[pays.length - 1];
- return { k, ech, du, totalPaye, reste: du - totalPaye, avance: Math.max(0, pot), prochaine, last,
+ return { k, ech, du, totalPaye, reste: du - totalPaye, avance: Math.max(0, pot), prochaine, prochaineMontant, last,
  nbImpayes: ech.filter(e => e.paye < e.du).length };
 }
 function situationCardHtml(s, compact) {
  const k = s.k;
  const unit = k.frequence === 'Mensuel' ? 'mois' : 'sem.';
  const strip = s.ech.slice(compact ? -26 : 0).map(e => {
- const st = e.paye >= e.du ? 'ok' : e.paye > 0 ? 'part' : 'no';
- return `<i class="wk ${st}" title="${e.date} : ${fmt(e.paye)} / ${fmt(e.du)} MAD"></i>`;
+ const st = e.offert ? 'part' : e.paye >= e.du ? 'ok' : e.paye > 0 ? 'part' : 'no';
+ return `<i class="wk ${st}" title="${e.date} : ${e.offert ? 'offerte' : fmt(e.paye) + ' / ' + fmt(e.du) + ' MAD'}"></i>`;
  }).join('');
  return `<div class="sit">
  <div class="sit-head">
  <div><b style="cursor:pointer;text-decoration:underline dotted" title="Voir tout l'historique" onclick="historiqueLocataire(${k.id})">${_esc(k.locataire)}</b><span>☕ ${_esc(k.cafe || '—')} · ${fmt(k.loyer)} MAD / ${k.frequence === 'Mensuel' ? 'mois' : 'semaine'} · depuis le ${k.debut}</span></div>
- <div class="sit-reste ${s.reste > 0 ? 'neg' : 'pos'}">${s.reste > 0 ? fmt(s.reste) + ' <small>MAD à payer</small>' : (s.avance > 0 ? 'Avance ' + fmt(s.avance) : 'À jour ✓')}</div>
+ <div class="sit-reste ${s.reste > 0 || (s.avance <= 0 && s.ech.length && s.ech[s.ech.length-1].offert) ? 'neg' : 'pos'}">${s.reste > 0 ? fmt(s.reste) + ' <small>MAD à payer</small>' : (s.avance > 0 ? 'Avance ' + fmt(s.avance) : (s.ech.length && s.ech[s.ech.length-1].offert ? '0 <small>MAD à payer (semaine offerte)</small>' : 'À jour ✓'))}</div>
  </div>
  <div class="strip">${strip || '<em>Première échéance le ' + k.debut + '</em>'}</div>
  <div class="sit-foot">
  <span>${s.ech.length} ${unit} échue(s) · ${fmt(s.du)} dû · ${fmt(s.totalPaye)} encaissé · ${s.nbImpayes} ${unit} non soldée(s)</span>
  <span>Dernier paiement : ${s.last ? s.last.date + ' (' + fmt(s.last.revenu) + ')' : 'aucun'} · Prochaine échéance : ${s.prochaine}</span>
+ <span style="color:var(--text2)">📅 Semaine en cours : <b>${fmt(s.prochaineMontant)} MAD</b> prévisionnel — à payer le ${_dFr(s.prochaine)}</span>
  </div>
  <div class="sit-actions">
  <button class="btn btn-sm" style="background:#2E5A8E;color:#fff" onclick="historiqueLocataire(${k.id})">📄 Historique / Situation</button>
@@ -1070,13 +1081,14 @@ function _histData(k) {
  const unit = k.frequence === 'Mensuel' ? 'Mois' : 'Semaine';
  const loyer = +k.loyer || 0;
  const semaines = s.ech.map((e, i) => {
- const fin = _addPeriod(k.debut, k.frequence, i + 1);
- const finD = new Date(fin + 'T12:00:00'); finD.setDate(finD.getDate() - 1);
- return { n: i + 1, du: e.date, au: finD.toISOString().slice(0, 10), montant: loyer, paye: 0, dates: [] };
+ let deb;
+ if (k.frequence === 'Mensuel') { deb = _addPeriod(e.date, k.frequence, -1); const dd = new Date(deb + 'T12:00:00'); dd.setDate(dd.getDate() + 1); deb = dd.toISOString().slice(0, 10); }
+ else { const dd = new Date(e.date + 'T12:00:00'); dd.setDate(dd.getDate() - 6); deb = dd.toISOString().slice(0, 10); }
+ return { n: i + 1, du: deb, au: e.date, montant: e.du, offert: e.offert, paye: 0, dates: [] };
  });
  const idxDe = d => { let i = semaines.findIndex(w => d >= w.du && d <= w.au); if (i < 0) i = d < k.debut ? 0 : semaines.length - 1; return i; };
  const pays = [];
- D.cafes.filter(x => _norm(x.locataire) === _norm(k.locataire) && (x.date || '') >= _addPeriod(k.debut, k.frequence, -1))
+ D.cafes.filter(x => _dansContrat(k, x) && !(x.offert === true || (+x.loyerConvenu === 0 && /offert/i.test(x.note || ''))))
  .sort((a, b) => (a.date || '').localeCompare(b.date || ''))
  .forEach(x => {
  let vs = Array.isArray(x.versements) && x.versements.length ? x.versements : [{ date: x.date, montant: +x.revenu }];
@@ -1096,14 +1108,14 @@ function _histData(k) {
  }
  if (amt > 0.5) { const w = semaines[semaines.length - 1]; w.paye += amt; w.dates.push(...dates); }
  });
- semaines.forEach(w => { w.dates = [...new Set(w.dates)]; w.st = w.paye >= w.montant - 0.01 ? 'Payée' : w.paye > 0.01 ? 'En partie' : 'Non payée'; });
+ semaines.forEach(w => { w.dates = [...new Set(w.dates)]; w.st = w.offert ? 'Offerte' : w.paye >= w.montant - 0.01 ? 'Payée' : w.paye > 0.01 ? 'En partie' : 'Non payée'; });
  pays.sort((a, b) => (a.date || '').localeCompare(b.date || ''));
  return { s, unit, semaines, pays };
 }
 function _histHtml(k, forPrint) {
  const { s, unit, semaines, pays } = _histData(k);
  const totFrais = pays.reduce((a, p) => a + p.frais, 0);
- const stCol = st => st === 'Payée' ? '#1E8449' : st === 'En partie' ? '#B9770E' : '#C0392B';
+ const stCol = st => st === 'Payée' ? '#1E8449' : st === 'Offerte' ? '#2E5A8E' : st === 'En partie' ? '#B9770E' : '#C0392B';
  return `
  <div class="hl-head">
  <div><div class="hl-name">${_esc(k.locataire)}</div>
