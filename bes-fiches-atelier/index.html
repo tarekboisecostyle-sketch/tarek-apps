@@ -512,6 +512,7 @@ header.top::after{content:"";position:absolute;left:0;right:0;bottom:0;height:5p
             <datalist id="matFList"><option value="Gris High Gloss"></option></datalist>
           </label>
         </div>
+        <label class="check"><input id="rSepF" type="checkbox" checked> Séparer les façades (portes et façades de tiroirs) des caissons : liste de débit et plans de découpe à part</label>
         <p class="hint">Vide = portes en MDF 18 comme les caissons. Avec une autre matière, portes et façades de tiroirs sortent sur leurs propres plaques dans le plan de découpe.</p>
       </fieldset>
       <fieldset id="fsEtag">
@@ -654,7 +655,7 @@ const T={
  charn:{fr:'Charnières',ar:'مفصلات'}, verin:{fr:'Vérins (portes relevables)',ar:'ڤيران ديال البيبان اللي كيتحلو للفوق'}, tringle:{fr:'Tringle',ar:'عمود التعليق'}, poign:{fr:'Poignées',ar:'مقابض'},
  placard:{fr:'Placard',ar:'خزانة'}, hab:{fr:"Panneau d'habillage",ar:'لوح تلبيس'}, joue:{fr:'Joue',ar:'جنب تلبيس'}, tab:{fr:'Tablette murale',ar:'رف حائطي'}, supT:{fr:'Supports de tablette',ar:'حمالات الرف'},
  elevm:{fr:'Élévation du meuble',ar:'واجهة الأثاث'}, meuble:{fr:'Meuble',ar:'أثاث'}, cuisine:{fr:'Cuisine',ar:'كوزينة'}, elev:{fr:'Élévation de la cuisine',ar:'واجهة الكوزينة'},
- rowbas:{fr:'Bas',ar:'تحتاني'}, vide:{fr:'Espace vide',ar:'فراغ'}, rowhaut:{fr:'Haut',ar:'فوقاني'}, rowcol:{fr:'Colonne',ar:'عمود'}, caissons:{fr:'Caissons',ar:'الخزانات'}, ptrav:{fr:'plan de travail',ar:'بلان دو ترافاي'}, caisson:{fr:'Caisson bas',ar:'خزانة سفلية'},
+ rowbas:{fr:'Bas',ar:'تحتاني'}, vide:{fr:'Espace vide',ar:'فراغ'}, rowhaut:{fr:'Haut',ar:'فوقاني'}, rowcol:{fr:'Colonne',ar:'عمود'}, caissons:{fr:'Caissons',ar:'الخزانات'}, facs:{fr:'Façades (portes et tiroirs)',ar:'الواجهات (البيبان والتيروار)'}, strc:{fr:'Caissons, étagères et tiroirs',ar:'الخزانات والرفوف والتيروار'}, ptrav:{fr:'plan de travail',ar:'بلان دو ترافاي'}, caisson:{fr:'Caisson bas',ar:'خزانة سفلية'},
  ftir:{fr:'Façade tiroir',ar:'واجهة التيروار'}, tcote:{fr:'Côté tiroir',ar:'جنب التيروار'}, tav:{fr:'Avant / arrière tiroir',ar:'قدام / ورا التيروار'}, tfond:{fr:'Fond tiroir',ar:'قاع التيروار'},
  coul:{fr:'Coulisses (paires)',ar:'سكك التيروار (زوج)'}, pieds:{fr:'Pieds réglables',ar:'رجلين بلاستيك'}, railH:{fr:'Rail haut coulissant',ar:'سكة الفوق'}, railB:{fr:'Rail bas coulissant',ar:'سكة التحت'}, kitC:{fr:'Kits roulettes (1 / porte)',ar:'روايض (1 لكل باب)'}, poignC:{fr:'Poignées cuvette',ar:'مقابض مدفونة'}, tass:{fr:'Tasseaux',ar:'تاسو (حامل الرف)'}, noDed:{fr:'NE PAS DÉDUIRE LE CHANT : il est déjà déduit. Couper à la cote écrite.',ar:'لا تنقص السينتا: راه محسوب. قطع على المقاس المكتوب.'}, montantJ:{fr:'Séparation joint du dos',ar:'فاصل وصلة الظهر'}, rain:{fr:'rainure',ar:'مجرى (رينور)'}, nest:{fr:'Plan de découpe',ar:'مخطط التقطيع على الألواح'}, plaque:{fr:'Plaque',ar:'لوح'},
  rend:{fr:'Rendement',ar:'المردودية'}, avis:{fr:'Votre avis sur la fiche',ar:'رأيكم في ورقة الورشة'}, pend:{fr:'Penderie',ar:'شماعة'}, total:{fr:'Total pièces',ar:'مجموع القطع'}
@@ -683,7 +684,7 @@ function read(){
    $('#hHint').textContent=b==='pieds'?'H = hauteur totale avec les pieds, sans le plan de travail. Les côtés font H − hauteur des pieds.':b==='socle'?'H = hauteur totale. Les côtés descendent jusqu\'au sol.':'H = hauteur totale, le dessous est posé au sol.';}
   Object.assign(S,{L:v('inL'),H:v('inH'),P:v('inP'),socle:Math.max(0,v('inSocle')),base:$('#inBase').value,doors:$('#inDoors').value,nc:+$('#inNc').value,plinthe:$('#inPlinthe').checked,q:Math.max(1,v('inQ')),
     chantier:$('#inChantier').value,fix:$('#inFix').value,produit:$('#inProduit').value});
-  R={ep:v('rEp')||18,chant:+$('#rChant').value,ded:$('#rDed').checked,jp:v('rJp'),jj:v('rJj'),dosEp:+$('#inDosEp').value,dosMode:$('#inDosMode').value,dosPl:$('#inDosPl').value,rp:v('rRainP'),rr:v('rRainR'),ret:v('rRet'),kerf:v('rKerf'),icale:v('rIcale'),rail:v('rRail'),cmin:v('rCmin')||650,rec:v('rRec'),cded:v('rCded'),cj:v('rCj'),tH:v('rTh'),tF:+$('#rTf').value,trim:v('rTrim'),fil:$('#rFil').checked,matF:(($('#rMatF')||{}).value||'').trim()};
+  R={ep:v('rEp')||18,chant:+$('#rChant').value,ded:$('#rDed').checked,jp:v('rJp'),jj:v('rJj'),dosEp:+$('#inDosEp').value,dosMode:$('#inDosMode').value,dosPl:$('#inDosPl').value,rp:v('rRainP'),rr:v('rRainR'),ret:v('rRet'),kerf:v('rKerf'),icale:v('rIcale'),rail:v('rRail'),cmin:v('rCmin')||650,rec:v('rRec'),cded:v('rCded'),cj:v('rCj'),tH:v('rTh'),tF:+$('#rTf').value,trim:v('rTrim'),fil:$('#rFil').checked,matF:(($('#rMatF')||{}).value||'').trim(),sepF:!$('#rSepF')||$('#rSepF').checked};
 }
 
 const plateOf=m=>{const dm=R.dosEp===3?'HDF 3':'MDF '+R.dosEp;if(m===dm&&R.dosEp<18&&R.dosPl)return R.dosPl.split('x').map(Number);return m==='HDF 3'?[2440,1220]:[2800,2100];};
@@ -1002,10 +1003,13 @@ function perspective(r){
 }
 
 /* ---------- plan de découpe (guillotine, meilleur ajustement) ---------- */
-function nest(list,mat){
+const isFront=p=>p.key==='porte'||p.key==='ftir';
+/* groupes de débit : caissons puis façades (si séparés) */
+const debitGroups=list=>R.sepF?[['strc',list.filter(p=>!isFront(p))],['facs',list.filter(isFront)]].filter(g=>g[1].length):[[null,list]];
+function nest(list,mat,grp){
   const [w0,h0]=plateOf(mat),PL={w:w0,h:h0};
   const K=R.kerf,Tm=R.trim,PW=PL.w-2*Tm,PH=PL.h-2*Tm,items=[],out=[];
-  list.filter(p=>p.mat===mat).forEach(p=>{const q=p.tq??p.qty*S.q;for(let i=0;i<q;i++)items.push({n:p.lab??p.n,k:p.key,w:p.Lc,h:p.Wc,fil:p.fil});});
+  list.filter(p=>p.mat===mat&&(!grp||(grp==='facs')===isFront(p))).forEach(p=>{const q=p.tq??p.qty*S.q;for(let i=0;i<q;i++)items.push({n:p.lab??p.n,k:p.key,w:p.Lc,h:p.Wc,fil:p.fil});});
   items.sort((a,b)=>(Math.max(b.w,b.h)-Math.max(a.w,a.h))||(b.w*b.h-a.w*a.h));
   const plates=[],nouv=()=>{const p={free:[{x:0,y:0,w:PW,h:PH}],parts:[],PL};plates.push(p);return p;};
   const tryIn=(pl,it)=>{let best=null;
@@ -1110,7 +1114,7 @@ function render(){queueMicrotask(()=>{try{updRelBanner();}catch(e){}});
     {const cp=KIT.pos[KIT.cur];if(cp){$('#inX').placeholder=`auto (${fmt(cp.x)})`;$('#inY').placeholder=`auto (${fmt(cp.y)})`;}}}
   r.L2=L2;r.A2=A2;
   $('#warns').innerHTML=W2.length?W2.map(w=>`<li>${esc(w)}</li>`).join(''):'<li class="ok">Toutes les pièces rentrent dans les plaques. Aucun point bloquant.</li>';
-  $('#debit').innerHTML=L2.map(p=>`<tr>
+  $('#debit').innerHTML=debitGroups(L2).map(([g,gl])=>(g?`<tr><td colspan="9"><b>${lb(g,'fr')}</b> <span class="ar muted">${lb(g,'ar')}</span></td></tr>`:'')+gl.map(p=>`<tr>
     <td><span class="rep${p.lab?' l':''}">${p.lab??p.n}</span></td>
     <td>${T[p.key].fr} <span class="ar muted">${T[p.key].ar}</span>${p.ch.rain?` <span class="muted">· rainure ${fmt(R.dosEp+.5)} × ${fmt(R.rp)} à ${fmt(R.rr)} du bord arrière${p.ch.rain2?', sur les 2 faces':''}</span>`:''}</td>
     <td>${p.mat}</td>
@@ -1118,13 +1122,13 @@ function render(){queueMicrotask(()=>{try{updRelBanner();}catch(e){}});
     <td class="num">${fmt(p.Lc)}</td><td class="num">${fmt(p.Wc)}</td>
     <td class="fin">${fmt(p.Lf)} × ${fmt(p.Wf)}</td>
     <td>${chantIcon(p.ch).replace('<svg','<svg style="width:40px;height:22px;vertical-align:middle"')}</td>
-    <td>${p.fits?'<span class="st-ok">OK</span>':'<span class="st-warn">Trop grande</span>'}</td></tr>`).join('');
+    <td>${p.fits?'<span class="st-ok">OK</span>':'<span class="st-warn">Trop grande</span>'}</td></tr>`).join('')).join('');
   $('#acc').innerHTML='<span class="muted">Quincaillerie'+(KIT?' (toute la cuisine)':'')+' :</span>'+A2.map(a=>`<span>${T[a.k].fr} <b>${a.v}</b>${a.note?` <span class="muted">(${a.note})</span>`:''}</span>`).join('');
   const mats=[...new Set(L2.map(p=>p.mat))].sort((a,b)=>parseFloat(b.split(' ')[1])-parseFloat(a.split(' ')[1]));
-  r.nests=mats.map(m=>nest(L2,m)).filter(N=>N.count);
-  $('#nestSum').innerHTML=r.nests.map(N=>`<b>${N.mat} : ${N.plates.length} plaque${N.plates.length>1?'s':''}</b> ${N.PL.w} × ${N.PL.h} pour ${N.count} pièce${N.count>1?'s':''} · rendement ${Math.round(N.rend*100)} %`+(N.out.length?` <span class="st-warn">${N.out.length} pièce(s) trop grande(s) non placée(s)</span>`:'')).join('<br>')
+  r.nests=(R.sepF?['strc','facs']:[null]).flatMap(g=>mats.map(m=>{const N=nest(L2,m,g);N.grp=g;N.lbl=(g?lb(g,'fr')+' · ':'')+m;N.lblS=(g?lb(g)+' · ':'')+m;return N;})).filter(N=>N.count);
+  $('#nestSum').innerHTML=r.nests.map(N=>`<b>${N.lbl} : ${N.plates.length} plaque${N.plates.length>1?'s':''}</b> ${N.PL.w} × ${N.PL.h} pour ${N.count} pièce${N.count>1?'s':''} · rendement ${Math.round(N.rend*100)} %`+(N.out.length?` <span class="st-warn">${N.out.length} pièce(s) trop grande(s) non placée(s)</span>`:'')).join('<br>')
     +`<br>Trait de scie ${fmt(R.kerf)} mm, délignage ${fmt(R.trim)} mm. Les croix grises sont les chutes réutilisables.`;
-  $('#nestBox').innerHTML=r.nests.map(N=>N.plates.map((p,i)=>`<div class="plate"><div class="plate-h"><span>${N.mat} · plaque ${i+1} / ${N.plates.length}</span><span>${N.PL.w} × ${N.PL.h}</span></div>${plateSVG(p)}${nestLegend([p])}</div>`).join('')).join('');
+  $('#nestBox').innerHTML=r.nests.map(N=>N.plates.map((p,i)=>`<div class="plate"><div class="plate-h"><span>${N.lbl} · plaque ${i+1} / ${N.plates.length}</span><span>${N.PL.w} × ${N.PL.h}</span></div>${plateSVG(p)}${nestLegend([p])}</div>`).join('')).join('');
   renderSheets();
   if(typeof saveDraft==='function')saveDraft();
   updHeader();
@@ -1150,15 +1154,16 @@ function renderSheets(){
    <div class="box"><h4>${lb('legend')}</h4><ul><li class="leg"><i></i>${lb('legChant')}</li><li><b>${lb('legCut')}</b></li><li>${lb('legFil')}</li></ul></div></aside></div>`});
   // 2. liste de débit
   const th=k=>LANG==='mix'?`${T[k].ar}<small>${T[k].fr}</small>`:lb(k);
+  debitGroups(pieces).forEach(([g,pieces])=>{
   const totQ=pieces.reduce((a,p)=>a+p.qty*S.q,0);
-  pages.push({k:'debit',body:`<div class="sh-body" style="align-content:start;gap:1cqw"><div class="nodd">${LANG==='mix'?`<span class="ar">${T.noDed.ar}</span><span>${T.noDed.fr}</span>`:lb('noDed')}</div><table class="ptab"><thead><tr><th>${th('n')}</th><th>${th('piece')}</th><th>${th('mat')}</th><th>${th('qty')}</th><th>${th('L')}</th><th>${th('W')}</th><th>${th('chant')}</th><th>${th('cut')}</th></tr></thead>
+  pages.push({k:'debit',sub:g?lb(g):undefined,body:`<div class="sh-body" style="align-content:start;gap:1cqw"><div class="nodd">${LANG==='mix'?`<span class="ar">${T.noDed.ar}</span><span>${T.noDed.fr}</span>`:lb('noDed')}</div><table class="ptab"><thead><tr><th>${th('n')}</th><th>${th('piece')}</th><th>${th('mat')}</th><th>${th('qty')}</th><th>${th('L')}</th><th>${th('W')}</th><th>${th('chant')}</th><th>${th('cut')}</th></tr></thead>
    <tbody>${pieces.map(p=>`<tr><td><span class="rp">${p.n}</span></td><td>${lb(p.key)}${p.ch.rain?` <small>· ${lb('rain')}${p.ch.rain2?' ×2':''}</small>`:''}</td><td>${p.mat}</td><td class="n">${p.qty*S.q}</td><td class="n">${fmt(p.Lc)}</td><td class="n">${fmt(p.Wc)}</td><td>${chantIcon(p.ch)}</td><td><span class="cb"></span></td></tr>`).join('')}
-   <tr><td></td><td><b>${lb('total')}</b></td><td></td><td class="n">${totQ}</td><td colspan="4"></td></tr></tbody></table></div>`});
+   <tr><td></td><td><b>${lb('total')}</b></td><td></td><td class="n">${totQ}</td><td colspan="4"></td></tr></tbody></table></div>`});});
   // 3. plan de découpe, 2 plaques par page
   r.nests.forEach(N=>{
   for(let i=0;i<N.plates.length;i+=2){
-    const two=N.plates.slice(i,i+2).map((p,j)=>`<div class="pb"><div><span>${lb('plaque')} ${i+j+1} / ${N.plates.length}</span><span>${N.PL.w} × ${N.PL.h} · ${N.mat}</span></div>${plateSVG(p)}</div>`).join('');
-    pages.push({k:'nest',sub:`${N.mat} · ${N.plates.length} × ${lb('plaque')} · ${lb('rend')} ${Math.round(N.rend*100)} % · ${LANG==='fr'?'trait de scie':LANG==='ar'?'سمك المنشار':'سمك المنشار · trait de scie'} ${fmt(R.kerf)} mm`,
+    const two=N.plates.slice(i,i+2).map((p,j)=>`<div class="pb"><div><span>${lb('plaque')} ${i+j+1} / ${N.plates.length}</span><span>${N.PL.w} × ${N.PL.h} · ${N.lblS}</span></div>${plateSVG(p)}</div>`).join('');
+    pages.push({k:'nest',sub:`${N.lblS} · ${N.plates.length} × ${lb('plaque')} · ${lb('rend')} ${Math.round(N.rend*100)} % · ${LANG==='fr'?'trait de scie':LANG==='ar'?'سمك المنشار':'سمك المنشار · trait de scie'} ${fmt(R.kerf)} mm`,
       body:`<div class="sh-body" style="align-content:start"><div class="pl2">${two}</div>${nestLegend(N.plates.slice(i,i+2))}</div>`});
   }});
   // 4. pièces cotées (en dernier)
@@ -1352,14 +1357,15 @@ function renderSheetsKit(){
     <div class="box"><h4>${lb('caissons')}</h4><table class="ptab" style="font-size:1.05cqw">${res.map(rm=>`<tr><td><span class="rpl">${esc(rm.m.rep)}</span></td><td>${rm.panel?lb(rm.list[0].key):rm.vide?lb('vide'):rowLb(rm.m.row)}</td><td class="n" style="font-size:1.1cqw">${rm.panel?fmt(rm.list[0].Lf)+'×'+fmt(rm.list[0].Wf):fmt(rm.m.L)+'×'+fmt(rm.m.H)+'×'+fmt(rm.m.P)}</td><td>${rm.m.q>1?'×'+rm.m.q:''}</td></tr>`).join('')}</table></div>
     <div class="box"><h4>${lb('quinc')}</h4><ul>${quinc||'<li>—</li>'}</ul></div>
     <div class="box"><h4>${lb('legend')}</h4><ul><li class="leg"><i></i>${lb('legChant')}</li><li><b>${lb('legCut')}</b></li></ul></div></aside></div>`});
+  debitGroups(L2).forEach(([g,L2])=>{const sub2=g?sub+' · '+lb(g):sub;
   const per=15,totQ=L2.reduce((a,p)=>a+p.tq,0);
   for(let i=0;i<L2.length;i+=per){const ch=L2.slice(i,i+per),last2=i+per>=L2.length;
-    pages.push({k:'debit',sub,body:`<div class="sh-body" style="align-content:start;gap:1cqw"><div class="nodd">${LANG==='mix'?`<span class="ar">${T.noDed.ar}</span><span>${T.noDed.fr}</span>`:lb('noDed')}</div><table class="ptab"><thead><tr><th>${th('n')}</th><th>${th('piece')}</th><th>${th('mat')}</th><th>${th('qty')}</th><th>${th('L')}</th><th>${th('W')}</th><th>${th('chant')}</th><th>${th('cut')}</th></tr></thead>
+    pages.push({k:'debit',sub:sub2,body:`<div class="sh-body" style="align-content:start;gap:1cqw"><div class="nodd">${LANG==='mix'?`<span class="ar">${T.noDed.ar}</span><span>${T.noDed.fr}</span>`:lb('noDed')}</div><table class="ptab"><thead><tr><th>${th('n')}</th><th>${th('piece')}</th><th>${th('mat')}</th><th>${th('qty')}</th><th>${th('L')}</th><th>${th('W')}</th><th>${th('chant')}</th><th>${th('cut')}</th></tr></thead>
      <tbody>${ch.map(p=>`<tr><td><span class="rpl">${p.lab}</span></td><td>${lb(p.key)}${p.ch.rain?` <small>· ${lb('rain')}${p.ch.rain2?' ×2':''}</small>`:''}</td><td>${p.mat}</td><td class="n">${p.tq}</td><td class="n">${fmt(p.Lc)}</td><td class="n">${fmt(p.Wc)}</td><td>${chantIcon(p.ch)}</td><td><span class="cb"></span></td></tr>`).join('')}
-     ${last2?`<tr><td></td><td><b>${lb('total')}</b></td><td></td><td class="n">${totQ}</td><td colspan="4"></td></tr>`:''}</tbody></table></div>`});}
+     ${last2?`<tr><td></td><td><b>${lb('total')}</b></td><td></td><td class="n">${totQ}</td><td colspan="4"></td></tr>`:''}</tbody></table></div>`});}});
   last.nests.forEach(N=>{for(let i=0;i<N.plates.length;i+=2){
-    const two=N.plates.slice(i,i+2).map((p,j)=>`<div class="pb"><div><span>${lb('plaque')} ${i+j+1} / ${N.plates.length}</span><span>${N.PL.w} × ${N.PL.h} · ${N.mat}</span></div>${plateSVG(p)}</div>`).join('');
-    pages.push({k:'nest',sub:`${N.mat} · ${N.plates.length} × ${lb('plaque')} · ${lb('rend')} ${Math.round(N.rend*100)} %`,body:`<div class="sh-body" style="align-content:start"><div class="pl2">${two}</div>${nestLegend(N.plates.slice(i,i+2))}</div>`});}});
+    const two=N.plates.slice(i,i+2).map((p,j)=>`<div class="pb"><div><span>${lb('plaque')} ${i+j+1} / ${N.plates.length}</span><span>${N.PL.w} × ${N.PL.h} · ${N.lblS}</span></div>${plateSVG(p)}</div>`).join('');
+    pages.push({k:'nest',sub:`${N.lblS} · ${N.plates.length} × ${lb('plaque')} · ${lb('rend')} ${Math.round(N.rend*100)} %`,body:`<div class="sh-body" style="align-content:start"><div class="pl2">${two}</div>${nestLegend(N.plates.slice(i,i+2))}</div>`});}});
   if($('#withVues').checked)res.filter(rm=>!rm.panel&&!rm.vide).forEach(rm=>{const M=rm.m;
     pages.push({k:'overview',sub:`${M.rep} · ${M.type==='placard'?lb('placard'):rowLb(M.row)} · ${fmt(M.L)} × ${fmt(M.H)} × ${fmt(M.P)} mm${M.q>1?' · ×'+M.q:''}`,body:`<div class="sh-body p1"><div class="ov">${rm.svg}</div><aside>
       <div class="box"><h4>${lb('debit')} · ${esc(M.rep)}</h4><table class="ptab" style="font-size:1cqw">${rm.list.map(p=>`<tr><td><span class="rp">${p.n}</span></td><td>${lb(p.key)}</td><td class="n" style="font-size:1.1cqw">${p.qty*M.q}</td><td class="n" style="font-size:1.1cqw">${fmt(p.Lc)}×${fmt(p.Wc)}</td></tr>`).join('')}</table></div></aside></div>`});});
