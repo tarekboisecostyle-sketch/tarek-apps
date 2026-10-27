@@ -478,10 +478,10 @@ header.top::after{content:"";position:absolute;left:0;right:0;bottom:0;height:5p
         <p class="hint" id="hHint"></p>
       </fieldset>
       <fieldset id="fsDoors">
-        <legend>Portes du placard</legend>
+        <legend>Portes</legend>
         <div class="grid2">
           <label class="f">Type
-            <select id="inDoors"><option value="battant" selected>Battantes (charnières)</option><option value="coul">Coulissantes</option></select>
+            <select id="inDoors"><option value="battant" selected>Battantes (charnières)</option><option value="coul">Coulissantes</option><option value="relev">Relevables (s'ouvrent vers le haut)</option></select>
           </label>
           <label class="f" id="ncWrap">Nombre de portes coulissantes
             <select id="inNc"><option value="0" selected>Auto (≥ 650 mm)</option><option>2</option><option>3</option><option>4</option><option>5</option><option>6</option></select>
@@ -651,7 +651,7 @@ const T={
  chantier:{fr:'Chantier',ar:'الورش'}, produit:{fr:'Produit',ar:'المنتوج'}, date:{fr:'Date',ar:'التاريخ'}, page:{fr:'Page',ar:'صفحة'}, qte:{fr:'Quantité',ar:'العدد'},
  legChant:{fr:'Trait épais = chant',ar:'خط غليظ = سينتا'}, legFil:{fr:'Flèche = sens du décor',ar:'السهم = اتجاه الخشب'},
  legCut:{fr:'Cotes des pièces = cotes de scie (jeux et chant déjà déduits). L × H × P = meuble fini',ar:'مقاسات القطع = مقاس المنشار (الجوج والسينتا محسوبين). L × H × P = الخزانة كاملة'},
- charn:{fr:'Charnières',ar:'مفصلات'}, tringle:{fr:'Tringle',ar:'عمود التعليق'}, poign:{fr:'Poignées',ar:'مقابض'},
+ charn:{fr:'Charnières',ar:'مفصلات'}, verin:{fr:'Vérins (portes relevables)',ar:'ڤيران ديال البيبان اللي كيتحلو للفوق'}, tringle:{fr:'Tringle',ar:'عمود التعليق'}, poign:{fr:'Poignées',ar:'مقابض'},
  placard:{fr:'Placard',ar:'خزانة'}, hab:{fr:"Panneau d'habillage",ar:'لوح تلبيس'}, joue:{fr:'Joue',ar:'جنب تلبيس'}, tab:{fr:'Tablette murale',ar:'رف حائطي'}, supT:{fr:'Supports de tablette',ar:'حمالات الرف'},
  elevm:{fr:'Élévation du meuble',ar:'واجهة الأثاث'}, meuble:{fr:'Meuble',ar:'أثاث'}, cuisine:{fr:'Cuisine',ar:'كوزينة'}, elev:{fr:'Élévation de la cuisine',ar:'واجهة الكوزينة'},
  rowbas:{fr:'Bas',ar:'تحتاني'}, vide:{fr:'Espace vide',ar:'فراغ'}, rowhaut:{fr:'Haut',ar:'فوقاني'}, rowcol:{fr:'Colonne',ar:'عمود'}, caissons:{fr:'Caissons',ar:'الخزانات'}, ptrav:{fr:'plan de travail',ar:'بلان دو ترافاي'}, caisson:{fr:'Caisson bas',ar:'خزانة سفلية'},
@@ -677,7 +677,7 @@ function syncDos(){
 }
 function read(){
   syncDos();
-  {const cl=$('#inDoors').value==='coul';$('#fsDoors').hidden=S.product!=='placard';$('#ncWrap').hidden=!cl;
+  {const cl=$('#inDoors').value==='coul';$('#fsDoors').hidden=false;{const o=$('#inDoors').querySelector('[value=coul]');if(o)o.hidden=S.product!=='placard';if(S.product!=='placard'&&$('#inDoors').value==='coul')$('#inDoors').value='battant';}$('#ncWrap').hidden=!cl;
    $('#doorHint').textContent=cl?`Le rail prend ${v('rRail')} mm devant : séparations et étagères reculent d'autant. ${+$('#inNc').value>0?'':'Nombre de portes calculé tout seul : chaque porte fait au moins '+(v('rCmin')||650)+' mm. '} Recouvrement ${v('rRec')} mm.`:'Portes et tiroirs se règlent dans chaque compartiment.';}
   {const b=$('#inBase').value;$('#plWrap').hidden=b!=='pieds';$('#inSocle').disabled=b==='aucun';
    $('#hHint').textContent=b==='pieds'?'H = hauteur totale avec les pieds, sans le plan de travail. Les côtés font H − hauteur des pieds.':b==='socle'?'H = hauteur totale. Les côtés descendent jusqu\'au sol.':'H = hauteur totale, le dessous est posé au sol.';}
@@ -789,6 +789,7 @@ function compute(){
     fz.push(z);
   });
   const gk=f=>`${fmt(f.w)}x${fmt(f.h)}`;
+  if(S.doors==='relev')fronts.forEach(f=>{if(f.type==='porte'&&!f.slide)f.hinge='T';});
   ['porte','tiroir'].forEach(t=>{const m=new Map();fronts.filter(f=>f.type===t).forEach(f=>{const k=gk(f);m.set(k,{f,n:(m.get(k)?.n||0)+1});});
     m.forEach(({f,n},k)=>{add(t==='porte'?'porte':'ftir',n,f.h,f.w,{l1:1,l2:1,w1:1,w2:1},R.matF?'MDF 18 '+R.matF:'MDF 18');list[list.length-1].grp=k;});});
   // caissons de tiroirs
@@ -838,7 +839,9 @@ function compute(){
     const [qa,qb]=plateOf(p.mat);p.fits=(p.Lc<=qa&&p.Wc<=qb)||(p.Lc<=qb&&p.Wc<=qa);
     if(!p.fits)warns.push(`${T[p.key].fr} (${fmt(p.Lc)} × ${fmt(p.Wc)}) ne rentre pas dans la plaque.`);});
   const acc=[],dr=fronts.filter(f=>f.type==='porte');
-  if(dr.length&&!coul){const nch=h=>h<=900?2:h<=1500?3:h<=2000?4:5;acc.push({k:'charn',v:dr.reduce((a,f)=>a+nch(f.h),0)*S.q,note:`2 à 5 / porte selon la hauteur`});}
+  if(dr.length&&!coul){const nch=h=>h<=900?2:h<=1500?3:h<=2000?4:5,rl=dr.filter(f=>f.hinge==='T'),bt=dr.filter(f=>f.hinge!=='T');
+    if(bt.length)acc.push({k:'charn',v:bt.reduce((a,f)=>a+nch(f.h),0)*S.q,note:`2 à 5 / porte selon la hauteur`});
+    if(rl.length){acc.push({k:'charn',v:rl.reduce((a,f)=>a+nch(f.w),0)*S.q,note:`portes relevables : en haut, selon la largeur`});acc.push({k:'verin',v:rl.length*2*S.q,note:`2 / porte relevable`});}}
   if(fronts.length)acc.push({k:coul?'poignC':'poign',v:fronts.length*S.q});
   if(coul){acc.push({k:'railH',v:S.q,note:`${fmt(S.L-2*e)} mm`});acc.push({k:'railB',v:S.q,note:`${fmt(S.L-2*e)} mm`});acc.push({k:'kitC',v:fronts.length*S.q});}
   if(drawers.length)acc.push({k:'coul',v:drawers.length*S.q,note:`${cl} mm`});
@@ -877,8 +880,9 @@ function overview(r,W,lang=LANG){
       out+=bub(cx,cy,pp.n)+`<path class="d" style="stroke-width:.9" d="M${cx-ax} ${cy+20}H${cx+ax}M${cx-ax+6} ${cy+16}L${cx-ax} ${cy+20}L${cx-ax+6} ${cy+24}M${cx+ax-6} ${cy+16}L${cx+ax} ${cy+20}L${cx+ax-6} ${cy+24}"/>`
         +`<text class="ts" x="${cx}" y="${cy+36}" text-anchor="middle">${d.rail?(lang==='fr'?'rail avant':lang==='ar'?'سكة قدام':'سكة قدام · avant'):(lang==='fr'?'rail arrière':lang==='ar'?'سكة ورا':'سكة ورا · arrière')}</text>`;}
     else if(d.type==='porte'){
-      const xh=d.hinge==='L'?X(oA,d.x):X(oA,d.x+d.w), xo=d.hinge==='L'?X(oA,d.x+d.w):X(oA,d.x);
-      out+=`<path class="sw" d="M${xo} ${Y(d.y+d.h)}L${xh} ${Y(d.y+d.h/2)}L${xo} ${Y(d.y)}"/>`;
+      if(d.hinge==='T')out+=`<path class="sw" d="M${X(oA,d.x)} ${Y(d.y)}L${X(oA,d.x+d.w/2)} ${Y(d.y+d.h)}L${X(oA,d.x+d.w)} ${Y(d.y)}"/>`;
+      else{const xh=d.hinge==='L'?X(oA,d.x):X(oA,d.x+d.w), xo=d.hinge==='L'?X(oA,d.x+d.w):X(oA,d.x);
+      out+=`<path class="sw" d="M${xo} ${Y(d.y+d.h)}L${xh} ${Y(d.y+d.h/2)}L${xo} ${Y(d.y)}"/>`;}
       const cy=Y(d.y+d.h*0.7);out+=bub(cx,cy,pp.n);
 
     }else{
@@ -992,6 +996,7 @@ function perspective(r){
   if(sc>0)o+=`<path class="p" d="M${X(0)} ${Y(sc)}H${X(L)}"/>`;
   r.g.fronts.forEach(d=>{o+=`<rect class="p" x="${X(d.x)}" y="${Y(d.y+d.h)}" width="${d.w*s}" height="${d.h*s}"/>`;
     if(d.type==='tiroir'){const cx=X(d.x+d.w/2);o+=`<path class="p" style="stroke-width:1.6" d="M${cx-8} ${Y(d.y+d.h)+5}H${cx+8}"/>`;return;}
+    if(d.hinge==='T'){const cx=X(d.x+d.w/2);o+=`<path class="p" style="stroke-width:1.6" d="M${cx-8} ${Y(d.y)-5}H${cx+8}"/>`;return;}
     const hx=d.hinge==='L'?X(d.x+d.w)-4:X(d.x)+4;o+=`<path class="p" style="stroke-width:1.6" d="M${hx} ${Y(d.y+d.h*0.55)}V${Y(d.y+d.h*0.45)}"/>`;});
   return `<svg class="dw" viewBox="0 0 ${W*s+20} ${Ht*s+20}">${o}</svg>`;
 }
@@ -1267,7 +1272,7 @@ function computeVide(m){const W=620,Hh=380,s=Math.min((W-120)/Math.max(m.L,1),(H
     <text class="ts" x="${W/2}" y="${y+hh/2+4}" text-anchor="middle">${lb('vide')}</text>${dimH(x,x+w,y+hh+40,y+hh,fmt(m.L))}${dimV(y+hh,y,x-40,x,fmt(m.H))}</svg>`;
   return {m,list:[],warns:[],acc:[],g:{fronts:[],comps:[]},panel:false,vide:true,svg,by:()=>null};}
 function computeModule(m){if(isPanel(m))return computePanel(m);if(isVide(m))return computeVide(m);const keys=['L','H','P','base','socle','plinthe','q','fix','produit','comps','product','doors','nc'],bak={};keys.forEach(k=>bak[k]=S[k]);
-  Object.assign(S,{L:m.L,H:m.H,P:m.P,base:m.base,socle:m.socle,plinthe:m.plinthe,q:m.q,fix:m.fix,produit:m.rep,comps:m.comps,product:m.type==='placard'?'placard':'caisson',doors:m.type==='placard'?(m.doors||'battant'):'battant',nc:m.nc??0});
+  Object.assign(S,{L:m.L,H:m.H,P:m.P,base:m.base,socle:m.socle,plinthe:m.plinthe,q:m.q,fix:m.fix,produit:m.rep,comps:m.comps,product:m.type==='placard'?'placard':'caisson',doors:m.type==='placard'?(m.doors||'battant'):(m.doors==='relev'?'relev':'battant'),nc:m.nc??0});
   const r=compute();r.m=m;r.svg=overview(r,1000);keys.forEach(k=>S[k]=bak[k]);return r;}
 const rowLb=(row,l=LANG)=>lb(row==='haut'?'rowhaut':row==='col'?'rowcol':'rowbas',l);
 function modSummary(rm){if(rm.panel||rm.vide)return TYPE_LB[rm.m.type];const f=rm.g.fronts,np=f.filter(x=>x.type==='porte').length,nt=f.filter(x=>x.type==='tiroir').length;
@@ -1323,6 +1328,7 @@ function kitchenSVG(res,W=1000,lang=LANG,sel=true){
         if(f.inner)return;
         if(f.type==='tiroir'){const cx=X(p.x+f.x+f.w/2);out+=`<path class="p" style="stroke-width:1.6" d="M${cx-7} ${Y(p.y+f.y+f.h)+4}H${cx+7}"/>`;}
         else if(f.slide){const cx=X(p.x+f.x+f.w/2),cy=Y(p.y+f.y+f.h/2);out+=`<path class="d" d="M${cx-10} ${cy}H${cx+10}"/>`;}
+        else if(f.hinge==='T'){const cx=X(p.x+f.x+f.w/2);out+=`<path class="p" style="stroke-width:1.6" d="M${cx-7} ${Y(p.y+f.y)-4}H${cx+7}"/>`;}
         else{const hx=f.hinge==='L'?X(p.x+f.x+f.w)-4:X(p.x+f.x)+4,yy=M.row==='haut'?f.y+f.h*0.1:(f.y>M.H*0.45?f.y+f.h*0.12:f.y+f.h*0.9);out+=`<path class="p" style="stroke-width:1.6" d="M${hx} ${Y(p.y+yy)-5}V${Y(p.y+yy)+5}"/>`;}});
       if(!g.fronts.length)p.rm.g.comps.forEach(c=>c.shelves.forEach(y=>out+=`<path class="p" d="M${X(p.x+c.x)} ${Y(p.y+y+R.ep/2)}H${X(p.x+c.x+c.w)}"/>`));}
     if(sel&&KIT&&i===KIT.cur)out+=`<rect class="ksel" x="${X(p.x)-3}" y="${Y(p.y+p.h)-3}" width="${p.w*s+6}" height="${p.h*s+6}"/>`;
