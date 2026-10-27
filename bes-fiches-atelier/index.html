@@ -504,6 +504,16 @@ header.top::after{content:"";position:absolute;left:0;right:0;bottom:0;height:5p
         </div>
         <p class="hint" id="dosHint"></p>
       </fieldset>
+      <fieldset>
+        <legend>Façades (portes et tiroirs)</legend>
+        <div class="grid2">
+          <label class="f" style="grid-column:1/-1">Matière des façades
+            <input id="rMatF" list="matFList" placeholder="Même que les caissons (MDF 18 blanc)" autocomplete="off">
+            <datalist id="matFList"><option value="Gris High Gloss"></option></datalist>
+          </label>
+        </div>
+        <p class="hint">Vide = portes en MDF 18 comme les caissons. Avec une autre matière, portes et façades de tiroirs sortent sur leurs propres plaques dans le plan de découpe.</p>
+      </fieldset>
       <fieldset id="fsEtag">
         <legend>Étagères</legend>
         <label class="f">Fixation
@@ -673,7 +683,7 @@ function read(){
    $('#hHint').textContent=b==='pieds'?'H = hauteur totale avec les pieds, sans le plan de travail. Les côtés font H − hauteur des pieds.':b==='socle'?'H = hauteur totale. Les côtés descendent jusqu\'au sol.':'H = hauteur totale, le dessous est posé au sol.';}
   Object.assign(S,{L:v('inL'),H:v('inH'),P:v('inP'),socle:Math.max(0,v('inSocle')),base:$('#inBase').value,doors:$('#inDoors').value,nc:+$('#inNc').value,plinthe:$('#inPlinthe').checked,q:Math.max(1,v('inQ')),
     chantier:$('#inChantier').value,fix:$('#inFix').value,produit:$('#inProduit').value});
-  R={ep:v('rEp')||18,chant:+$('#rChant').value,ded:$('#rDed').checked,jp:v('rJp'),jj:v('rJj'),dosEp:+$('#inDosEp').value,dosMode:$('#inDosMode').value,dosPl:$('#inDosPl').value,rp:v('rRainP'),rr:v('rRainR'),ret:v('rRet'),kerf:v('rKerf'),icale:v('rIcale'),rail:v('rRail'),cmin:v('rCmin')||650,rec:v('rRec'),cded:v('rCded'),cj:v('rCj'),tH:v('rTh'),tF:+$('#rTf').value,trim:v('rTrim'),fil:$('#rFil').checked};
+  R={ep:v('rEp')||18,chant:+$('#rChant').value,ded:$('#rDed').checked,jp:v('rJp'),jj:v('rJj'),dosEp:+$('#inDosEp').value,dosMode:$('#inDosMode').value,dosPl:$('#inDosPl').value,rp:v('rRainP'),rr:v('rRainR'),ret:v('rRet'),kerf:v('rKerf'),icale:v('rIcale'),rail:v('rRail'),cmin:v('rCmin')||650,rec:v('rRec'),cded:v('rCded'),cj:v('rCj'),tH:v('rTh'),tF:+$('#rTf').value,trim:v('rTrim'),fil:$('#rFil').checked,matF:(($('#rMatF')||{}).value||'').trim()};
 }
 
 const plateOf=m=>{const dm=R.dosEp===3?'HDF 3':'MDF '+R.dosEp;if(m===dm&&R.dosEp<18&&R.dosPl)return R.dosPl.split('x').map(Number);return m==='HDF 3'?[2440,1220]:[2800,2100];};
@@ -693,7 +703,7 @@ function compute(){
   ws.forEach((w,i)=>{if(w<250)warns.push(`Compartiment ${i+1} : ${fmt(w)} mm de large, trop étroit.`);});
   const add=(key,qty,Lf,Wf,ch,mat='MDF 18',fil=true)=>{
     if(qty<=0)return;
-    const md=mat==='MDF 18'?d:0, nW=(ch.w1?1:0)+(ch.w2?1:0), nL=(ch.l1?1:0)+(ch.l2?1:0);
+    const md=/^MDF 18\b/.test(mat)?d:0, nW=(ch.w1?1:0)+(ch.w2?1:0), nL=(ch.l1?1:0)+(ch.l2?1:0);
     list.push({key,qty,Lf,Wf,Lc:Lf-md*nW,Wc:Wf-md*nL,ch,mat,fil});
   };
   add('cote',2,S.base==='socle'?S.H:S.H-sc,Pc,{l1:1,rain});
@@ -780,7 +790,7 @@ function compute(){
   });
   const gk=f=>`${fmt(f.w)}x${fmt(f.h)}`;
   ['porte','tiroir'].forEach(t=>{const m=new Map();fronts.filter(f=>f.type===t).forEach(f=>{const k=gk(f);m.set(k,{f,n:(m.get(k)?.n||0)+1});});
-    m.forEach(({f,n},k)=>{add(t==='porte'?'porte':'ftir',n,f.h,f.w,{l1:1,l2:1,w1:1,w2:1});list[list.length-1].grp=k;});});
+    m.forEach(({f,n},k)=>{add(t==='porte'?'porte':'ftir',n,f.h,f.w,{l1:1,l2:1,w1:1,w2:1},R.matF?'MDF 18 '+R.matF:'MDF 18');list[list.length-1].grp=k;});});
   // caissons de tiroirs
   const CL=[250,300,350,400,450,500,550],cl=[...CL].reverse().find(v=>v<=Pm-rail-20)||250,tm=new Map();
   drawers.forEach(dr=>{const bw=dr.bw||ws[dr.comp]-2*R.cj,bh=Math.max(60,dr.h-R.tH),k=fmt(bw)+'x'+fmt(bh);tm.set(k,{bw,bh,n:(tm.get(k)?.n||0)+1});});
