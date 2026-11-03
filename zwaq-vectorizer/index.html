@@ -78,7 +78,7 @@ aside{border-right:1px solid var(--line);overflow:auto;padding:16px 16px 28px;ba
 .size label{font-size:13px;color:var(--muted)}
 .size input{width:100%;padding:8px 10px;border:1.5px solid var(--line);border-radius:8px;background:var(--bg);font-variant-numeric:tabular-nums}
 .size input:focus,.fld input:focus,.fld select:focus,.fld textarea:focus,.filters input:focus,.filters select:focus{outline:none;border-color:var(--brass)}
-.btns{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.btns{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
 .btn{text-decoration:none;border:1px solid var(--bench);background:var(--bench);color:var(--tile);padding:10px 12px;border-radius:8px;cursor:pointer;font-weight:700;display:inline-flex;align-items:center;justify-content:center;gap:7px}
 .btn:hover{filter:brightness(1.08)}
 .btn.ghost{background:transparent;color:var(--bench)}
@@ -282,9 +282,10 @@ dialog h2{font-size:20px}
       <div class="btns">
         <button class="btn" id="bDxf" disabled>DXF R12</button>
         <button class="btn ghost" id="bSvg" disabled>SVG</button>
+        <button class="btn ghost" id="bEps" disabled>EPS</button>
         <button class="btn brass wide" id="bSave" disabled>Enregistrer dans la bibliothèque</button>
       </div>
-      <p class="hint">DXF R12 en LINE + ARC : s'ouvre dans ArtCAM 2008, Aspire et VCarve. Origine en bas à gauche, en mm. Le tracé et l'aperçu sont gratuits ; l'export demande un compte.</p>
+      <p class="hint">DXF R12 en LINE + ARC : ArtCAM 2008, Aspire, VCarve. EPS : Illustrator, CorelDRAW. Origine en bas à gauche, en mm. Le tracé et l'aperçu sont gratuits ; l'export demande un compte.</p>
     </div>
   </aside>
 
@@ -309,6 +310,7 @@ dialog h2{font-size:20px}
       Ajoute une calligraphie, un logo, un moucharabieh ou un dessin scanné.
       <div class="feat">
         <div>✓ <b>DXF R12 en LINE + ARC</b> : s'ouvre dans ArtCAM 2008, Aspire, VCarve</div>
+        <div>✓ <b>SVG et EPS</b> : pour Illustrator, CorelDRAW, Inkscape</div>
         <div>✓ <b>Contour</b> pour la découpe ou <b>centerline</b> pour le V-carve</div>
         <div>✓ <b>Symétrie</b> : miroir, 4 quadrants, rosaces, efface watermark et taches</div>
         <div>✓ <b>Finition</b> : vraies droites et vrais arcs, coins nets</div>
@@ -370,7 +372,7 @@ dialog h2{font-size:20px}
     <h2>Zwaq Deco Vectorizer Pro</h2>
     <div class="price" id="proPrice"></div>
     <ul class="prolist">
-      <li>Exports DXF et SVG <b>illimités</b></li>
+      <li>Exports DXF, SVG et EPS <b>illimités</b></li>
       <li>Bibliothèque de motifs <b>illimitée</b></li>
       <li><b>Pack ZIP</b> : plusieurs motifs en un clic</li>
       <li>Toutes les nouvelles fonctions en premier</li>
@@ -765,7 +767,7 @@ function run() {
 function afterTrace() {
   const has = S.paths.length > 0;
   $('empty').style.display = (S.img || S.fromLib) ? 'none' : '';
-  ['bDxf', 'bSvg', 'bSave'].forEach(id => $(id).disabled = !has);
+  ['bDxf', 'bSvg', 'bEps', 'bSave'].forEach(id => $(id).disabled = !has);
   updateSize(true);
   if (S.fit) fitView();
   draw();
@@ -962,22 +964,24 @@ function baseName(m) {
   const nm = S.fromLib ? S.fromLib.nom : S.name;
   return `${slug(nm)}_${Math.round(m.w)}x${Math.round(m.h)}mm_${S.mode === 'vcarve' ? 'vcarve' : 'contour'}`;
 }
+const MIME = { dxf: 'application/dxf', svg: 'image/svg+xml', eps: 'application/postscript' };
 async function exportCurrent(format) {
   if (!(targetWidth() > 0)) return toast('Indique une taille en mm', true);
   if (needLogin('Crée un compte gratuit ou connecte-toi pour télécharger ton fichier.')) return;
-  const btn = $(format === 'dxf' ? 'bDxf' : 'bSvg'); btn.disabled = true;
+  const btn = $({ dxf: 'bDxf', svg: 'bSvg', eps: 'bEps' }[format]); btn.disabled = true;
   const W = targetWidth(), geo = V.packGeometry(S.paths, W);
   const r = await callFn('zv-export', { format, geometrie: geo, largeur_mm: W, longY: $('longY').checked, mode: S.mode });
   btn.disabled = false;
   if (!r.ok) return handleFnError(r);
   const f = r.data.fichiers[0];
-  download(baseName(f) + '.' + format, f.fichier, format === 'dxf' ? 'application/dxf' : 'image/svg+xml');
-  toast((format === 'dxf' ? 'DXF R12' : 'SVG') + ' téléchargé : ' + fmt(f.w) + ' × ' + fmt(f.h) + ' mm' +
+  download(baseName(f) + '.' + format, f.fichier, MIME[format]);
+  toast({ dxf: 'DXF R12', svg: 'SVG', eps: 'EPS' }[format] + ' téléchargé : ' + fmt(f.w) + ' × ' + fmt(f.h) + ' mm' +
     (r.data.restants != null ? ` · ${r.data.restants} export(s) gratuit(s) restant(s)` : ''));
   refreshAccount();
 }
 $('bDxf').onclick = () => exportCurrent('dxf');
 $('bSvg').onclick = () => exportCurrent('svg');
+$('bEps').onclick = () => exportCurrent('eps');
 
 /* ================= APERÇU MINIATURE ================= */
 function thumbFromPaths(paths, mode, size = 360) {
@@ -1097,6 +1101,7 @@ function renderLib() {
           <button class="btn sm" data-a="open">Ouvrir</button>
           <button class="btn sm ghost" data-a="dxf">DXF</button>
           <button class="btn sm ghost" data-a="svg">SVG</button>
+          <button class="btn sm ghost" data-a="eps">EPS</button>
           <button class="btn sm ghost" data-a="edit">Modifier</button>
           <button class="btn sm danger" data-a="del" aria-label="Supprimer">Suppr.</button>
         </div>
@@ -1119,12 +1124,12 @@ $('lib').addEventListener('click', async e => {
   }
   const a = e.target.dataset.a; if (!a) return;
   try {
-    if (a === 'dxf' || a === 'svg') {
+    if (a === 'dxf' || a === 'svg' || a === 'eps') {
       const geo = await fetchGeo(m.id);
       const r = await callFn('zv-export', { format: a, geometrie: geo, largeur_mm: geo.w, longY: $('longY').checked, mode: m.mode });
       if (!r.ok) return handleFnError(r);
       const f = r.data.fichiers[0];
-      download(`${slug(m.nom)}_${Math.round(f.w)}x${Math.round(f.h)}mm_${m.mode}.${a}`, f.fichier, a === 'dxf' ? 'application/dxf' : 'image/svg+xml');
+      download(`${slug(m.nom)}_${Math.round(f.w)}x${Math.round(f.h)}mm_${m.mode}.${a}`, f.fichier, MIME[a]);
       refreshAccount();
     }
     if (a === 'open') {
@@ -1176,7 +1181,7 @@ $('bZip').onclick = async () => {
     const { data, error } = await sb.from(TABLE).select('id,nom,mode,geometrie,apercu').in('id', ids);
     if (error) throw error;
     const zip = new JSZip(), names = [];
-    for (const fx of ['dxf', 'svg']) {
+    for (const fx of ['dxf', 'svg', 'eps']) {
       const r = await callFn('zv-export', { format: fx, items: data.map(m => ({ geometrie: m.geometrie, largeur_mm: m.geometrie.w, longY: $('longY').checked, mode: m.mode, nom: m.nom })) });
       if (!r.ok) { handleFnError(r); throw new Error(r.data?.message || 'export'); }
       r.data.fichiers.forEach((f, i) => {
@@ -1189,7 +1194,7 @@ $('bZip').onclick = async () => {
     }
     zip.file('LISEZMOI.txt',
       `Pack de ${data.length} motifs CNC — Zwaq Deco Vectorizer\r\n\r\n` +
-      `Chaque dossier contient :\r\n- un fichier DXF R12 en LINE + ARC (millimètres, origine en bas à gauche)\r\n- un fichier SVG (millimètres)\r\n- une image d'aperçu\r\n`);
+      `Chaque dossier contient :\r\n- un fichier DXF R12 en LINE + ARC (millimètres, origine en bas à gauche)\r\n- un fichier SVG (millimètres)\r\n- un fichier EPS (Illustrator, CorelDRAW)\r\n- une image d'aperçu\r\n`);
     const blob = await zip.generateAsync({ type: 'blob' });
     download(`pack_motifs_${data.length}_${new Date().toISOString().slice(0, 10)}.zip`, blob);
     toast(`Pack ZIP prêt : ${data.length} motifs`);

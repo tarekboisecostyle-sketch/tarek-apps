@@ -1,7 +1,7 @@
 // @ts-nocheck
 // Zwaq Deco Vectorizer — export DXF R12 / SVG côté serveur, avec quota du plan gratuit
 import { createClient } from 'npm:@supabase/supabase-js@2';
-import { toMachine, toDXF, toSVG, unpackGeometry } from './export.js';
+import { toMachine, toDXF, toSVG, toEPS, unpackGeometry } from './export.js';
 import { verifierGumroad } from './gumroad.js';
 import { cors, json } from './cors.js';
 
@@ -20,7 +20,7 @@ function valide(it) {
 
 function fabriquer(it, format) {
   const mach = toMachine(unpackGeometry(it.geometrie), +it.largeur_mm, it.longY !== false);
-  const fichier = format === 'svg' ? toSVG(mach, it.mode) : toDXF(mach, it.mode === 'vcarve' ? 'VCARVE' : 'CONTOUR');
+  const fichier = format === 'svg' ? toSVG(mach, it.mode) : format === 'eps' ? toEPS(mach, it.mode) : toDXF(mach, it.mode === 'vcarve' ? 'VCARVE' : 'CONTOUR');
   return { fichier, w: mach.w, h: mach.h, nom: it.nom || 'motif', mode: it.mode };
 }
 
@@ -35,7 +35,7 @@ Deno.serve(async (req) => {
 
   let body;
   try { body = await req.json(); } catch { return json({ error: 'JSON' }, 400); }
-  const format = body.format === 'svg' ? 'svg' : 'dxf';
+  const format = ['svg', 'eps'].includes(body.format) ? body.format : 'dxf';
   const items = Array.isArray(body.items) ? body.items : [body];
   if (items.length > 100) return json({ error: 'TROP', message: '100 motifs maximum par pack.' }, 400);
   for (const it of items) { const e = valide(it); if (e) return json({ error: 'INVALIDE', message: e }, 400); }

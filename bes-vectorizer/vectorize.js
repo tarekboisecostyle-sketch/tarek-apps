@@ -1040,6 +1040,46 @@
       '<path d="' + d + '" fill="' + (fill ? '#000' : 'none') + '" fill-rule="evenodd" stroke="#000" stroke-width="' + (fill ? 0 : Math.max(W, H) / 400).toFixed(3) + '" stroke-linecap="round" stroke-linejoin="round"/>\n</svg>\n';
   }
 
+  // EPS (PostScript encapsulé) en millimètres : s'ouvre dans Illustrator, CorelDRAW, Inkscape
+  function toEPS(mach, mode) {
+    const k = 72 / 25.4, W = mach.w, H = mach.h;
+    const n4 = v => (Math.round(v * 10000) / 10000).toString();
+    const L = [];
+    L.push('%!PS-Adobe-3.0 EPSF-3.0');
+    L.push('%%BoundingBox: 0 0 ' + Math.ceil(W * k) + ' ' + Math.ceil(H * k));
+    L.push('%%HiResBoundingBox: 0 0 ' + n4(W * k) + ' ' + n4(H * k));
+    L.push('%%Creator: Zwaq Deco Vectorizer');
+    L.push('%%Title: ' + Math.round(W) + 'x' + Math.round(H) + ' mm');
+    L.push('%%Pages: 1');
+    L.push('%%EndComments');
+    L.push('%%Page: 1 1');
+    L.push('gsave');
+    L.push(n4(k) + ' ' + n4(k) + ' scale');
+    L.push('1 setlinejoin 1 setlinecap');
+    L.push('newpath');
+    for (const p of mach.paths) {
+      const n = p.pts.length; if (n < 2) continue;
+      const segs = p.closed ? n : n - 1;
+      L.push(n4(p.pts[0][0]) + ' ' + n4(p.pts[0][1]) + ' moveto');
+      for (let i = 0; i < segs; i++) {
+        const S = p.pts[i], E = p.pts[(i + 1) % n], bv = p.b ? p.b[i] : 0;
+        if (!bv) { L.push(n4(E[0]) + ' ' + n4(E[1]) + ' lineto'); continue; }
+        const A = arcParams(S, E, bv), d = r => r * 180 / Math.PI;
+        const a0 = d(Math.atan2(S[1] - A.cy, S[0] - A.cx)), a1 = d(Math.atan2(E[1] - A.cy, E[0] - A.cx));
+        // repère y vers le haut : bulge positif = sens anti-horaire = arc ; négatif = arcn
+        L.push(n4(A.cx) + ' ' + n4(A.cy) + ' ' + n4(A.r) + ' ' + n4(a0) + ' ' + n4(a1) + (bv > 0 ? ' arc' : ' arcn'));
+      }
+      if (p.closed) L.push('closepath');
+    }
+    if (mode === 'contour') L.push('0 setgray eofill');
+    else L.push(n4(Math.max(W, H) / 400) + ' setlinewidth 0 setgray stroke');
+    L.push('grestore');
+    L.push('showpage');
+    L.push('%%Trailer');
+    L.push('%%EOF');
+    return L.join('\n') + '\n';
+  }
+
   // Géométrie compacte pour la bibliothèque (mm, y vers le bas, non tournée)
   function packGeometry(paths, widthMm) {
     const b = bbox(paths);
@@ -1064,7 +1104,7 @@
 
   const api = {
     toGray, otsu, threshold, removeSmall, traceOutlines, traceCenterlines,
-    rdp, smooth, bbox, toMachine, toDXF, toSVG, packGeometry, unpackGeometry, polyLength,
+    rdp, smooth, bbox, toMachine, toDXF, toSVG, toEPS, packGeometry, unpackGeometry, polyLength,
     detectSymmetry, applySymmetry, symParts, symMapper, arcParams, flatten, refinePath
   };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;

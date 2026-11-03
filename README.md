@@ -9,7 +9,7 @@ Toutes les applications de Tarek réunies en un seul endroit (BES, Zwaq Deco, PO
 | `bes-fiches-atelier/` | Fiches atelier BES, avec `releve/` (relevé de chantier) et `zwaq/` (Zwaq Deco) |
 | `bes-caisse/` | BES Caisse (caisse espèces, Supabase) |
 | `zwaq-vectorizer/` | Zwaq Deco Vectorizer — version clients (comptes, quota gratuit, abonnement Pro via licence Gumroad). Projet Supabase séparé `gsxoxywecdscsxuehlgf`, fonctions `supabase/functions/zv-*` |
-| `bes-vectorizer/` | BES Vectorizer — image vers DXF R12 / SVG (contour et centerline V-carve), bibliothèque de motifs (Supabase `bes_motifs`) |
+| `bes-vectorizer/` | BES Vectorizer — image vers DXF R12 / SVG / EPS (contour et centerline V-carve), bibliothèque de motifs (Supabase `bes_motifs`) |
 | `gestionpro/` | GestionPro Perso — finances perso, POD, cafés mobiles (Firebase) |
 
 Le code seulement : les données restent dans Supabase / Firebase, jamais dans ce dépôt (il est public).
