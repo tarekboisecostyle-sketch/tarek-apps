@@ -1,0 +1,4 @@
+-- Zwaq Deco Vectorizer : projet Supabase séparé gsxoxywecdscsxuehlgf (appliqué le 2026-11-03)
+-- Tables : zv_comptes (plan gratuit/pro, licence Gumroad), zv_exports (quota), zv_motifs (bibliothèque privée), zv_config
+-- Le détail complet est dans l'historique des migrations du projet (migration « zv_init »).
+-- Réglages modifiables : update zv_config set valeur = '...' where cle in ('quota_gratuit','motifs_gratuit','gumroad_product_id','reverif_heures');
