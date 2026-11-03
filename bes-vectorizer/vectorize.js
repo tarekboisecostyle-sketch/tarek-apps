@@ -967,7 +967,7 @@
 
   function f(n) { return (Math.round(n * 1000) / 1000).toFixed(3); }
 
-  // DXF R12 (AC1009) : POLYLINE/VERTEX (+ bulge code 42 pour les arcs)/SEQEND — ArtCAM 2008 et Aspire
+  // DXF R12 (AC1009) en LINE + ARC — ArtCAM 2008 et Aspire
   function toDXF(mach, layer) {
     layer = (layer || 'VECTEURS').toUpperCase().replace(/[^A-Z0-9_-]/g, '_');
     const L = [];
@@ -990,15 +990,24 @@
     g(0, 'ENDTAB');
     g(0, 'ENDSEC');
     g(0, 'SECTION'); g(2, 'ENTITIES');
+    // ArtCAM 2008 lit mal les POLYLINE denses : on écrit des LINE et des ARC simples
+    const deg = r => r * 180 / Math.PI;
     for (const p of mach.paths) {
-      if (p.pts.length < 2) continue;
-      g(0, 'POLYLINE'); g(8, layer); g(66, 1); g(10, '0.0'); g(20, '0.0'); g(30, '0.0'); g(70, p.closed ? 1 : 0);
-      p.pts.forEach((q, i) => {
-        g(0, 'VERTEX'); g(8, layer); g(10, f(q[0])); g(20, f(q[1])); g(30, '0.0');
-        const bv = p.b ? p.b[i] : 0;
-        if (bv && (p.closed || i < p.pts.length - 1)) g(42, (Math.round(bv * 1e6) / 1e6).toFixed(6));
-      });
-      g(0, 'SEQEND'); g(8, layer);
+      const n = p.pts.length, segs = p.closed ? n : n - 1;
+      for (let i = 0; i < segs; i++) {
+        const S = p.pts[i], E = p.pts[(i + 1) % n], bv = p.b ? p.b[i] : 0;
+        if (Math.hypot(E[0] - S[0], E[1] - S[1]) < 1e-6) continue;
+        if (!bv) {
+          g(0, 'LINE'); g(8, layer); g(10, f(S[0])); g(20, f(S[1])); g(30, '0.0'); g(11, f(E[0])); g(21, f(E[1])); g(31, '0.0');
+        } else {
+          const A = arcParams(S, E, bv);
+          const aS = deg(Math.atan2(S[1] - A.cy, S[0] - A.cx)), aE = deg(Math.atan2(E[1] - A.cy, E[0] - A.cx));
+          const [a0, a1] = bv > 0 ? [aS, aE] : [aE, aS]; // ARC DXF : sens anti-horaire
+          g(0, 'ARC'); g(8, layer); g(10, f(A.cx)); g(20, f(A.cy)); g(30, '0.0'); g(40, f(A.r));
+          g(50, (Math.round(((a0 % 360) + 360) % 360 * 1e4) / 1e4).toFixed(4));
+          g(51, (Math.round(((a1 % 360) + 360) % 360 * 1e4) / 1e4).toFixed(4));
+        }
+      }
     }
     g(0, 'ENDSEC'); g(0, 'EOF');
     return L.join('\r\n') + '\r\n';
@@ -1056,7 +1065,7 @@
   const api = {
     toGray, otsu, threshold, removeSmall, traceOutlines, traceCenterlines,
     rdp, smooth, bbox, toMachine, toDXF, toSVG, packGeometry, unpackGeometry, polyLength,
-    detectSymmetry, applySymmetry, symParts, symMapper, arcParams, flatten
+    detectSymmetry, applySymmetry, symParts, symMapper, arcParams, flatten, refinePath
   };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else root.BESVec = api;
