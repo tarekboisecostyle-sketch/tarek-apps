@@ -14,19 +14,19 @@
 :root{
   --bg:#E7ECE6; --tile:#F7F8F4; --ink:#1D2621; --muted:#5B6A61; --line:#CBD4CC;
   --bench:#2F4A3C; --brass:#B07D2B; --ply1:#E6D3A9; --ply2:#B8925E;
-  --vec:#C2410C; --ok:#2e7d46; --bad:#b42318; --canvas:#FFFFFF;
+  --vec:#C2410C; --arc:#1D4ED8; --ok:#2e7d46; --bad:#b42318; --canvas:#FFFFFF;
 }
 @media (prefers-color-scheme: dark){
   :root:not([data-theme="light"]){
     --bg:#131916; --tile:#1D2520; --ink:#E9EEE8; --muted:#9DAEA3; --line:#2E3A33;
     --bench:#7FAF92; --brass:#D9A54A; --ply1:#5A4A31; --ply2:#3A2F1F;
-    --vec:#FB923C; --ok:#6BCB8B; --bad:#F2877D; --canvas:#0E1311;
+    --vec:#FB923C; --arc:#7AA7FF; --ok:#6BCB8B; --bad:#F2877D; --canvas:#0E1311;
   }
 }
 :root[data-theme="dark"]{
   --bg:#131916; --tile:#1D2520; --ink:#E9EEE8; --muted:#9DAEA3; --line:#2E3A33;
   --bench:#7FAF92; --brass:#D9A54A; --ply1:#5A4A31; --ply2:#3A2F1F;
-  --vec:#FB923C; --ok:#6BCB8B; --bad:#F2877D; --canvas:#0E1311;
+  --vec:#FB923C; --arc:#7AA7FF; --ok:#6BCB8B; --bad:#F2877D; --canvas:#0E1311;
 }
 *{box-sizing:border-box}
 html,body{margin:0;height:100%}
@@ -103,6 +103,7 @@ aside{border-right:1px solid var(--line);overflow:auto;padding:16px 16px 28px;ba
 .stat{background:var(--tile);border:1px solid var(--line);border-radius:8px;padding:6px 10px;font-size:13px;box-shadow:0 2px 8px rgb(0 0 0 / .06)}
 .stat b{font-variant-numeric:tabular-nums}
 .stat.v{border-color:var(--brass)}
+.sw{display:inline-block;width:10px;height:10px;border-radius:2px;margin:0 4px 0 2px;vertical-align:-1px}
 .empty{position:absolute;inset:0;display:grid;place-items:center;text-align:center;color:var(--muted);padding:24px}
 .empty div{max-width:420px}
 .empty h2{color:var(--ink);font-size:24px;margin-bottom:8px}
@@ -203,16 +204,47 @@ dialog h2{font-size:20px}
       <p class="hint">Plus haut = plus de détails, mais plus lent.</p>
     </div>
 
+    <div class="grp" id="symGrp">
+      <h3>4 · Symétrie (miroir)</h3>
+      <div class="fld"><label for="symType">Type de symétrie</label>
+        <select id="symType">
+          <option value="none">Aucune</option>
+          <option value="v">Miroir gauche ↔ droite</option>
+          <option value="h">Miroir haut ↔ bas</option>
+          <option value="q">4 quadrants (double miroir)</option>
+          <option value="r6">Rosace 6 branches</option>
+          <option value="r8">Rosace 8 branches</option>
+          <option value="r12">Rosace 12 branches</option>
+        </select></div>
+      <div id="symOpts" hidden>
+        <div class="fld" style="margin-top:10px"><label for="symSrc">Partie modèle (celle qui est recopiée)</label><select id="symSrc"></select></div>
+        <p class="hint" id="symInfo"></p>
+        <div class="row"><label for="symX">Centre X</label><output id="symXO"></output><input type="range" id="symX" min="0" max="1000" step="0.5"></div>
+        <div class="row"><label for="symY">Centre Y</label><output id="symYO"></output><input type="range" id="symY" min="0" max="1000" step="0.5"></div>
+        <div class="row" id="symRotRow"><label for="symR">Rotation des axes</label><output id="symRO"></output><input type="range" id="symR" min="0" max="90" step="0.5"></div>
+        <button class="btn sm ghost" id="symDetect" type="button">Re-détecter le centre</button>
+      </div>
+    </div>
+
     <div class="grp" id="traceGrp">
-      <h3>4 · Qualité du tracé</h3>
-      <div class="row"><label for="tol">Simplification</label><output id="tolO">0.8</output><input type="range" id="tol" min="0.2" max="4" step="0.1" value="0.8"></div>
-      <div class="row"><label for="smo">Lissage des courbes</label><output id="smoO">2</output><input type="range" id="smo" min="0" max="4" step="1" value="2"></div>
-      <div class="row"><label for="ang">Garder les angles vifs au-delà de</label><output id="angO">55°</output><input type="range" id="ang" min="20" max="120" step="5" value="55"></div>
+      <h3>5 · Finition du tracé</h3>
+      <div class="seg" id="methSeg">
+        <button type="button" data-meth="geo" aria-pressed="true">Géométrique<small>droites + vrais arcs</small></button>
+        <button type="button" data-meth="free" aria-pressed="false">Libre<small>courbes lissées</small></button>
+      </div>
+      <p class="hint" id="methHint">Analyse le dessin : chaque forme devient des droites et des arcs de cercle, avec des coins nets. Idéal pour moucharabieh et géométrie.</p>
+      <div class="row"><label for="tol">Tolérance</label><output id="tolO">1.2</output><input type="range" id="tol" min="0.3" max="5" step="0.1" value="1.2"></div>
+      <div class="row" id="smoRow" hidden><label for="smo">Lissage des courbes</label><output id="smoO">2</output><input type="range" id="smo" min="0" max="4" step="1" value="2"></div>
+      <div class="row"><label for="ang">Angle minimal d'un coin</label><output id="angO">35°</output><input type="range" id="ang" min="15" max="120" step="5" value="35"></div>
+      <div id="snapRow">
+        <label class="chk"><input type="checkbox" id="snap" checked> Redresser les droites (0°, 45°, 90°)</label>
+        <label class="chk"><input type="checkbox" id="sharp" checked> Coins nets (enlever les arrondis dus au flou)</label>
+      </div>
       <div class="row" id="spurRow" hidden><label for="spur">Couper les petites branches</label><output id="spurO">14 px</output><input type="range" id="spur" min="0" max="80" step="2" value="14"></div>
     </div>
 
     <div class="grp">
-      <h3>5 · Taille réelle</h3>
+      <h3>6 · Taille réelle</h3>
       <div class="size">
         <div><label for="wmm">Largeur (mm)</label><input type="number" id="wmm" min="1" step="0.1" value="300"></div>
         <div><label for="hmm">Hauteur (mm)</label><input type="number" id="hmm" min="1" step="0.1"></div>
@@ -222,7 +254,7 @@ dialog h2{font-size:20px}
     </div>
 
     <div class="grp">
-      <h3>6 · Exporter</h3>
+      <h3>7 · Exporter</h3>
       <div class="btns">
         <button class="btn" id="bDxf" disabled>DXF R12</button>
         <button class="btn ghost" id="bSvg" disabled>SVG</button>
@@ -316,7 +348,10 @@ const S = {
   mask: null, maskKey: '',
   paths: [], stroke: null,
   fromLib: null,       // motif de la bibliothèque ouvert (géométrie seule)
-  view: 'both', zoom: 1, panX: 0, panY: 0, fit: true
+  view: 'both', zoom: 1, panX: 0, panY: 0, fit: true,
+  method: 'geo',
+  sym: { type: 'none', fx: .5, fy: .5, rot: 0, source: 'vote', needDetect: false },
+  symMask: null, symKey: '', symBest: 0, symQuality: null, maskUsed: null
 };
 
 /* ================= OUTILS ================= */
@@ -354,7 +389,8 @@ function loadFile(file) {
     S.img = img; S.name = file.name.replace(/\.[^.]+$/, ''); S.fromLib = null;
     $('fname').textContent = file.name;
     setLibMode(false);
-    S.maskKey = ''; S.fit = true;
+    S.maskKey = ''; S.symKey = ''; S.fit = true;
+    if (S.sym.type !== 'none') S.sym.needDetect = true;
     run();
   };
   img.onerror = () => toast('Impossible de lire cette image', true);
@@ -389,6 +425,66 @@ bindRange('spur', v => v + ' px', () => schedule(true));
 $('autoThr').onchange = () => { $('thr').disabled = $('autoThr').checked; schedule(); };
 $('inv').onchange = () => schedule();
 $('longY').onchange = () => updateSize();
+
+const PART_NAMES = {
+  v: ['Gauche', 'Droite'], h: ['Haut', 'Bas'],
+  q: ['Haut gauche', 'Haut droite', 'Bas gauche', 'Bas droite']
+};
+function partName(type, j) {
+  if (PART_NAMES[type]) return PART_NAMES[type][j];
+  return 'Secteur ' + (j + 1);
+}
+function fillSymSources() {
+  const t = S.sym.type, sel = $('symSrc'), cur = S.sym.source;
+  sel.innerHTML = '';
+  sel.add(new Option('Vote de toutes les parties (efface watermark et taches)', 'vote'));
+  sel.add(new Option('La partie la plus propre (auto)', 'auto'));
+  if (t !== 'none') for (let j = 0; j < V.symParts(t); j++) sel.add(new Option(partName(t, j), String(j)));
+  sel.value = [...sel.options].some(o => o.value === String(cur)) ? String(cur) : 'vote';
+  S.sym.source = sel.value === 'vote' || sel.value === 'auto' ? sel.value : +sel.value;
+}
+function syncSymUI() {
+  const w = S.work ? S.work.w : 1000, h = S.work ? S.work.h : 1000;
+  $('symX').max = w; $('symY').max = h;
+  $('symX').value = S.sym.fx * w; $('symY').value = S.sym.fy * h;
+  $('symXO').textContent = Math.round(S.sym.fx * w) + ' px';
+  $('symYO').textContent = Math.round(S.sym.fy * h) + ' px';
+  const N = S.sym.type[0] === 'r' ? +S.sym.type.slice(1) : 0;
+  $('symRotRow').hidden = !N;
+  if (N) { $('symR').max = 180 / N; $('symR').value = S.sym.rot * 180 / Math.PI; $('symRO').textContent = (S.sym.rot * 180 / Math.PI).toFixed(1) + '°'; }
+}
+$('symType').onchange = () => {
+  S.sym.type = $('symType').value;
+  $('symOpts').hidden = S.sym.type === 'none';
+  fillSymSources();
+  S.sym.needDetect = S.sym.type !== 'none';
+  S.symKey = ''; schedule(true);
+};
+$('symSrc').onchange = () => {
+  const v = $('symSrc').value;
+  S.sym.source = v === 'vote' || v === 'auto' ? v : +v;
+  S.symKey = ''; schedule(true);
+};
+$('symX').addEventListener('input', () => { S.sym.fx = +$('symX').value / (S.work?.w || 1000); syncSymUI(); S.symKey = ''; schedule(true); });
+$('symY').addEventListener('input', () => { S.sym.fy = +$('symY').value / (S.work?.h || 1000); syncSymUI(); S.symKey = ''; schedule(true); });
+$('symR').addEventListener('input', () => { S.sym.rot = +$('symR').value * Math.PI / 180; syncSymUI(); S.symKey = ''; schedule(true); });
+$('symDetect').onclick = () => { S.sym.needDetect = true; S.symKey = ''; schedule(true); };
+
+document.querySelectorAll('#methSeg button').forEach(b => b.onclick = () => {
+  if (S.fromLib) return;
+  S.method = b.dataset.meth;
+  document.querySelectorAll('#methSeg button').forEach(x => x.setAttribute('aria-pressed', x === b));
+  const geo = S.method === 'geo';
+  $('smoRow').hidden = geo; $('snapRow').hidden = !geo;
+  $('methHint').textContent = geo
+    ? 'Analyse le dessin : chaque forme devient des droites et des arcs de cercle, avec des coins nets. Idéal pour moucharabieh et géométrie.'
+    : 'Garde la forme dessinée à la main, avec des courbes lissées. Pour la calligraphie libre et les dessins organiques.';
+  const setR = (id, v, txt) => { $(id).value = v; $(id + 'O').textContent = txt; };
+  if (geo) { setR('tol', 1.2, '1.2'); setR('ang', 35, '35°'); } else { setR('tol', 0.8, '0.8'); setR('ang', 55, '55°'); }
+  schedule(true);
+});
+$('snap').onchange = () => schedule(true);
+$('sharp').onchange = () => schedule(true);
 
 document.querySelectorAll('#modeSeg button').forEach(b => b.onclick = () => {
   if (S.fromLib) return;
@@ -442,11 +538,32 @@ function run() {
         const dust = Math.round(+$('dust').value * (Math.max(w, h) / 1600) ** 2);
         V.removeSmall(m, w, h, 1, dust);
         V.removeSmall(m, w, h, 0, dust);
-        S.mask = m; S.maskKey = key; S.maskCanvas = null;
+        S.mask = m; S.maskKey = key; S.maskCanvas = null; S.symKey = '';
       }
-      const opt = { tol: +$('tol').value, smooth: +$('smo').value, cornerDeg: +$('ang').value, minArea: 6, spur: +$('spur').value };
-      if (S.mode === 'contour') { S.paths = V.traceOutlines(S.mask, w, h, opt); S.stroke = null; }
-      else { const r = V.traceCenterlines(S.mask, w, h, opt); S.paths = r.paths; S.stroke = r.strokePx; }
+      // symétrie : recopie la partie modèle (ou le vote) sur tout le dessin
+      let mk = S.mask;
+      if (S.sym.type !== 'none') {
+        if (S.sym.needDetect) {
+          const d = V.detectSymmetry(S.mask, w, h, S.sym.type);
+          S.sym.fx = d.cx / w; S.sym.fy = d.cy / h; S.sym.rot = d.rot; S.sym.needDetect = false;
+          syncSymUI();
+        }
+        const sk = [S.maskKey, S.sym.type, S.sym.fx, S.sym.fy, S.sym.rot, S.sym.source].join('|');
+        if (sk !== S.symKey) {
+          const r = V.applySymmetry(S.mask, w, h, { type: S.sym.type, cx: S.sym.fx * w, cy: S.sym.fy * h, rot: S.sym.rot, source: S.sym.source });
+          S.symMask = r.mask; S.symBest = r.best; S.symQuality = r.quality; S.symKey = sk; S.maskCanvas = null;
+          const q = r.quality.slice().sort((a, b) => a.score - b.score);
+          const worst = q[q.length - 1];
+          $('symInfo').innerHTML = `Partie la plus propre : <b>${partName(S.sym.type, r.best)}</b>` +
+            (worst.disagree > 0.02 ? ` · la plus abîmée : ${partName(S.sym.type, worst.part)} (watermark ou taches)` : '');
+        }
+        mk = S.symMask;
+      }
+      if (S.maskUsed !== mk) { S.maskUsed = mk; S.maskCanvas = null; }
+      const opt = { method: S.method, tol: +$('tol').value, smooth: +$('smo').value, cornerDeg: +$('ang').value,
+        snap: $('snap').checked, sharp: $('sharp').checked, snapDeg: 3, minArea: 6, spur: +$('spur').value };
+      if (S.mode === 'contour') { S.paths = V.traceOutlines(mk, w, h, opt); S.stroke = null; }
+      else { const r = V.traceCenterlines(mk, w, h, opt); S.paths = r.paths; S.stroke = r.strokePx; }
     } catch (e) { console.error(e); toast('Erreur pendant le tracé : ' + e.message, true); }
     $('busy').classList.remove('on');
     afterTrace();
@@ -492,7 +609,10 @@ function renderStats() {
   const closed = S.paths.filter(p => p.closed).length;
   const add = (html, cls) => { const d = document.createElement('div'); d.className = 'stat' + (cls ? ' ' + cls : ''); d.innerHTML = html; st.appendChild(d); };
   add(`<b>${S.paths.length}</b> vecteurs (${closed} fermés)`);
-  add(`<b>${pts.toLocaleString('fr-FR')}</b> points`);
+  let nl = 0, na = 0;
+  for (const p of S.paths) { const segs = p.closed ? p.pts.length : p.pts.length - 1; for (let i = 0; i < segs; i++) (p.b && p.b[i] ? na++ : nl++); }
+  if (na || S.method === 'geo') add(`<span class="sw" style="background:var(--vec)"></span><b>${nl}</b> droites <span class="sw" style="background:var(--arc)"></span><b>${na}</b> arcs`);
+  else add(`<b>${pts.toLocaleString('fr-FR')}</b> points`);
   if (S.stroke && S.stroke.median > 0) {
     const b = geoBox(), mmPerPx = targetWidth() / b.w;
     const wMed = S.stroke.median * mmPerPx, wMax = S.stroke.max * mmPerPx;
@@ -522,11 +642,11 @@ function fitView() {
   S.fit = true;
 }
 function maskCanvas() {
-  if (S.maskCanvas || !S.mask) return S.maskCanvas;
+  if (S.maskCanvas || !S.maskUsed) return S.maskCanvas;
   const { w, h } = S.work, c = document.createElement('canvas'); c.width = w; c.height = h;
   const g = c.getContext('2d'), id = g.createImageData(w, h);
-  for (let i = 0, j = 0; i < S.mask.length; i++, j += 4) {
-    const v = S.mask[i] ? 20 : 255; id.data[j] = id.data[j + 1] = id.data[j + 2] = v; id.data[j + 3] = 255;
+  for (let i = 0, j = 0; i < S.maskUsed.length; i++, j += 4) {
+    const v = S.maskUsed[i] ? 20 : 255; id.data[j] = id.data[j + 1] = id.data[j + 2] = v; id.data[j + 3] = 255;
   }
   g.putImageData(id, 0, 0); S.maskCanvas = c; return c;
 }
@@ -544,24 +664,70 @@ function draw() {
     if (S.view === 'mask') { const m = maskCanvas(); if (m) { cx.globalAlpha = .55; cx.drawImage(m, 0, 0); cx.globalAlpha = 1; } }
   }
   cx.lineWidth = 1.6 / S.zoom; cx.lineJoin = 'round'; cx.lineCap = 'round';
-  cx.strokeStyle = css.getPropertyValue('--vec');
-  cx.beginPath();
-  for (const p of S.paths) {
-    cx.moveTo(p.pts[0][0], p.pts[0][1]);
-    for (let i = 1; i < p.pts.length; i++) cx.lineTo(p.pts[i][0], p.pts[i][1]);
-    if (p.closed) cx.closePath();
-  }
+  const vec = css.getPropertyValue('--vec').trim(), arc = css.getPropertyValue('--arc').trim();
   if (S.mode === 'contour' && S.view === 'vec') {
-    cx.fillStyle = css.getPropertyValue('--vec').trim() + '22'; cx.fill('evenodd');
+    cx.beginPath(); for (const p of S.paths) tracePath(cx, p);
+    cx.fillStyle = vec + '22'; cx.fill('evenodd');
   }
-  cx.stroke();
-  // points de départ des traits ouverts (V-carve)
-  if (S.mode === 'vcarve' && S.zoom > 1.2) {
-    cx.fillStyle = css.getPropertyValue('--vec');
-    for (const p of S.paths) if (!p.closed) {
-      for (const q of [p.pts[0], p.pts[p.pts.length - 1]]) { cx.beginPath(); cx.arc(q[0], q[1], 2.2 / S.zoom, 0, 7); cx.fill(); }
+  // droites et arcs en deux couleurs : on voit l'analyse du dessin
+  const segLines = new Path2D(), segArcs = new Path2D();
+  for (const p of S.paths) {
+    const n = p.pts.length, segs = p.closed ? n : n - 1;
+    for (let i = 0; i < segs; i++) {
+      const A = p.pts[i], E = p.pts[(i + 1) % n], bv = p.b ? p.b[i] : 0;
+      if (!bv) { segLines.moveTo(A[0], A[1]); segLines.lineTo(E[0], E[1]); }
+      else { const q = V.arcParams(A, E, bv); segArcs.moveTo(A[0], A[1]); segArcs.arc(q.cx, q.cy, q.r, q.a0, q.a0 + q.sweep, q.sweep < 0); }
     }
   }
+  cx.strokeStyle = vec; cx.stroke(segLines);
+  cx.strokeStyle = arc; cx.lineWidth = 2 / S.zoom; cx.stroke(segArcs);
+  // sommets (jonctions) visibles quand on zoome
+  if (S.zoom > 1.3) {
+    cx.fillStyle = css.getPropertyValue('--ink');
+    for (const p of S.paths) for (const q of p.pts) { cx.beginPath(); cx.arc(q[0], q[1], 2 / S.zoom, 0, 7); cx.fill(); }
+  }
+  drawSymOverlay(css);
+}
+function tracePath(ctx, p) {
+  const n = p.pts.length, segs = p.closed ? n : n - 1;
+  ctx.moveTo(p.pts[0][0], p.pts[0][1]);
+  for (let i = 0; i < segs; i++) {
+    const E = p.pts[(i + 1) % n], bv = p.b ? p.b[i] : 0;
+    if (!bv) ctx.lineTo(E[0], E[1]);
+    else { const q = V.arcParams(p.pts[i], E, bv); ctx.arc(q.cx, q.cy, q.r, q.a0, q.a0 + q.sweep, q.sweep < 0); }
+  }
+  if (p.closed) ctx.closePath();
+}
+function drawSymOverlay(css) {
+  if (S.fromLib || !S.work || S.sym.type === 'none') return;
+  const { w, h } = S.work, t = S.sym.type, X = S.sym.fx * w, Y = S.sym.fy * h, R = Math.hypot(w, h);
+  const brass = css.getPropertyValue('--brass').trim();
+  // partie modèle en surbrillance
+  const src = S.sym.source === 'vote' ? null : S.sym.source === 'auto' ? S.symBest : S.sym.source;
+  if (src != null) {
+    cx.beginPath();
+    if (t === 'v') cx.rect(src ? X : 0, 0, src ? w - X : X, h);
+    else if (t === 'h') cx.rect(0, src ? Y : 0, w, src ? h - Y : Y);
+    else if (t === 'q') cx.rect(src & 1 ? X : 0, src & 2 ? Y : 0, src & 1 ? w - X : X, src & 2 ? h - Y : Y);
+    else {
+      const N = +t.slice(1), wd = Math.PI / N, a0 = S.sym.rot + src * wd;
+      cx.moveTo(X, Y); cx.arc(X, Y, R, a0, a0 + wd); cx.closePath();
+    }
+    cx.fillStyle = brass + '30'; cx.fill();
+  }
+  cx.save(); cx.setLineDash([8 / S.zoom, 6 / S.zoom]); cx.strokeStyle = brass; cx.lineWidth = 1.5 / S.zoom;
+  cx.beginPath();
+  if (t === 'v' || t === 'q') { cx.moveTo(X, 0); cx.lineTo(X, h); }
+  if (t === 'h' || t === 'q') { cx.moveTo(0, Y); cx.lineTo(w, Y); }
+  if (t[0] === 'r') {
+    const N = +t.slice(1);
+    for (let j = 0; j < N; j++) {
+      const a = S.sym.rot + j * Math.PI / N;
+      cx.moveTo(X - R * Math.cos(a), Y - R * Math.sin(a)); cx.lineTo(X + R * Math.cos(a), Y + R * Math.sin(a));
+    }
+  }
+  cx.stroke(); cx.restore();
+  cx.beginPath(); cx.arc(X, Y, 5 / S.zoom, 0, 7); cx.fillStyle = brass; cx.fill();
 }
 new ResizeObserver(resize).observe($('stage'));
 function setView(v) {
@@ -627,7 +793,7 @@ function thumbFromPaths(paths, mode, size = 360) {
   g.fillStyle = '#fff'; g.fillRect(0, 0, c.width, c.height);
   g.setTransform(k, 0, 0, k, pad - b.x0 * k, pad - b.y0 * k);
   g.beginPath();
-  for (const p of paths) { g.moveTo(...p.pts[0]); for (let i = 1; i < p.pts.length; i++) g.lineTo(...p.pts[i]); if (p.closed) g.closePath(); }
+  for (const p of paths) tracePath(g, p);
   if (mode === 'contour') { g.fillStyle = '#1D2621'; g.fill('evenodd'); }
   else { g.strokeStyle = '#1D2621'; g.lineWidth = 1.6 / k; g.lineJoin = g.lineCap = 'round'; g.stroke(); }
   const webp = c.toDataURL('image/webp', 0.85);
@@ -762,7 +928,7 @@ $('lib').addEventListener('click', async e => {
     }
     if (a === 'open') {
       const geo = await fetchGeo(m.id);
-      S.fromLib = m; S.img = null; S.work = null; S.mask = null;
+      S.fromLib = m; S.img = null; S.work = null; S.mask = null; S.maskUsed = null;
       S.mode = m.mode; S.paths = V.unpackGeometry(geo); S.stroke = null;
       document.querySelectorAll('#modeSeg button').forEach(x => x.setAttribute('aria-pressed', x.dataset.mode === m.mode));
       $('fname').textContent = 'Bibliothèque : ' + m.nom;
@@ -792,9 +958,9 @@ $('lib').addEventListener('click', async e => {
   } catch (err) { console.error(err); toast('Erreur : ' + (err.message || err), true); }
 });
 function setLibMode(on) {
-  ['cleanGrp', 'traceGrp'].forEach(id => {
+  ['cleanGrp', 'symGrp', 'traceGrp'].forEach(id => {
     $(id).style.opacity = on ? .45 : 1;
-    $(id).querySelectorAll('input').forEach(i => i.disabled = on || (i.id === 'thr' && $('autoThr').checked));
+    $(id).querySelectorAll('input,select,button').forEach(i => i.disabled = on || (i.id === 'thr' && $('autoThr').checked));
   });
   $('modeSeg').style.opacity = on ? .6 : 1;
   $('vBoth').disabled = $('vMask').disabled = on;
