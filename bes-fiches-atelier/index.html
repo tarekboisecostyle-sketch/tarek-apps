@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="fr">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta charset="utf-8">
+<meta charset="utf-8"><script src="../bes-auth.js"></script>
 <title>BES Fiches Atelier</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans+Arabic:wght@400;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
@@ -1453,7 +1453,7 @@ const CL_KEY='bes_fiches_cloud';
 const CL_DEFAULT={url:'https://ypvjnermbksjxlebeoyr.supabase.co',key:'sb_publishable_IlWas1CWdwQLHNj1NTLSUw_D97PW-wL'};
 let CL=lsGet(CL_KEY)||CL_DEFAULT;
 const clOn=()=>!!(CL&&CL.url&&CL.key);
-async function clReq(path,opt={}){const r=await fetch(CL.url.replace(/\/+$/,'')+'/rest/v1/'+path,{...opt,headers:{apikey:CL.key,Authorization:'Bearer '+CL.key,'Content-Type':'application/json',...(opt.headers||{})}});
+async function clReq(path,opt={}){const r=await fetch(CL.url.replace(/\/+$/,'')+'/rest/v1/'+path,{...opt,headers:{apikey:CL.key,Authorization:'Bearer '+(await BESAuth.token()),'Content-Type':'application/json',...(opt.headers||{})}});
   if(!r.ok){let t='';try{t=(await r.json()).message||'';}catch(e){}throw new Error(r.status+' '+t);}return r.status===204?null:r.json().catch(()=>null);}
 async function clSave(name,st){await clReq('fiches_projets?on_conflict=name',{method:'POST',headers:{Prefer:'resolution=merge-duplicates,return=minimal'},
   body:JSON.stringify({name,mode:st.mode,chantier:st.form.inChantier||'',data:st,updated_at:new Date().toISOString()})});}

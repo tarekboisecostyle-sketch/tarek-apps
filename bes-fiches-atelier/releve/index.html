@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-<meta charset="UTF-8">
+<meta charset="UTF-8"><script src="../../bes-auth.js"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <title>BES · Relevé de chantier</title>
 <style>
@@ -828,7 +828,7 @@ function lsGet(k){try{return JSON.parse(localStorage.getItem(k)||'null');}catch(
 function lsSet(k,v){try{localStorage.setItem(k,JSON.stringify(v));return true;}catch(e){return false;}}
 function cloudCfg(){const c=lsGet(CL_KEY)||CL_DEFAULT;return c&&c.url&&c.key?c:null;}
 async function clReq(path,opt={}){const c=cloudCfg();if(!c)throw new Error('cloud non réglé');
-  const r=await fetch(c.url.replace(/\/+$/,'')+'/rest/v1/'+path,{...opt,headers:{apikey:c.key,Authorization:'Bearer '+c.key,'Content-Type':'application/json',...(opt.headers||{})}});
+  const r=await fetch(c.url.replace(/\/+$/,'')+'/rest/v1/'+path,{...opt,headers:{apikey:c.key,Authorization:'Bearer '+(await BESAuth.token()),'Content-Type':'application/json',...(opt.headers||{})}});
   if(!r.ok){let t='';try{t=(await r.json()).message||'';}catch(e){}throw new Error(r.status+' '+t);}
   const tx=await r.text();return tx?JSON.parse(tx):null;}
 function newId(){return 'r'+Date.now().toString(36)+Math.random().toString(36).slice(2,6);}

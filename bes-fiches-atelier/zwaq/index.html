@@ -1,4 +1,4 @@
-<!doctype html><html><head><meta charset="utf-8"><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<!doctype html><html><head><meta charset="utf-8"><script src="../../bes-auth.js"></script><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
 <title>ZWAQ DECO Atelier</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+Arabic:wght@400;600&display=swap">
@@ -588,7 +588,7 @@ async function exportPrix(){
 /* ================= BES · ZWAQ : base Supabase (remplace la base de l'artifact) ================= */
 const SB={url:'https://ypvjnermbksjxlebeoyr.supabase.co',key:'sb_publishable_IlWas1CWdwQLHNj1NTLSUw_D97PW-wL'};
 async function sbReq(path,opt={}){
-  const r=await fetch(SB.url+'/rest/v1/'+path,{...opt,headers:{apikey:SB.key,Authorization:'Bearer '+SB.key,'Content-Type':'application/json',...(opt.headers||{})}});
+  const r=await fetch(SB.url+'/rest/v1/'+path,{...opt,headers:{apikey:SB.key,Authorization:'Bearer '+(await BESAuth.token()),'Content-Type':'application/json',...(opt.headers||{})}});
   if(!r.ok)throw new Error('Supabase '+r.status+' '+(await r.text()).slice(0,120));
   const t=await r.text();return t?JSON.parse(t):null;
 }
