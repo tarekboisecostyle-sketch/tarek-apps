@@ -1,0 +1,7 @@
+-- Accès réservé aux applications BES (appliqué le 2026-11-03 sur ypvjnermbksjxlebeoyr)
+-- Sauvegarde complète avant changement : schéma sauvegarde_20261103
+-- Les tables BES ne sont lisibles/modifiables que par les comptes listés dans public.bes_acces.
+-- Ajouter quelqu'un (après qu'il a créé son compte) :
+--   insert into public.bes_acces (user_id, email) select id, email from auth.users where email = 'email@exemple.com';
+-- Retirer quelqu'un :
+--   delete from public.bes_acces where email = 'email@exemple.com';
