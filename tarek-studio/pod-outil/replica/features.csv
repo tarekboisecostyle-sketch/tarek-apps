@@ -1,0 +1,33 @@
+feature,area,priority,original,clone,notes
+Recherche par mot-clé sur Amazon Merch (résultats Merch seulement),recherche,must,yes,no,Merch Informer Product Search / MerchPivot
+Filtres BSR prix avis date type de produit marketplace,recherche,must,yes,no,
+Ventes estimées à partir du BSR,recherche,must,yes,no,MerchRex / Merch Informer
+Fiche produit (titre marque ASIN prix BSR avis date),recherche,must,yes,no,
+Score de niche demande contre concurrence,niches,must,yes,no,Merch Hunter / MerchFlux ; formule à définir
+Suggestions de mots-clés Amazon (préfixes suffixes longue traîne),mots-clés,must,yes,no,MerchRex / MerchFlux autocomplete
+Exclure les marques officielles des résultats,recherche,must,yes,no,MerchFlux « hide brand » ; Merch Ninja « Official Brands »
+Vérification des marques déposées USPTO sur titre bullets et texte du design,marques,must,yes,no,Merch Titans trademark engine
+Alternatives proposées pour un mot à risque,marques,must,yes,no,Merch Titans swap automatique
+Analyse IA des designs gagnants (motif texte police placement couleurs combinaison),analyse,must,no,no,notre différence
+Résumé des points communs d'une niche (ce qui revient chez les gagnants),analyse,must,no,no,notre différence
+Fiche design avec prompt de génération,fiche,must,no,no,notre différence
+Favoris et export CSV,organisation,must,yes,no,Merch Informer Favorites
+Historique BSR en graphique,recherche,should,yes,no,MerchFlux
+Tendances du jour (Google Trends) et calendrier des événements,tendances,should,yes,no,MerchRex / Merch Informer Trend Hunter
+Recherche Etsy et Pinterest des niches et tags,tendances,should,yes,no,Merch Informer Social Hunter
+Archives saisonnières des top ventes passées,tendances,should,yes,no,Merch Informer Archive (plan Enterprise)
+Listing généré par IA (titre bullets description) avec compteur de caractères,listing,should,yes,no,Merch Titans AI SEO
+Recherche Redbubble TeePublic Spreadshirt,recherche,should,partial,no,les références sont surtout Amazon
+Badge tendance sur les produits qui montent,recherche,should,yes,no,MerchFlux
+Lien vers génération d'image (Gemini Ideogram Fooocus) depuis la fiche,fiche,should,no,no,notre ajout
+Upload en masse multi-plateformes,upload,should,yes,no,Merch Titans ; déjà fait par la routine POD de Tarek dans son navigateur
+Recherche par vendeur (Merchant Search),recherche,could,yes,no,Merch Informer
+Competition Checker sur les mots-clés d'un listing,listing,could,yes,no,Merch Informer
+Calculateur de royalties Amazon Merch,outils,could,yes,no,Merch Titans outil gratuit
+Générateur de tags Redbubble et Etsy,outils,could,yes,no,Merch Titans outil gratuit
+Comptes utilisateurs quotas et abonnement,compte,could,yes,no,pour la version à vendre (licence Gumroad comme zwaq-vectorizer)
+Recherche française et arabe pour d'autres marchés,recherche,could,no,no,piste pour la version à vendre
+Packs graphiques et polices sous licence,design,skip,yes,no,contenu sous licence de Merch Informer
+Designer drag and drop intégré,design,skip,yes,no,Tarek génère avec l'IA et VectorCraft
+Communauté Facebook Discord et formation,communauté,skip,yes,no,c'est leur réseau pas une fonction
+Vraies ventes des concurrents,recherche,skip,no,no,Amazon ne les publie pas ; estimation par BSR seulement
