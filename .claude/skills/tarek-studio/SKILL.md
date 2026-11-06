@@ -32,6 +32,12 @@ précédent a écrit.
 7. `replica-brand` : nom et marque propres.
 8. `replica-launch` puis `replica-deploy` : page de vente, prix, mise en ligne.
 
+## Protection des applications BES
+
+- Les apps BES (`bes-*/`, `bes-auth.js`) et leurs bases Supabase ne sont jamais modifiées, lues en écriture ou réutilisées par le studio.
+- Le studio travaille seulement dans `tarek-studio/`.
+- Quand un produit est prêt à être vendu, on en fait une copie dans un dépôt GitHub séparé, avec son propre projet Supabase et ses propres clés. Aucune clé ni donnée BES dans ce dépôt.
+
 ## Règles de Tarek à respecter
 
 - Base de données dans Supabase, code dans ce dépôt `tarek-apps` (dépôt public : jamais de données ni de clés secrètes).
