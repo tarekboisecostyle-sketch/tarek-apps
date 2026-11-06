@@ -63,4 +63,4 @@ Une fois les apps nécessaires construites et les ventes lancées : renforcer la
 
 | Dossier | Produit | Étape |
 |---|---|---|
-| `tarek-studio/pod-outil/` | Outil POD (designs + publication Amazon Merch / Redbubble) | à démarrer : recon |
+| `tarek-studio/pod-outil/` | Outil POD : trouver ce qui se vend, analyser les designs gagnants, générer gratuitement | à démarrer : recon |
