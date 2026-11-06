@@ -38,6 +38,19 @@ précédent a écrit.
 - Le studio travaille seulement dans `tarek-studio/`.
 - Quand un produit est prêt à être vendu, on en fait une copie dans un dépôt GitHub séparé, avec son propre projet Supabase et ses propres clés. Aucune clé ni donnée BES dans ce dépôt.
 
+## Accès de Claude à chaque application
+
+Chaque application construite ou utilisée par Tarek doit rester accessible à Claude :
+le code dans GitHub (dépôt où Claude peut pousser) et la base dans un projet Supabase
+du compte de Tarek, connecté à Claude. Comme ça Claude peut entrer dans l'app, modifier
+le code ou la base, et exécuter directement les tâches que Tarek lui donne.
+Pas d'outil fermé qu'on ne peut pas piloter (pas de base hors Supabase, pas de code hors GitHub).
+
+## Plus tard
+
+Une fois les apps nécessaires construites et les ventes lancées : renforcer la sécurité
+(protection des mots de passe divulgués, inscriptions fermées, dépôts privés).
+
 ## Règles de Tarek à respecter
 
 - Base de données dans Supabase, code dans ce dépôt `tarek-apps` (dépôt public : jamais de données ni de clés secrètes).
