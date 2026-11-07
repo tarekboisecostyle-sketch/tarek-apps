@@ -102,6 +102,20 @@ details.rules .grid2{margin-top:10px}
 .kb-head h3{color:var(--accent)}
 .kb-add{display:flex;flex-wrap:wrap;gap:8px;align-items:flex-end}
 .kb-add .f{min-width:200px;flex:0 1 280px}
+.kb-wall{display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end;border-top:1px solid var(--line);padding-top:10px}
+.kb-wall .f{flex:0 0 180px}
+.kb-wall .zbw{flex:1 1 400px;display:grid;gap:6px}
+.kb-wall .zbl{display:flex;flex-wrap:wrap;gap:8px;align-items:center;font-family:var(--f-mono);font-size:13px}
+.kb-wall .zbl b{font-family:var(--f-body);font-size:13px;min-width:120px}
+.kb-multi{border-top:1px solid var(--line);padding-top:10px}
+.kb-multi summary{cursor:pointer;font:600 13px var(--f-body);color:var(--accent)}
+.km-quick{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:10px 0 8px}
+.km-quick .btn{padding:4px 10px;font-size:12.5px}
+.km-list{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
+.km-list label{display:inline-flex;align-items:center;gap:5px;border:1px solid var(--line);padding:4px 8px;font-size:12.5px;cursor:pointer;background:var(--bg)}
+.km-list label.on{border-color:var(--accent);background:var(--accent-soft)}
+.km-list input{margin:0}
+.km-fields{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:8px 10px;margin-bottom:10px}
 .kit{display:flex;flex-wrap:wrap;gap:6px}
 .krow{display:inline-grid;grid-template-columns:auto auto auto;gap:8px;align-items:center;min-width:0;max-width:100%;border:1px solid var(--line);background:var(--bg);padding:5px 8px;cursor:pointer;font-size:12.5px}
 .krow[aria-current="true"]{border-color:var(--accent);box-shadow:inset 3px 0 0 var(--mark);background:var(--accent-soft)}
@@ -478,6 +492,27 @@ tr.drow.on td{background:#ffe2c6;color:#121212}
       </label>
       <button type="button" class="btn solid" id="kAddBtn">+ Ajouter</button>
     </div>
+    <div class="kb-wall" id="kWallW">
+      <label class="f">Longueur du mur<span class="unit"><input id="kWall" type="number" step="10" min="0" placeholder="ex. 3200"></span></label>
+      <div id="kWallBud" class="zbw"><span class="hint">Tapez la longueur du mur : la fiche vérifie que les caissons bas et hauts retombent juste et propose de compléter le reste.</span></div>
+    </div>
+    <details class="kb-multi" id="kMulti">
+      <summary>Modifier plusieurs caissons à la fois <span class="hint" id="kmCount"></span></summary>
+      <div class="km-quick"><span class="hint">Choisir :</span>
+        <button type="button" class="btn" data-ksel="all">Tous</button><button type="button" class="btn" data-ksel="bas">Bas</button><button type="button" class="btn" data-ksel="haut">Hauts</button><button type="button" class="btn" data-ksel="col">Colonnes</button><button type="button" class="btn" data-ksel="none">Aucun</button>
+        <span class="hint">ou cochez ci-dessous · en Vue 3D « tout le projet » : Maj + clic sur un caisson</span></div>
+      <div class="km-list" id="kmList"></div>
+      <div class="km-fields">
+        <label class="f">Hauteur H<span class="unit"><input id="kmH" type="number" step="10" placeholder="inchangée"></span></label>
+        <label class="f">Profondeur P<span class="unit"><input id="kmP" type="number" step="10" placeholder="inchangée"></span></label>
+        <label class="f">Hauteur du dessous (socle)<span class="unit"><input id="kmSoc" type="number" step="5" placeholder="inchangée"></span></label>
+        <label class="f">Sous le meuble<select id="kmBase"><option value="">— inchangé —</option><option value="socle">Socle : plinthe + traverse</option><option value="pieds">Pieds plastique réglables</option><option value="aucun">Rien (posé au sol)</option></select></label>
+        <label class="f">Portes<select id="kmDoors"><option value="">— inchangé —</option><option value="battant">Battantes (charnières)</option><option value="relev">Relevables</option></select></label>
+        <label class="f">Fixation des étagères<select id="kmFix"><option value="">— inchangé —</option><option value="vis">Vissées dans les côtés</option><option value="tass">Sur tasseaux vissés</option></select></label>
+        <label class="f">Quantité<input id="kmQ" type="number" min="1" placeholder="inchangée"></label>
+      </div>
+      <div class="pb-row"><button type="button" class="btn solid" id="kmApply">Appliquer aux caissons choisis</button><span class="hint" id="kmMsg"></span></div>
+    </details>
   </div>
   <div class="work">
     <form class="panel" id="form" onsubmit="return false">
@@ -1223,7 +1258,7 @@ function render(){queueMicrotask(()=>{try{updRelBanner();}catch(e){}});
     L2=KIT.res.flatMap(rm=>rm.list.map(p=>({...p,rep:rm.m.rep,lab:rm.m.rep+'-'+p.n,tq:p.qty*rm.m.q})));
     W2=KIT.res.flatMap(rm=>rm.warns.map(w=>rm.m.rep+' : '+w));
     const am=new Map();KIT.res.forEach(rm=>rm.acc.forEach(a=>{const k=a.k+'|'+(a.note||'');const o=am.get(k)||{k:a.k,note:a.note,v:0};o.v+=a.v;am.set(k,o);}));A2=[...am.values()];
-    KIT.pos=kitLayout(KIT.res);$('#kitBox').innerHTML=kitchenSVG(KIT.res,1000);renderKitList();
+    KIT.pos=kitLayout(KIT.res);$('#kitBox').innerHTML=kitchenSVG(KIT.res,1000);renderKitList();if(typeof kitExtras==='function')kitExtras();
     {const cp=KIT.pos[KIT.cur];if(cp){$('#inX').placeholder=`auto (${fmt(cp.x)})`;$('#inY').placeholder=`auto (${fmt(cp.y)})`;}}}
   r.L2=L2;r.A2=A2;
   $('#warns').innerHTML=W2.length?W2.map(w=>`<li>${esc(w)}</li>`).join(''):'<li class="ok">Toutes les pièces rentrent dans les plaques. Aucun point bloquant.</li>';
@@ -1531,14 +1566,14 @@ function setModeUI(k,isKit){CUR_MODE=k;document.querySelectorAll('[data-prod]').
 function snapState(){if(KIT)snapModule();const f={};
   document.querySelectorAll('#form input[id],#form select[id]').forEach(el=>{if(el.dataset.i!=null||el.type==='file')return;f[el.id]=el.type==='checkbox'?el.checked:el.value;});
   return {v:1,saved:new Date().toISOString(),mode:KIT?KIT.mode:CUR_MODE,form:f,comps:KIT?null:JSON.parse(JSON.stringify(S.comps)),
-    kit:KIT?{mode:KIT.mode,cur:KIT.cur,mods:JSON.parse(JSON.stringify(KIT.mods))}:null,lang:LANG,name:$('#pjName').value};}
+    kit:KIT?{mode:KIT.mode,cur:KIT.cur,wall:KIT.wall||null,mods:JSON.parse(JSON.stringify(KIT.mods))}:null,lang:LANG,name:$('#pjName').value};}
 function applyState(st){if(!st||!st.form)throw new Error('format');$('#inReleve').value='';
   setModeUI(st.mode,!!st.kit);
   if(String(st.form.rRail)==='100'&&String(st.form.rCded)==='40'){st.form.rRail='90';st.form.rCded='34';}
   Object.entries(st.form).forEach(([id,v])=>{const el=document.getElementById(id);if(!el||el.type==='file')return;if(el.type==='checkbox')el.checked=!!v;else el.value=v;});
   if(st.lang){LANG=st.lang;document.querySelectorAll('.seg button').forEach(x=>x.setAttribute('aria-pressed',x.dataset.lang===LANG));}
   $('#pjName').value=st.name||'';
-  if(st.kit){KIT={mode:st.kit.mode,cur:0,mods:st.kit.mods};UID=1+Math.max(0,...KIT.mods.map(m=>parseInt(String(m.id||'').slice(1))||0));
+  if(st.kit){KIT={mode:st.kit.mode,cur:0,wall:st.kit.wall||null,mods:st.kit.mods};UID=1+Math.max(0,...KIT.mods.map(m=>parseInt(String(m.id||'').slice(1))||0));
     KIT.mods.forEach(m=>{if(!m.id)m.id='m'+(UID++);});loadModule(Math.min(st.kit.cur||0,KIT.mods.length-1));}
   else{KIT=null;S.product=st.mode==='caisson'?'caisson':'placard';S.comps=st.comps||[];renderComps();render();}}
 const pjList=()=>lsGet(PJ_KEY)||[];
@@ -1657,12 +1692,14 @@ async function ficheFromReleve(id,i){const d=await relGet(id);if(!d)throw new Er
   $('#inReleve').value=link;render();enterWork();$('#pjSave').click();
   pjMsg(type==='placard'?`Fiche créée depuis le relevé : ${L||'?'} × ${H||'?'} × ${P||'?'} mm. Vérifiez compartiments, portes et étagères.`
     :`Fiche créée depuis le relevé. Mesures relevées : ${[L,H,P].map(x=>x||'?').join(' × ')} mm. Placez les caissons dans cet espace.`);}
-$('#relBanner').addEventListener('click',e=>{const b=e.target.closest('[data-zb]');if(!b||!KIT)return;let r=null;try{r=JSON.parse($('#inReleve').value);}catch(x){}if(!r)return;
-  const [row,what]=b.dataset.zb.split(':'),mods=KIT.mods.filter(m=>!isPanel(m)||m.type==='vide'),arr=mods.filter(m=>row==='haut'?m.row==='haut':m.row!=='haut');
+function addRest(zb,r){if(!KIT||!r)return;
+  const [row,what]=zb.split(':'),mods=KIT.mods.filter(m=>!isPanel(m)||m.type==='vide'),arr=mods.filter(m=>row==='haut'?m.row==='haut':m.row!=='haut');
   const rest=r.L-arr.reduce((t,m)=>t+(+m.L||0)*(+m.q||1),0);if(!(rest>0))return;
   const k=what==='v'?(row==='haut'?'vide-haut':'vide-bas'):(row==='haut'?'haut':'bas-porte');const md=mkMod(k,{L:rest});md.k=k;
   if(KIT.mode==='cuisine'&&what==='c'&&row!=='haut'&&r.P)md.P=Math.min(md.P,r.P);
-  md.rep=nextRep(md);KIT.mods.push(md);loadModule(KIT.mods.length-1);pjMsg(`${md.rep} ajouté : ${rest} mm. Réglez-le dans la barre des produits.`);});
+  md.rep=nextRep(md);KIT.mods.push(md);loadModule(KIT.mods.length-1);pjMsg(`${md.rep} ajouté : ${rest} mm. Réglez-le dans la barre des produits.`);}
+$('#relBanner').addEventListener('click',e=>{const b=e.target.closest('[data-zb]');if(!b||!KIT)return;let r=null;try{r=JSON.parse($('#inReleve').value);}catch(x){}addRest(b.dataset.zb,r);});
+$('#kWallBud').addEventListener('click',e=>{const b=e.target.closest('[data-zb]');if(b&&KIT&&KIT.wall>0)addRest(b.dataset.zb,{L:KIT.wall});});
 const FAC_KIND={bas:'bas-porte',cuisine:'bas-porte',haut:'haut',colonne:'col',vide:'vide-bas',placard:'placard',tv:'tv-susp',meuble:'bas-porte',autre:'panneau'};
 async function ficheFromFacade(id,key){const d=await relGet(id);if(!d)throw new Error('Relevé introuvable (ni sur cet appareil ni dans le cloud).');
   const m=d.meta||{},f=(d.facades||[]).find(x=>x.piece+':'+x.mur===key);if(!f||!(f.elements||[]).length)throw new Error('Cette façade n\'a plus d\'élément dans le relevé.');
@@ -1767,6 +1804,7 @@ function v3dInit(){
   rd.domElement.addEventListener('pointerdown',e=>{down={x:e.clientX,y:e.clientY};});
   rd.domElement.addEventListener('pointerup',e=>{if(!down)return;const mv=Math.hypot(e.clientX-down.x,e.clientY-down.y);down=null;if(mv>6)return;
     const hit=v3dPick(e);if(!hit)return;const p=hit.userData.part;
+    if(e.shiftKey&&KIT&&p.mod!=null&&KIT.mods[p.mod]&&kmEligible(KIT.mods[p.mod])){const id=KIT.mods[p.mod].id;KIT.msel=KIT.msel||new Set();KIT.msel.has(id)?KIT.msel.delete(id):KIT.msel.add(id);$('#kMulti').open=true;kitExtras();v3dPaint();return;}
     if(KIT&&p.mod!=null&&p.mod!==KIT.cur){V3.sel=p.id;V3.editFor=null;loadModule(p.mod);return;}
     v3dSelect(p.id,true);});
   rd.domElement.addEventListener('dblclick',e=>{if(!v3dPick(e)){V3.sel=null;v3dPaint();v3dInfo();}});
@@ -1868,7 +1906,8 @@ function v3dPaint(){
   V3.meshes.forEach(m=>{const p=m.userData.part;if(!m.material||!m.material.color||p.rod||p.foot)return;
     const base=p.kind==='f'&&R.matF&&/gris/i.test(R.matF)?0x8d939b:p.kind==='f'&&R.matF&&/noir/i.test(R.matF)?0x3a3a3a:(V3COL[p.kind]??V3COL.c);
     const on=p.id===V3.sel,same=!on&&selRow&&p.res===selP.res&&v3dRow(p,p.res)===selRow;
-    m.material.color.setHex(on?V3COL.sel:same?V3COL.row:base);
+    const ms=KIT&&KIT.msel&&p.mod!=null&&KIT.mods[p.mod]&&KIT.msel.has(KIT.mods[p.mod].id);
+    m.material.color.setHex(on?V3COL.sel:same?V3COL.row:ms?(p.kind==='f'?0xa9c4e6:0xcfe0f5):base);
     const isF=p.kind==='f';m.visible=!(isF&&V3.fac==='hide'&&!on);
     const ghost=isF&&V3.fac==='ghost'&&!on;m.material.opacity=ghost?.18:1;m.material.depthWrite=!ghost;
     if(m.userData.edges)m.userData.edges.material.opacity=ghost?.35:.7;});
@@ -2041,6 +2080,45 @@ function montBody(rm,rep,q){
 /* page « Vue 3D du projet » (cuisine, ensemble) */
 function projBody(res){const c=snapGet(snapSetsAll(res),{fac:'show'});
   return `<div class="sh-body p3d"><div class="snap">${c&&c.src?`<img src="${c.src}" alt="">`:`<div class="wait">${SNAP.failed?'3D indisponible':'…'}</div>`}</div></div>`;}
+
+/* ================= MUR + MODIFICATION DE PLUSIEURS CAISSONS ================= */
+const kmEligible=m=>!isPanel(m)&&!isVide(m);
+function kitExtras(){if(!KIT)return;KIT.msel=KIT.msel||new Set();
+  /* mur : caché si la fiche vient d'une zone relevée (le bandeau du relevé fait déjà la vérification) */
+  let r=null;try{r=JSON.parse($('#inReleve').value||'null');}catch(e){}
+  const zone=r&&!r.facade&&r.L>0;$('#kWallW').hidden=!!zone;
+  if(r&&r.facade&&r.longueur>0&&!KIT.wall)KIT.wall=r.longueur;
+  const wi=$('#kWall');if(document.activeElement!==wi)wi.value=KIT.wall||'';
+  if(!zone){const L=KIT.wall,mods=KIT.mods.filter(m=>!isPanel(m)||m.type==='vide');
+    if(L>0){const sum=a=>a.reduce((t,m)=>t+(+m.L||0)*(+m.q||1),0),bas=mods.filter(m=>m.row!=='haut'),haut=mods.filter(m=>m.row==='haut');
+      const line=(lab,arr,row)=>{if(!arr.length&&row==='haut')return '';const t=sum(arr),rest=L-t;
+        const st=rest===0?'<span class="zb ok">✓ complet</span>':rest>0?`<span class="zb warn">reste ${fmt(rest)} mm</span>`:`<span class="zb err">dépasse de ${fmt(-rest)} mm</span>`;
+        const btn=rest>0?`<button type="button" class="btn" data-zb="${row}:c">+ ${row==='haut'?'caisson haut':KIT.mode==='placard'?'caisson':'caisson bas'} de ${fmt(rest)}</button><button type="button" class="btn" data-zb="${row}:v">+ espace vide de ${fmt(rest)}</button>`:'';
+        return `<div class="zbl"><b>${lab}</b> ${fmt(t)} / ${fmt(L)} mm ${st} ${btn}</div>`;};
+      $('#kWallBud').innerHTML=line(KIT.mode==='placard'?'Produits':'Bas et colonnes',bas,'bas')+line('Hauts',haut,'haut');}
+    else $('#kWallBud').innerHTML='<span class="hint">Tapez la longueur du mur : la fiche vérifie que les caissons bas et hauts retombent juste et propose de compléter le reste.</span>';}
+  /* liste des caissons à cocher */
+  [...KIT.msel].forEach(id=>{if(!KIT.mods.some(m=>m.id===id&&kmEligible(m)))KIT.msel.delete(id);});
+  const el=KIT.mods.filter(kmEligible);
+  $('#kmList').innerHTML=el.map(m=>`<label class="${KIT.msel.has(m.id)?'on':''}"><input type="checkbox" data-kid="${esc(m.id)}"${KIT.msel.has(m.id)?' checked':''}><b>${esc(m.rep)}</b> ${m.type==='placard'?'Placard':rowLb(m.row,'fr')} · ${fmt(m.L)}×${fmt(m.H)}×${fmt(m.P)}</label>`).join('')||'<span class="hint">Aucun caisson.</span>';
+  const n=KIT.msel.size;$('#kmCount').textContent=n?`· ${n} choisi${n>1?'s':''}`:'';$('#kmApply').disabled=!n;}
+$('#kWall').addEventListener('input',e=>{if(!KIT)return;KIT.wall=parseFloat(e.target.value)>0?parseFloat(e.target.value):null;kitExtras();if(typeof saveDraft==='function')saveDraft();});
+$('#kMulti').addEventListener('click',e=>{const b=e.target.closest('[data-ksel]');if(!b||!KIT)return;const k=b.dataset.ksel,el=KIT.mods.filter(kmEligible);
+  KIT.msel=new Set(k==='none'?[]:el.filter(m=>k==='all'||(k==='haut'?m.row==='haut':k==='col'?m.row==='col':k==='bas'?(m.row!=='haut'&&m.row!=='col'):false)).map(m=>m.id));
+  kitExtras();if(typeof v3dPaint==='function')v3dPaint();});
+$('#kmList').addEventListener('change',e=>{const c=e.target.closest('[data-kid]');if(!c||!KIT)return;c.checked?KIT.msel.add(c.dataset.kid):KIT.msel.delete(c.dataset.kid);kitExtras();if(typeof v3dPaint==='function')v3dPaint();});
+$('#kmApply').addEventListener('click',()=>{if(!KIT||!KIT.msel.size)return;
+  const num=id=>{const x=parseFloat($('#'+id).value);return x>0?x:null;},soc=$('#kmSoc').value===''?null:Math.max(0,parseFloat($('#kmSoc').value)||0);
+  const ch={H:num('kmH'),P:num('kmP'),socle:soc,base:$('#kmBase').value||null,doors:$('#kmDoors').value||null,fix:$('#kmFix').value||null,q:num('kmQ')};
+  const keys=Object.keys(ch).filter(k=>ch[k]!=null);if(!keys.length){$('#kmMsg').textContent='Remplissez au moins un réglage.';return;}
+  /* le caisson ouvert dans le formulaire : on garde d'abord ses réglages en cours */
+  snapModule();let n=0;
+  KIT.mods.forEach(m=>{if(!KIT.msel.has(m.id)||!kmEligible(m))return;keys.forEach(k=>{let v=ch[k];if(k==='doors'&&v==='relev'&&m.type==='placard')v='battant';if(k==='q')v=Math.round(v);m[k]=v;});n++;});
+  ['kmH','kmP','kmSoc','kmQ'].forEach(id=>$('#'+id).value='');['kmBase','kmDoors','kmFix'].forEach(id=>$('#'+id).value='');
+  loadModule(KIT.cur);
+  const names={H:'hauteur',P:'profondeur',socle:'hauteur du dessous',base:'dessous',doors:'portes',fix:'fixation',q:'quantité'};
+  $('#kmMsg').textContent=`${n} caisson${n>1?'s':''} modifié${n>1?'s':''} : ${keys.map(k=>names[k]).join(', ')}.`;
+  pjMsg(`${n} caisson${n>1?'s':''} modifié${n>1?'s':''} en une fois.`);});
 {let k='3d';try{k=localStorage.getItem('bes_fa_vtab')||'3d';}catch(e){}v3dShowTab(k);}
 </script>
 

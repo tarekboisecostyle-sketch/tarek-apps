@@ -5,6 +5,13 @@ Application de production de BOIS ECO-STYLE : saisie des meubles (placards, cuis
 - Application : `index.html` (fichier unique, sans installation)
 - Enregistrement des projets : navigateur (local) et Supabase (table `fiches_projets`)
 
+## Ensemble sur un mur
+
+Dans la barre « Produits du projet » :
+
+- **Longueur du mur** (pour les projets sans zone relevée, enregistrée avec le projet ; reprise du relevé pour une façade) : total des bas/colonnes et des hauts, « reste » ou « dépasse », boutons « + caisson » / « + espace vide » du reste
+- **Modifier plusieurs caissons à la fois** : choix Tous / Bas / Hauts / Colonnes ou cases à cocher (en Vue 3D « tout le projet » : Maj + clic, les caissons choisis passent en bleu), puis hauteur, profondeur, socle, dessous, portes, fixation, quantité appliqués en une fois (champ vide = inchangé)
+
 ## Liste d'achat
 
 Sous le plan de découpe, et en page imprimée « Liste d'achat » avec cases à cocher : nombre de plaques par matière et format, mètres de chant par matière (côtés chantés de chaque pièce + surlongueur par côté réglable, 30 mm par défaut, arrondi au mètre), quincaillerie.
