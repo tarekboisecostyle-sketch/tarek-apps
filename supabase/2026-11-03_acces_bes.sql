@@ -5,3 +5,7 @@
 --   insert into public.bes_acces (user_id, email) select id, email from auth.users where email = 'email@exemple.com';
 -- Retirer quelqu'un :
 --   delete from public.bes_acces where email = 'email@exemple.com';
+
+-- 2026-11-07 : photos du relevé de chantier (bucket privé, même accès que les justificatifs)
+-- insert into storage.buckets (id,name,public,file_size_limit,allowed_mime_types) values ('releve-photos','releve-photos',false,10485760,array['image/jpeg','image/png','image/webp']);
+-- policies bes_releve_photos_ajout / _lecture / _modif / _suppression : bucket_id='releve-photos' and bes_autorise()
