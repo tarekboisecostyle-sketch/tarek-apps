@@ -13,6 +13,7 @@ Onglet « Vue 3D » à côté du plan coté (Three.js, chargé depuis internet l
 - Clic sur une pièce (ou sur une ligne du débit) : elle passe en orange, les pièces identiques en orange clair, avec n° de débit, cotes de coupe, chant et matière
 - « Modifier directement » : les réglages de la pièce cliquée (cotes du meuble, étagères du compartiment, portes, tiroirs, dos, socle) se changent dans le panneau et tout se recalcule
 - Projets à plusieurs produits (cuisine) : « tout le projet » affiche tous les caissons à leur place ; cliquer un caisson l'ouvre dans le formulaire
+- Fiche imprimée (case « Ajouter le montage en 3D », cochée par défaut) : page « Montage en 3D » par caisson, avec les pièces écartées et numérotées comme la liste de débit, le meuble monté en petit et la liste des pièces du caisson ; page « Vue 3D du projet » pour les cuisines et ensembles
 
 ## Relevé de chantier
 

@@ -151,6 +151,21 @@ table.debit td.fin{font:400 12px var(--f-mono);color:var(--muted);text-align:rig
 .photo{border:.12cqw solid var(--ink);aspect-ratio:4/3;display:grid;place-items:center;overflow:hidden}
 .photo img{width:100%;height:100%;object-fit:cover}
 .photo svg{width:88%;height:auto}
+.photo img.s3{object-fit:contain}
+.m3{display:grid;grid-template-columns:minmax(0,.95fr) minmax(0,2fr);gap:1.4cqw;align-items:start;min-height:0}
+.snap .inset{position:absolute;left:1.2%;top:1.6%;width:29%;aspect-ratio:4/3;border:.1cqw solid #8a8a8a;background:#fff}
+.snap .inset img{position:static;width:100%;height:100%;object-fit:contain}
+.snap .inset span{position:absolute;left:0;right:0;bottom:-1.5cqw;font-size:.95cqw;color:#444;text-align:center}
+.p3d{display:grid;min-height:0}
+.p3d .snap{aspect-ratio:auto;height:100%;min-height:0}
+.m3 .ptab td{padding-top:.25cqw;padding-bottom:.25cqw}
+.m3 figure{margin:0;display:grid;gap:.5cqw}
+.m3 figcaption{font-size:1.15cqw;line-height:1.3}
+.m3 figcaption .ar{display:block;font-size:1.35cqw}
+.snap{position:relative;aspect-ratio:4/3;border:.12cqw solid var(--ink);background:#fff}
+.snap img,.snap svg{position:absolute;inset:0;width:100%;height:100%;object-fit:contain}
+.snap .wait{position:absolute;inset:0;display:grid;place-items:center;color:#777;font-size:1.2cqw}
+.m3 .box{margin-top:0}
 .box{border:.12cqw solid var(--ink);padding:.8cqw 1cqw}
 .box h4{margin:0 0 .4cqw;font:600 1.15cqw var(--f-body);text-transform:uppercase;letter-spacing:.06em}
 .sheet[dir=rtl] .box h4{font-family:var(--f-ar);letter-spacing:0;font-size:1.35cqw}
@@ -654,6 +669,7 @@ tr.drow.on td{background:#ffe2c6;color:#121212}
   <div class="printbar">
     <button type="button" class="btn solid big" id="printBtn">Imprimer la fiche</button>
     <label class="check" style="grid-column:auto" id="withVuesWrap" hidden><input type="checkbox" id="withVues" checked> Ajouter la vue d'ensemble de chaque caisson (1 page par caisson)</label>
+    <label class="check" style="grid-column:auto"><input type="checkbox" id="with3d" checked> Ajouter le montage en 3D (pièces numérotées)</label>
     <label class="check" style="grid-column:auto"><input type="checkbox" id="withPieces"> Ajouter les pièces cotées</label>
     <label class="check" style="grid-column:auto"><input type="checkbox" id="withAvis" checked> Ajouter la feuille d'avis (patron et employés)</label>
     <p class="hint" style="flex-basis:100%">Si l'impression ne s'ouvre pas dans cette page Claude, ouvrez le fichier <b>bes-fiches-atelier.html</b> envoyé dans la conversation avec Chrome, puis cliquez sur ce bouton. Choisissez « Paysage » et « Enregistrer en PDF » ou votre imprimante.</p>
@@ -719,8 +735,10 @@ const T={
  rowbas:{fr:'Bas',ar:'تحتاني'}, vide:{fr:'Espace vide',ar:'فراغ'}, rowhaut:{fr:'Haut',ar:'فوقاني'}, rowcol:{fr:'Colonne',ar:'عمود'}, caissons:{fr:'Caissons',ar:'الخزانات'}, facs:{fr:'Façades (portes et tiroirs)',ar:'الواجهات (البيبان والتيروار)'}, strc:{fr:'Caissons, étagères et tiroirs',ar:'الخزانات والرفوف والتيروار'}, ptrav:{fr:'plan de travail',ar:'بلان دو ترافاي'}, caisson:{fr:'Caisson bas',ar:'خزانة سفلية'},
  ftir:{fr:'Façade tiroir',ar:'واجهة التيروار'}, tcote:{fr:'Côté tiroir',ar:'جنب التيروار'}, tav:{fr:'Avant / arrière tiroir',ar:'قدام / ورا التيروار'}, tfond:{fr:'Fond tiroir',ar:'قاع التيروار'},
  coul:{fr:'Coulisses (paires)',ar:'سكك التيروار (زوج)'}, pieds:{fr:'Pieds réglables',ar:'رجلين بلاستيك'}, railH:{fr:'Rail haut coulissant',ar:'سكة الفوق'}, railB:{fr:'Rail bas coulissant',ar:'سكة التحت'}, kitC:{fr:'Kits roulettes (1 / porte)',ar:'روايض (1 لكل باب)'}, poignC:{fr:'Poignées cuvette',ar:'مقابض مدفونة'}, tass:{fr:'Tasseaux',ar:'تاسو (حامل الرف)'}, noDed:{fr:'NE PAS DÉDUIRE LE CHANT : il est déjà déduit. Couper à la cote écrite.',ar:'لا تنقص السينتا: راه محسوب. قطع على المقاس المكتوب.'}, montantJ:{fr:'Séparation joint du dos',ar:'فاصل وصلة الظهر'}, rain:{fr:'rainure',ar:'مجرى (رينور)'}, nest:{fr:'Plan de découpe',ar:'مخطط التقطيع على الألواح'}, plaque:{fr:'Plaque',ar:'لوح'},
- rend:{fr:'Rendement',ar:'المردودية'}, avis:{fr:'Votre avis sur la fiche',ar:'رأيكم في ورقة الورشة'}, pend:{fr:'Penderie',ar:'شماعة'}, total:{fr:'Total pièces',ar:'مجموع القطع'}
+ rend:{fr:'Rendement',ar:'المردودية'}, mont:{fr:'Montage en 3D',ar:'التركيب بالثلاثي الأبعاد'}, v3a:{fr:'Meuble monté (façades transparentes)',ar:'الأثاث مركب (الواجهات شفافة)'}, v3e:{fr:'Pièces écartées, sans façades : le numéro = la ligne de la liste de débit',ar:'القطع مفرقة بلا واجهات: الرقم = السطر في لائحة التقطيع'}, v3p:{fr:'Vue 3D du projet',ar:'الرسم الثلاثي الأبعاد'}, avis:{fr:'Votre avis sur la fiche',ar:'رأيكم في ورقة الورشة'}, pend:{fr:'Penderie',ar:'شماعة'}, total:{fr:'Total pièces',ar:'مجموع القطع'}
 };
+/* remplacées par le module 3D plus bas (images 3D de la fiche) */
+var snapImg=()=>'',snapHas=()=>false,montBody=()=>'';
 let KIT=null, LANG='mix', PHOTO=null, R={}, S={product:'placard',comps:[{type:'pend',n:0,hp:1000,hc:350,dp:2,nt:0},{type:'mixte',n:2,hp:0,hc:350,dp:2,nt:0},{type:'etag',n:4,hp:1000,hc:350,dp:2,nt:0}]}, last=null;
 const fmt=v=>{const r=Math.round(v*10)/10;return Number.isInteger(r)?String(r):r.toFixed(1)};
 const lb=(k,l=LANG)=>{const t=T[k];return l==='fr'?t.fr:l==='ar'?t.ar:t.ar+' · '+t.fr};
@@ -1211,7 +1229,7 @@ function renderSheets(){
   // 1. vue d'ensemble
   const quinc=r.acc.map(a=>`<li><span>${lb(a.k)}${a.note?' <small>('+a.note+')</small>':''}</span><b>${a.v}</b></li>`).join('');
   pages.push({k:'overview',body:`<div class="sh-body p1"><div class="ov">${overview(r,1000)}</div>
-   <aside><div class="photo">${PHOTO?`<img src="${PHOTO}" alt="Photo du produit">`:perspective(r)}</div>
+   <aside><div class="photo">${PHOTO?`<img src="${PHOTO}" alt="Photo du produit">`:(snapImg([{r,mod:null}],{fac:'ghost'},'one')||perspective(r))}</div>
    <div class="box"><h4>${lb('quinc')}</h4><ul>${quinc||'<li>—</li>'}</ul></div>
    <div class="box"><h4>${lb('legend')}</h4><ul><li class="leg"><i></i>${lb('legChant')}</li><li><b>${lb('legCut')}</b></li><li>${lb('legFil')}</li></ul></div></aside></div>`});
   // 2. liste de débit
@@ -1228,6 +1246,7 @@ function renderSheets(){
     pages.push({k:'nest',sub:`${N.lblS} · ${N.plates.length} × ${lb('plaque')} · ${lb('rend')} ${Math.round(N.rend*100)} % · ${LANG==='fr'?'trait de scie':LANG==='ar'?'سمك المنشار':'سمك المنشار · trait de scie'} ${fmt(R.kerf)} mm`,
       body:`<div class="sh-body" style="align-content:start"><div class="pl2">${two}</div>${nestLegend(N.plates.slice(i,i+2))}</div>`});
   }});
+  if($('#with3d').checked&&!r.panel)pages.push({k:'mont',body:montBody(r,null,S.q)});
   // 4. pièces cotées (en dernier)
   if($('#withPieces').checked)for(let i=0;i<np;i++){const chunk=pieces.slice(i*per,i*per+per);
     pages.push({k:'pieces',body:`<div class="sh-body"><div class="pgrid">${chunk.map(p=>`<div class="pcard">${pieceSVG(p,LANG)}</div>`).join('')}</div></div>`});}
@@ -1419,6 +1438,7 @@ function renderSheetsKit(){
     <div class="box"><h4>${lb('caissons')}</h4><table class="ptab" style="font-size:1.05cqw">${res.map(rm=>`<tr><td><span class="rpl">${esc(rm.m.rep)}</span></td><td>${rm.panel?lb(rm.list[0].key):rm.vide?lb('vide'):rowLb(rm.m.row)}</td><td class="n" style="font-size:1.1cqw">${rm.panel?fmt(rm.list[0].Lf)+'×'+fmt(rm.list[0].Wf):fmt(rm.m.L)+'×'+fmt(rm.m.H)+'×'+fmt(rm.m.P)}</td><td>${rm.m.q>1?'×'+rm.m.q:''}</td></tr>`).join('')}</table></div>
     <div class="box"><h4>${lb('quinc')}</h4><ul>${quinc||'<li>—</li>'}</ul></div>
     <div class="box"><h4>${lb('legend')}</h4><ul><li class="leg"><i></i>${lb('legChant')}</li><li><b>${lb('legCut')}</b></li></ul></div></aside></div>`});
+  if($('#with3d').checked&&res.filter(rm=>!rm.vide).length>1)pages.push({k:'v3p',sub,body:projBody(res)});
   debitGroups(L2).forEach(([g,L2])=>{const sub2=g?sub+' · '+lb(g):sub;
   const per=15,totQ=L2.reduce((a,p)=>a+p.tq,0);
   for(let i=0;i<L2.length;i+=per){const ch=L2.slice(i,i+per),last2=i+per>=L2.length;
@@ -1431,6 +1451,7 @@ function renderSheetsKit(){
   if($('#withVues').checked)res.filter(rm=>!rm.panel&&!rm.vide).forEach(rm=>{const M=rm.m;
     pages.push({k:'overview',sub:`${M.rep} · ${M.type==='placard'?lb('placard'):rowLb(M.row)} · ${fmt(M.L)} × ${fmt(M.H)} × ${fmt(M.P)} mm${M.q>1?' · ×'+M.q:''}`,body:`<div class="sh-body p1"><div class="ov">${rm.svg}</div><aside>
       <div class="box"><h4>${lb('debit')} · ${esc(M.rep)}</h4><table class="ptab" style="font-size:1cqw">${rm.list.map(p=>`<tr><td><span class="rp">${p.n}</span></td><td>${lb(p.key)}</td><td class="n" style="font-size:1.1cqw">${p.qty*M.q}</td><td class="n" style="font-size:1.1cqw">${fmt(p.Lc)}×${fmt(p.Wc)}</td></tr>`).join('')}</table></div></aside></div>`});});
+  if($('#with3d').checked)res.filter(rm=>!rm.panel&&!rm.vide).forEach(rm=>{const M=rm.m;pages.push({k:'mont',sub:`${M.rep} · ${fmt(M.L)} × ${fmt(M.H)} × ${fmt(M.P)} mm${M.q>1?' · ×'+M.q:''}`,body:montBody(rm,M.rep,M.q)});});
   const tot=pages.length,prod=`${lb(cuis?'cuisine':'meuble','fr')} (${res.length})`;
   $('#sheets').innerHTML=pages.map((p,i)=>`<div class="sheet" dir="${dir}">${title(p.k,p.sub)}${p.body}${cartouche(i+1,tot,prod,1)}</div>`).join('');
 }
@@ -1553,6 +1574,7 @@ $('#inDoors').addEventListener('change',()=>{renderComps();render();});
 $('#printBtn').addEventListener('click',()=>{try{window.print();}catch(e){}});
 $('#withAvis').addEventListener('change',renderSheets);
 $('#withPieces').addEventListener('change',renderSheets);
+$('#with3d').addEventListener('change',renderSheets);
 $('#withVues').addEventListener('change',renderSheets);
 document.querySelectorAll('.seg button').forEach(b=>b.addEventListener('click',()=>{if(KIT){LANG=b.dataset.lang;document.querySelectorAll('.seg button').forEach(x=>x.setAttribute('aria-pressed',x===b));render();return;}
   LANG=b.dataset.lang;document.querySelectorAll('.seg button').forEach(x=>x.setAttribute('aria-pressed',x===b));renderSheets();}));
@@ -1685,9 +1707,7 @@ const V3COL={c:0xf3f1ec,dos:0xcdb894,f:0xe9e3d6,d:0xddd3bf,feet:0x333333,rod:0x9
 function v3dLoad(){
   if(V3.lib)return V3.lib;
   const add=src=>new Promise((res,rej)=>{const s=document.createElement('script');s.src=src;s.onload=res;s.onerror=()=>rej(new Error(src));document.head.appendChild(s);});
-  V3.lib=(window.THREE?Promise.resolve():add('https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js'))
-    .then(()=>THREE.OrbitControls?null:add('https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js'))
-    .then(v3dInit)
+  V3.lib=v3dLib().then(v3dInit)
     .catch(e=>{V3.lib=null;$('#v3dMsg').hidden=false;$('#v3dMsg').textContent='La 3D a besoin d\'internet pour se charger la première fois. Vérifiez la connexion puis rouvrez l\'onglet « Vue 3D ».';throw e;});
   return V3.lib;
 }
@@ -1754,7 +1774,9 @@ function v3dParts(r,mod){
     const xs=L<=1000?[60,L-60]:[60,L/2,L-60];xs.forEach((x,i)=>[80,D.P-80].forEach((z,j)=>P.push({id:(mod!=null?mod+':':'')+`pied-${i}-${j}`,key:null,foot:true,x,z,h:sc,kind:'feet',mod})));}
   {const de=dd.de,rp=R.rp;let x0,x1;
     if(dd.mode==='rainure'){x0=e-(rp-1);x1=L-e+(rp-1);}else if(dd.mode==='encastre'){x0=e;x1=L-e;}else{const j=de>=18?0:1;x0=j;x1=L-j;}
-    box('dos','dos',x0,x1,dd.dy0,dd.dy1,dd.dosX,dd.dosX+de,'dos');}
+    /* dos en plusieurs morceaux : coupé au milieu des séparations à joint */
+    const cuts=g.comps.map((c,i)=>c.joint&&i>0?c.x-e/2:null).filter(v=>v!=null),xs=[x0,...cuts,x1];
+    for(let i=0;i<xs.length-1;i++)box(xs.length>2?'dos-'+i:'dos','dos',xs[i]+(i?0.5:0),xs[i+1]-(i<xs.length-2?0.5:0),dd.dy0,dd.dy1,dd.dosX,dd.dosX+de,'dos');}
   const ws=g.ws||g.comps.map(c=>c.w);
   g.fronts.forEach((f,k)=>{let z0;
     if(f.slide)z0=6+(f.rail||0)*(e+10);else if(f.inner)z0=(g.coul?rail:0)+2;else z0=-e-1;
@@ -1904,6 +1926,84 @@ $('#debit').addEventListener('click',e=>{const tr=e.target.closest('tr.drow');if
     if(V3.three)tryIt();else v3dLoad().then(()=>{V3.three.fit();v3dUpdate(last);tryIt();}).catch(()=>{});};
   if(KIT&&rep&&V3.scope!=='all'){const i=KIT.mods.findIndex(m=>m.rep===rep);if(i>=0&&i!==KIT.cur){loadModule(i);}}
   go();});
+
+/* ================= IMAGES 3D POUR LA FICHE IMPRIMÉE =================
+   Rendu hors écran (même construction que la vue 3D), mis en cache : la fiche se redessine dès que les images sont prêtes. */
+const SNAP={cache:new Map(),queue:new Map(),timer:0,ren:null,failed:false};
+function v3dLib(){if(window.THREE&&THREE.OrbitControls)return Promise.resolve();
+  if(V3.libOnly)return V3.libOnly;
+  const add=src=>new Promise((res,rej)=>{const s=document.createElement('script');s.src=src;s.onload=res;s.onerror=()=>rej(new Error(src));document.head.appendChild(s);});
+  V3.libOnly=(window.THREE?Promise.resolve():add('https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js'))
+    .then(()=>THREE.OrbitControls?null:add('https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js'))
+    .catch(e=>{V3.libOnly=null;throw e;});
+  return V3.libOnly;}
+function snapHas(){return !SNAP.failed;}
+function snapKey(sets,opts){return JSON.stringify([opts,R,sets.map(st=>[st.r.m?{...st.r.m,x:null,y:null}:[S.L,S.H,S.P,S.base,S.socle,S.plinthe,S.doors,S.nc,S.comps,S.product],st.ox||0,st.oy||0])]);}
+/* renvoie l'entrée en cache ou programme le rendu */
+function snapGet(sets,opts){if(SNAP.failed)return null;const k=snapKey(sets,opts),c=SNAP.cache.get(k);if(c)return c;
+  SNAP.queue.set(k,{sets,opts});clearTimeout(SNAP.timer);SNAP.timer=setTimeout(snapRun,250);return null;}
+function snapRun(){if(!SNAP.queue.size)return;
+  v3dLib().then(()=>{const jobs=[...SNAP.queue.entries()];SNAP.queue.clear();
+    jobs.forEach(([k,j])=>{try{SNAP.cache.set(k,snapRender(j.sets,j.opts));}catch(e){console.error(e);SNAP.cache.set(k,{src:'',labels:[]});}});
+    while(SNAP.cache.size>40)SNAP.cache.delete(SNAP.cache.keys().next().value);
+    renderSheets();})
+  .catch(()=>{SNAP.failed=true;SNAP.queue.clear();renderSheets();});}
+/* positions des caissons d'un projet (comme la vue 3D « tout le projet ») */
+function snapSetsAll(res){if(!KIT||!KIT.pos)return res.map((rm,i)=>({r:rm,mod:i,ox:0,oy:0,oz:0}));
+  const maxP=Math.max(...res.map(rm=>v3dDims(rm).P||0));
+  return res.map((rm,i)=>{const p=KIT.pos[i];if(!p)return null;const D=v3dDims(rm);return {r:rm,mod:i,ox:p.x,oy:p.y,oz:(rm.panel&&rm.m.type==='panneau')?0:maxP-D.P};}).filter(Boolean);}
+function snapImg(sets,opts,kind){if(kind==='all')sets=snapSetsAll(sets.map(s=>s.r));
+  const c=snapGet(sets,opts);return c&&c.src?`<img class="s3" src="${c.src}" alt="Vue 3D">`:'';}
+function snapRender(sets,opts){
+  const T3=THREE,W=1200,H=900;
+  if(!SNAP.ren){SNAP.ren=new T3.WebGLRenderer({antialias:true,preserveDrawingBuffer:true});SNAP.ren.setPixelRatio(1);SNAP.ren.setSize(W,H,false);SNAP.ren.setClearColor(0xffffff,1);}
+  const sc=new T3.Scene(),grp=new T3.Group();sc.add(grp);
+  sc.add(new T3.HemisphereLight(0xffffff,0xb9bec7,0.8));const dl=new T3.DirectionalLight(0xffffff,0.5);dl.position.set(-1.2,2,1.6);sc.add(dl);const d2=new T3.DirectionalLight(0xffffff,.25);d2.position.set(1.5,.6,-1);sc.add(d2);
+  const parts=[];sets.forEach(st=>v3dParts(st.r,st.mod).forEach(p=>{p.ox=st.ox||0;p.oy=st.oy||0;p.oz=st.oz||0;p.res=st.r;parts.push(p);}));
+  const vis=parts.filter(p=>!(p.kind==='f'&&opts.fac==='hide')&&!(opts.ex&&(p.rod||p.foot)));
+  const bb=new T3.Box3();vis.forEach(p=>{if(p.x0==null)return;bb.expandByPoint(new T3.Vector3(p.ox+p.x0,p.oy+(p.y0??0),-(p.oz+(p.z0??0))));bb.expandByPoint(new T3.Vector3(p.ox+p.x1,p.oy+(p.y1??0),-(p.oz+(p.z1??0))));});
+  const c=bb.getCenter(new T3.Vector3()),size=Math.max(...bb.getSize(new T3.Vector3()).toArray(),300),ex=opts.ex||0,meshes=[];
+  vis.forEach(p=>{let m;
+    if(p.rod){const g=new T3.CylinderGeometry(12,12,p.x1-p.x0,16);g.rotateZ(Math.PI/2);m=new T3.Mesh(g,new T3.MeshStandardMaterial({color:V3COL.rod,metalness:.5,roughness:.4}));m.position.set(p.ox+(p.x0+p.x1)/2,p.oy+p.y,-(p.oz+p.z));}
+    else if(p.foot){const g=new T3.CylinderGeometry(18,22,p.h,14);m=new T3.Mesh(g,new T3.MeshStandardMaterial({color:V3COL.feet}));m.position.set(p.ox+p.x,p.oy+p.h/2,-(p.oz+p.z));}
+    else{const w=p.x1-p.x0,h=p.y1-p.y0,d=p.z1-p.z0,g=new T3.BoxGeometry(w,h,d),isF=p.kind==='f',ghost=isF&&opts.fac==='ghost';
+      const col=isF&&R.matF&&/gris/i.test(R.matF)?0x8d939b:isF&&R.matF&&/noir/i.test(R.matF)?0x3a3a3a:(V3COL[p.kind]??V3COL.c);
+      m=new T3.Mesh(g,new T3.MeshStandardMaterial({color:col,roughness:.85,transparent:ghost,opacity:ghost?.16:1,depthWrite:!ghost,polygonOffset:true,polygonOffsetFactor:1,polygonOffsetUnits:1}));
+      m.add(new T3.LineSegments(new T3.EdgesGeometry(g),new T3.LineBasicMaterial({color:0x151515,transparent:true,opacity:ghost?.45:.95})));
+      m.position.set(p.ox+p.x0+w/2,p.oy+p.y0+h/2,-(p.oz+p.z0+d/2));}
+    if(ex>0){const dv=m.position.clone().sub(c);m.position.add(dv.multiplyScalar(ex));}
+    m.userData.part=p;grp.add(m);meshes.push(m);});
+  /* caméra : vue 3D de trois quarts, cadrée sur l'ensemble */
+  const box=new T3.Box3().setFromObject(grp),cc=box.getCenter(new T3.Vector3()),cam=new T3.PerspectiveCamera(26,W/H,10,200000);
+  const dir=new T3.Vector3(0.75,0.5,1).normalize();cam.position.copy(cc).add(dir.multiplyScalar(size*3));cam.lookAt(cc);cam.updateMatrixWorld();cam.updateProjectionMatrix();
+  /* recadrage : on mesure la place prise à l'écran et on rapproche la caméra */
+  const corners=[];for(const x of [box.min.x,box.max.x])for(const y of [box.min.y,box.max.y])for(const z of [box.min.z,box.max.z])corners.push(new T3.Vector3(x,y,z));
+  for(let it=0;it<3;it++){let mx=0;corners.forEach(v=>{const q=v.clone().project(cam);mx=Math.max(mx,Math.abs(q.x),Math.abs(q.y));});
+    const k=mx/0.9;cam.position.sub(cc).multiplyScalar(k).add(cc);cam.updateMatrixWorld();}
+  SNAP.ren.render(sc,cam);const src=SNAP.ren.domElement.toDataURL('image/jpeg',0.92);
+  /* numéros des pièces (lignes de la liste de débit) */
+  const labels=[];
+  if(opts.labels){const seen=[];
+    meshes.forEach(m=>{const p=m.userData.part;if(!p.key)return;const row=v3dRow(p,p.res);if(!row)return;
+      const q=m.getWorldPosition(new T3.Vector3()).project(cam);if(q.z>1)return;let x=(q.x+1)/2*W,y=(1-q.y)/2*H;const t=String(row.n);
+      if(seen.some(o=>o.t===t&&Math.hypot(o.x-x,o.y-y)<70))return;
+      for(let n=0;n<6&&seen.some(o=>Math.hypot(o.x-x,o.y-y)<34);n++)y+=34;
+      seen.push({x,y,t});labels.push({x,y,t});});}
+  meshes.forEach(m=>{m.geometry.dispose();m.material.dispose();m.children.forEach(ch=>{ch.geometry.dispose();ch.material.dispose();});});
+  return {src,labels,W,H};}
+/* page « Montage en 3D » d'un caisson : monté + éclaté numéroté */
+function montBody(rm,rep,q){
+  const sets=[{r:rm,mod:null}],a=snapGet(sets,{fac:'ghost'}),b=snapGet(sets,{fac:'hide',ex:.55,labels:true});
+  const cap=k=>LANG==='mix'?`<span class="ar">${T[k].ar}</span>${T[k].fr}`:LANG==='ar'?`<span class="ar">${T[k].ar}</span>`:T[k].fr;
+  const wait=SNAP.failed?'3D indisponible (pas d\'internet au premier chargement)':'…';
+  const lab=c=>c.labels.length?`<svg viewBox="0 0 ${c.W} ${c.H}">${c.labels.map(l=>`<g><circle cx="${l.x}" cy="${l.y}" r="17" fill="#fff" stroke="#121212" stroke-width="2.2"/><text x="${l.x}" y="${l.y+6}" text-anchor="middle" font-size="17" font-weight="700" font-family="IBM Plex Mono,monospace" fill="#121212">${esc(l.t)}</text></g>`).join('')}</svg>`:'';
+  const rows=rm.list.filter(p=>!isFront(p)).map(p=>`<tr><td><span class="rp">${p.n}</span></td><td>${lb(p.key)}</td><td class="n" style="font-size:1.1cqw">${p.qty*q}</td><td class="n" style="font-size:1.1cqw">${fmt(p.Lc)}×${fmt(p.Wc)}</td></tr>`).join('');
+  return `<div class="sh-body m3"><div class="box"><h4>${lb('debit')}${rep?' · '+esc(rep):''}</h4><table class="ptab" style="font-size:1cqw">${rows}</table></div>
+    <figure><div class="snap">${b&&b.src?`<img src="${b.src}" alt="">${lab(b)}`:`<div class="wait">${wait}</div>`}${a&&a.src?`<div class="inset"><img src="${a.src}" alt=""></div>`:''}</div>
+    <figcaption>${cap('v3e')}<br><small>${LANG==='fr'?'En haut à gauche : ':LANG==='ar'?'فوق على اليسار: ':'فوق على اليسار · en haut à gauche : '}${cap('v3a')}</small></figcaption></figure></div>`;}
+/* page « Vue 3D du projet » (cuisine, ensemble) */
+function projBody(res){const c=snapGet(snapSetsAll(res),{fac:'show'});
+  return `<div class="sh-body p3d"><div class="snap">${c&&c.src?`<img src="${c.src}" alt="">`:`<div class="wait">${SNAP.failed?'3D indisponible':'…'}</div>`}</div></div>`;}
 {let k='3d';try{k=localStorage.getItem('bes_fa_vtab')||'3d';}catch(e){}v3dShowTab(k);}
 </script>
 
