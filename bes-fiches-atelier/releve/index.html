@@ -395,7 +395,7 @@ $('#rail').addEventListener('click',e=>{const t=e.target.closest('.tool');if(!t)
   [...document.querySelectorAll('.tool')].forEach(x=>x.classList.remove('active'));t.classList.add('active');
   if(tool!=='select')selectEl(null);
   canvas.style.cursor=tool==='select'?'default':(tool==='pan'?'grab':'crosshair');
-  flash({select:'Touche un élément pour le sélectionner',pan:'Glisse pour déplacer le plan',scale:'Trace une longueur connue, puis saisis sa vraie mesure',pen:'Croquis à main levée',line:'Trace un mur/segment',rect:'Trace un rectangle',dim:'Trace puis saisis la mesure',room:'Étape 1 : touche le plan et saisis les dimensions de l\'espace',open:'Étape 3 : touche un mur pour y poser une porte, une fenêtre ou un passage',product:'Étape 2 : touche le mur ou le coin où ira le produit',text:'Touche pour ajouter une note',erase:"Touche un élément pour l'effacer"}[tool]);});
+  flash({select:'Touche un élément pour le sélectionner',pan:'Glisse pour déplacer le plan',scale:'Trace une longueur connue, puis saisis sa vraie mesure',pen:'Dessine au doigt ou au stylet · reste appuyé à la fin pour redresser la forme · touche une cote pour la vraie mesure',line:'Trace un mur/segment',rect:'Trace un rectangle',dim:'Trace puis saisis la mesure',room:'Étape 1 : touche le plan et saisis les dimensions de l\'espace',open:'Étape 3 : touche un mur pour y poser une porte, une fenêtre ou un passage',product:'Étape 2 : touche le mur ou le coin où ira le produit',text:'Touche pour ajouter une note',erase:"Touche un élément pour l'effacer"}[tool]);});
 
 /* pose le bloc du bon côté du point touché pour qu'il reste dans la pièce */
 function placeInRoom(el,pt){const rooms=elements.filter(e=>e.type==='rect').map(e=>({x1:Math.min(e.x1,e.x2),y1:Math.min(e.y1,e.y2),x2:Math.max(e.x1,e.x2),y2:Math.max(e.y1,e.y2)}));
@@ -452,6 +452,7 @@ function pBox(el){if(!el.box)return null;const k=pxPerCm||DEF_PX,t=el.ptype||'au
   const W=(toCm(el.w)||100)*k,D=(toCm(el.d)||DEF_DEPTH[t]||50)*k;const r=(el.rot||0)%2;return{x:el.x,y:el.y,w:r?D:W,h:r?W:D};}
 function allAnchors(){const a=[];for(const el of elements){if(el.type==='dim'&&el.of)continue;const pb=el.type==='product'&&pBox(el);if(pb){a.push({x:pb.x,y:pb.y},{x:pb.x+pb.w,y:pb.y},{x:pb.x+pb.w,y:pb.y+pb.h},{x:pb.x,y:pb.y+pb.h});continue;}if(el.type==='line'||el.type==='dim'){a.push({x:el.x1,y:el.y1},{x:el.x2,y:el.y2});}
   else if(el.type==='rect'){a.push({x:el.x1,y:el.y1},{x:el.x2,y:el.y1},{x:el.x2,y:el.y2},{x:el.x1,y:el.y2});}
+  else if(el.type==='poly'){el.pts.forEach(q=>a.push({x:q.x,y:q.y}));}else if(el.type==='circle'){a.push({x:el.cx,y:el.cy});}
   else if(el.type==='product'||el.type==='text'){a.push({x:el.x,y:el.y});}}return a;}
 function snapAnchor(p){if(!magnetOn)return{x:p.x,y:p.y,snapped:false};const R=13/scale;let best=null,bd=R;
   for(const a of allAnchors()){const d=Math.hypot(a.x-p.x,a.y-p.y);if(d<bd){bd=d;best=a;}}return best?{x:best.x,y:best.y,snapped:true}:{x:p.x,y:p.y,snapped:false};}
@@ -464,16 +465,90 @@ function resolveEnd(s,raw,isRect){const sn=snapAnchor(raw);if(sn.snapped)return{
 function strokeLen(pts){let L=0;for(let i=1;i<pts.length;i++)L+=Math.hypot(pts[i].x-pts[i-1].x,pts[i].y-pts[i-1].y);return L;}
 function maxPerp(pts,a,b){const dx=b.x-a.x,dy=b.y-a.y,L=Math.hypot(dx,dy)||1;let m=0;for(const p of pts){const d=Math.abs((p.x-a.x)*dy-(p.y-a.y)*dx)/L;if(d>m)m=d;}return m;}
 function ptsBBox(pts){let x0=Infinity,y0=Infinity,x1=-Infinity,y1=-Infinity;for(const p of pts){x0=Math.min(x0,p.x);y0=Math.min(y0,p.y);x1=Math.max(x1,p.x);y1=Math.max(y1,p.y);}return{x:x0,y:y0,w:x1-x0,h:y1-y0};}
-function cleanupPen(el){const pts=el.pts;if(pts.length<3)return el;const a=pts[0],b=pts[pts.length-1];
-  const total=strokeLen(pts),chord=Math.hypot(b.x-a.x,b.y-a.y),closed=Math.hypot(a.x-b.x,a.y-b.y)<Math.max(26/scale,0.22*total),dev=maxPerp(pts,a,b);
-  if(!closed&&chord>12/scale&&dev<Math.max(11/scale,0.11*chord)){let s={x:a.x,y:a.y},e={x:b.x,y:b.y};
-    if(magnetOn){const ss=snapAnchor(s);if(ss.snapped)s=ss;const ee=snapAnchor(e);if(ee.snapped)e=ee;}const eo=ortho(s,e);
-    return {type:'line',x1:s.x,y1:s.y,x2:eo.x,y2:eo.y,color:el.color,w:el.w};}
-  const bb=ptsBBox(pts);
-  if(closed&&bb.w>18/scale&&bb.h>18/scale){const th=Math.max(16/scale,0.14*Math.min(bb.w,bb.h));
-    const near=pts.filter(p=>Math.min(Math.abs(p.x-bb.x),Math.abs(p.x-bb.x-bb.w),Math.abs(p.y-bb.y),Math.abs(p.y-bb.y-bb.h))<th).length/pts.length;
-    if(near>0.70)return {type:'rect',x1:bb.x,y1:bb.y,x2:bb.x+bb.w,y2:bb.y+bb.h,color:el.color,w:el.w};}
-  return el;}
+/* ── reconnaissance de forme (doigt / stylet) ──
+   Ligne · tracé en L/U (polyligne) · rectangle · triangle · polygone · cercle/ellipse.
+   Rester appuyé ~0,5 s à la fin du trait = la forme se redresse tout de suite. */
+function rdp(pts,eps){if(pts.length<3)return pts.slice();let md=0,mi=0;const a=pts[0],b=pts[pts.length-1];
+  for(let i=1;i<pts.length-1;i++){const d=distToSeg(pts[i],a,b);if(d>md){md=d;mi=i;}}
+  if(md>eps){const l=rdp(pts.slice(0,mi+1),eps),r=rdp(pts.slice(mi),eps);return l.slice(0,-1).concat(r);}return[a,b];}
+function resample(pts,step){const out=[{x:pts[0].x,y:pts[0].y}];let acc=0;
+  for(let i=1;i<pts.length;i++){let p=pts[i-1];const q=pts[i];let d=Math.hypot(q.x-p.x,q.y-p.y);
+    while(acc+d>=step){const t=(step-acc)/d;const n={x:p.x+(q.x-p.x)*t,y:p.y+(q.y-p.y)*t};out.push(n);p=n;d=Math.hypot(q.x-p.x,q.y-p.y);acc=0;}acc+=d;}
+  const L=pts[pts.length-1];if(Math.hypot(L.x-out[out.length-1].x,L.y-out[out.length-1].y)>step*0.3)out.push({x:L.x,y:L.y});return out;}
+function angAt(a,b,c){const v1x=a.x-b.x,v1y=a.y-b.y,v2x=c.x-b.x,v2y=c.y-b.y;const d=Math.hypot(v1x,v1y)*Math.hypot(v2x,v2y)||1;return Math.acos(clamp((v1x*v2x+v1y*v2y)/d,-1,1))*180/Math.PI;}
+function dropFlat(v,closed){let ch=true;while(ch&&v.length>(closed?3:2)){ch=false;const n=v.length;
+    for(let i=closed?0:1;i<(closed?n:n-1);i++){const a=v[(i-1+n)%n],b=v[i],c=v[(i+1)%n];
+      if(angAt(a,b,c)>158||Math.hypot(b.x-a.x,b.y-a.y)<4/scale){v.splice(i,1);ch=true;break;}}}return v;}
+function orthoPoly(v,closed){if(!orthoOn)return v;const n=v.length,segs=closed?n:n-1,T=13;
+  for(let i=0;i<segs;i++){const a=v[i],b=v[(i+1)%n];const an=((Math.atan2(b.y-a.y,b.x-a.x)*180/Math.PI)%180+180)%180;
+    const last=closed&&i===n-1;
+    if(an<T||an>180-T){if(last)a.y=b.y;else b.y=a.y;}else if(Math.abs(an-90)<T){if(last)a.x=b.x;else b.x=a.x;}}
+  return v;}
+function snapVerts(v){if(!magnetOn)return v;return v.map(p=>{const s=snapAnchor(p);return s.snapped?{x:s.x,y:s.y}:p;});}
+function polyArea(v){let s=0;for(let i=0;i<v.length;i++){const a=v[i],b=v[(i+1)%v.length];s+=a.x*b.y-b.x*a.y;}return s/2;}
+function recognize(raw){if(!raw||raw.length<3)return null;
+  const total=strokeLen(raw);if(total<14/scale)return null;
+  const pts=resample(raw,Math.max(2/scale,total/120));const a=pts[0],b=pts[pts.length-1];
+  const gap=Math.hypot(b.x-a.x,b.y-a.y),bb=ptsBBox(pts),diag=Math.hypot(bb.w,bb.h)||1;
+  const closed=gap<Math.max(28/scale,0.2*diag)&&total>1.6*diag;
+  const base={color:current&&current.color||color,w:(current&&current.w)||lineW,meas:true};
+  if(!closed){
+    let v=rdp(pts,Math.max(7/scale,0.035*total));v=dropFlat(v.map(p=>({x:p.x,y:p.y})),false);
+    if(v.length===2){let s=v[0],e=v[1];if(magnetOn){const ss=snapAnchor(s);if(ss.snapped)s=ss;const ee=snapAnchor(e);if(ee.snapped)e=ee;}const eo=ortho(s,e);
+      return {...base,type:'line',x1:s.x,y1:s.y,x2:eo.x,y2:eo.y,shape:'Ligne'};}
+    if(v.length<=7){v=snapVerts(orthoPoly(v,false));v=dropFlat(v,false);
+      if(v.length===2)return {...base,type:'line',x1:v[0].x,y1:v[0].y,x2:v[1].x,y2:v[1].y,shape:'Ligne'};
+      return {...base,type:'poly',closed:false,pts:v,shape:v.length===3?'Tracé en L':v.length===4?'Tracé en U':'Tracé'};}
+    return null;}
+  // fermé : comparer ellipse et polygone
+  const cx=bb.x+bb.w/2,cy=bb.y+bb.h/2,rx=bb.w/2||1,ry=bb.h/2||1;let dev=0;
+  for(const p of pts)dev+=Math.abs(Math.hypot((p.x-cx)/rx,(p.y-cy)/ry)-1);dev/=pts.length;
+  const loop=pts.slice();loop[loop.length-1]={x:a.x,y:a.y};
+  // départ du polygone au point le plus éloigné du centre (un vrai coin)
+  let fi=0,fd=-1;loop.forEach((p,i)=>{const d=Math.hypot(p.x-cx,p.y-cy);if(d>fd){fd=d;fi=i;}});
+  const rot=loop.slice(fi,-1).concat(loop.slice(0,fi));rot.push(rot[0]);
+  let v=rdp(rot,Math.max(8/scale,0.045*total)).slice(0,-1).map(p=>({x:p.x,y:p.y}));v=dropFlat(v,true);
+  if(dev<0.075&&(v.length>=5||dev<0.045)){const circ=Math.abs(rx-ry)<0.12*Math.max(rx,ry);const r=(rx+ry)/2;
+    return {...base,type:'circle',cx,cy,rx:circ?r:rx,ry:circ?r:ry,shape:circ?'Cercle':'Ellipse'};}
+  if(v.length<3||v.length>10)return null;
+  v=orthoPoly(v,true);v=dropFlat(v,true);v=snapVerts(v);
+  if(v.length===4){const xs=[...new Set(v.map(p=>Math.round(p.x*100)))],ys=[...new Set(v.map(p=>Math.round(p.y*100)))];
+    if(xs.length===2&&ys.length===2){const r=ptsBBox(v);return {...base,type:'rect',x1:r.x,y1:r.y,x2:r.x+r.w,y2:r.y+r.h,shape:'Rectangle'};}}
+  return {...base,type:'poly',closed:true,pts:v,shape:v.length===3?'Triangle':v.length===4?'Quadrilatère':v.length===6?'Forme en L':'Polygone ('+v.length+' côtés)'};}
+function cleanupPen(el){const r=recognize(el.pts);if(!r)return el;if(el.color)r.color=el.color;if(el.w)r.w=el.w;return r;}
+
+/* ── cotes sur chaque côté (forme dessinée) — touche un chiffre pour saisir la vraie mesure ── */
+function measSegs(el){if(el.type==='line')return[{a:{x:el.x1,y:el.y1},b:{x:el.x2,y:el.y2},i:0}];
+  if(el.type==='rect'){const x1=Math.min(el.x1,el.x2),x2=Math.max(el.x1,el.x2),y1=Math.min(el.y1,el.y2),y2=Math.max(el.y1,el.y2);
+    return[{a:{x:x1,y:y1},b:{x:x2,y:y1},i:0,out:{x:0,y:-1}},{a:{x:x2,y:y1},b:{x:x2,y:y2},i:1,out:{x:1,y:0}}];}
+  if(el.type==='poly'){const v=el.pts,n=v.length,s=[],sg=el.closed?Math.sign(polyArea(v))||1:0;
+    for(let i=0;i<(el.closed?n:n-1);i++){const a=v[i],b=v[(i+1)%n],L=Math.hypot(b.x-a.x,b.y-a.y)||1;
+      const o=el.closed?{x:(b.y-a.y)/L*sg,y:-(b.x-a.x)/L*sg}:null;s.push({a,b,i,out:o});}return s;}
+  return[];}
+function measBadges(el){if(!el.meas||!pxPerCm)return[];const out=[];
+  if(el.type==='circle'){const c=Math.abs(el.rx-el.ry)<0.5;
+    out.push({x:el.cx,y:el.cy,t:(c?'Ø ':'L ')+fmtLen(el.rx*2),i:0});if(!c)out.push({x:el.cx+el.rx+4,y:el.cy,t:'H '+fmtLen(el.ry*2),i:1,left:true});return out;}
+  for(const s of measSegs(el)){const L=Math.hypot(s.b.x-s.a.x,s.b.y-s.a.y);if(L<10/scale)continue;
+    let nx=-(s.b.y-s.a.y)/L,ny=(s.b.x-s.a.x)/L;if(s.out){nx=s.out.x;ny=s.out.y;}else if(ny>0||(ny===0&&nx>0)){nx=-nx;ny=-ny;}
+    out.push({x:(s.a.x+s.b.x)/2+nx*16,y:(s.a.y+s.b.y)/2+ny*16,t:fmtLen(L),i:s.i});}return out;}
+function drawMeas(g,el){for(const m of measBadges(el)){g.save();g.font='700 14px -apple-system,Segoe UI,Roboto,sans-serif';
+  const tw=g.measureText(m.t).width,bw=tw+12,bh=22,x=m.left?m.x+bw/2:m.x;g.fillStyle='#2E5A8E';roundRect(g,x-bw/2,m.y-bh/2,bw,bh,6);g.fill();
+  g.fillStyle='#fff';g.textAlign='center';g.textBaseline='middle';g.fillText(m.t,x,m.y+0.5);m.bw=bw;m.cx=x;g.restore();}}
+function badgeAt(p){for(let k=elements.length-1;k>=0;k--){const el=elements[k];if(!el.meas)continue;
+    for(const m of measBadges(el)){const x=m.left?m.x+30:m.x;if(Math.abs(p.x-x)<40/Math.max(scale,.6)&&Math.abs(p.y-m.y)<16/Math.max(scale,.6))return{el,i:m.i};}}return null;}
+function setSegLen(el,i,px){
+  if(el.type==='circle'){if(Math.abs(el.rx-el.ry)<0.5&&i===0){el.rx=el.ry=px/2;}else if(i===0)el.rx=px/2;else el.ry=px/2;return;}
+  if(el.type==='line'){const L=Math.hypot(el.x2-el.x1,el.y2-el.y1)||1;el.x2=el.x1+(el.x2-el.x1)/L*px;el.y2=el.y1+(el.y2-el.y1)/L*px;return;}
+  if(el.type==='rect'){const sx=el.x2>=el.x1?1:-1,sy=el.y2>=el.y1?1:-1;if(i===0){if(sx>0)el.x2=el.x1+px;else el.x1=el.x2+px;}else{if(sy>0)el.y2=el.y1+px;else el.y1=el.y2+px;}return;}
+  if(el.type==='poly'){const v=el.pts,n=v.length,a=v[i],b=v[(i+1)%n],L=Math.hypot(b.x-a.x,b.y-a.y)||1,dx=(b.x-a.x)/L*(px-L),dy=(b.y-a.y)/L*(px-L);
+    if(el.closed){// étirement type CAO : tout ce qui est au-delà du côté se décale, la forme reste d'équerre
+      const ux=(b.x-a.x)/L,uy=(b.y-a.y)/L,pb=b.x*ux+b.y*uy,eps=0.5;for(const q of v)if(q.x*ux+q.y*uy>=pb-eps){q.x+=dx;q.y+=dy;}return;}
+    for(let j=i+1;j<n;j++){v[j].x+=dx;v[j].y+=dy;}
+  }}
+function editMeas(hit){const el=hit.el,bs=measBadges(el),m=bs.find(q=>q.i===hit.i);const cur=m?m.t.replace(/^(Ø|L|H)\s/,'').replace(/\s?(cm|m)$/,''):'';
+  askValue(el.type==='circle'?(m&&m.t.startsWith('Ø')?'Diamètre réel':'Mesure réelle'):'Mesure réelle de ce côté',true,cur).then(v=>{const cm=toCm(v);if(!cm)return;
+    pushHistory();setSegLen(el,hit.i,cm*pxPerCm);redraw();flash('Côté mis à '+v+' '+unit);});}
+
 
 /* ── cotes auto ── */
 /* ── ouvertures (porte, fenêtre, passage) posées sur un mur ── */
@@ -587,7 +662,7 @@ function mkDim(x1,y1,x2,y2){return {type:'dim',x1,y1,x2,y2,value:lenValue(Math.h
 function autoDims(out){if(out.type==='line')return[mkDim(out.x1,out.y1,out.x2,out.y2)];
   const x1=Math.min(out.x1,out.x2),x2=Math.max(out.x1,out.x2),y1=Math.min(out.y1,out.y2),y2=Math.max(out.y1,out.y2);
   return[mkDim(x1,y2,x2,y2),mkDim(x1,y1,x1,y2)];}
-function finishShape(out){if(autoCoteOn&&pxPerCm&&(out.type==='line'||out.type==='rect')){ensureIds();out.id='e'+(NEXTID++);
+function finishShape(out){if(out.meas){ensureScale();const nm=out.shape;delete out.shape;commit(out);if(nm)flash(nm+' · touche une cote pour saisir la vraie mesure');return;}if(autoCoteOn&&pxPerCm&&(out.type==='line'||out.type==='rect')){ensureIds();out.id='e'+(NEXTID++);
     const lh=Math.abs(out.x2-out.x1)>=Math.abs(out.y2-out.y1);commitEls([out,...linkDims(out,out.type==='rect'?['top','left']:[lh?'top':'left'])]);}else commit(out);}
 
 /* ── produits ── */
@@ -635,6 +710,8 @@ function roundRect(g,x,y,w,h,r){g.beginPath();g.moveTo(x+r,y);g.arcTo(x+w,y,x+w,
 function drawEl(g,el){g.save();g.strokeStyle=el.color;g.fillStyle=el.color;g.lineWidth=el.w||lineW;g.lineCap='round';g.lineJoin='round';
   if(el.type==='pen'){g.beginPath();el.pts.forEach((p,i)=>i?g.lineTo(p.x,p.y):g.moveTo(p.x,p.y));g.stroke();}
   else if(el.type==='line'){g.beginPath();g.moveTo(el.x1,el.y1);g.lineTo(el.x2,el.y2);g.stroke();}
+  else if(el.type==='poly'){g.beginPath();el.pts.forEach((p,i)=>i?g.lineTo(p.x,p.y):g.moveTo(p.x,p.y));if(el.closed)g.closePath();g.stroke();}
+  else if(el.type==='circle'){g.beginPath();g.ellipse(el.cx,el.cy,Math.max(1,el.rx),Math.max(1,el.ry),0,0,Math.PI*2);g.stroke();}
   else if(el.type==='rect'){g.strokeRect(Math.min(el.x1,el.x2),Math.min(el.y1,el.y2),Math.abs(el.x2-el.x1),Math.abs(el.y2-el.y1));}
   else if(el.type==='scale'){g.setLineDash([7/scale,5/scale]);g.strokeStyle='#F2B705';g.lineWidth=Math.max(2,el.w||2);g.beginPath();g.moveTo(el.x1,el.y1);g.lineTo(el.x2,el.y2);g.stroke();g.setLineDash([]);}
   else if(el.type==='dim'){const{x1,y1,x2,y2}=el;g.beginPath();g.moveTo(x1,y1);g.lineTo(x2,y2);g.stroke();
@@ -685,11 +762,11 @@ function drawLivePreview(g){if(!current)return;
     drawLenBadge(g,(current.x1+current.x2)/2,Math.max(current.y1,current.y2),fmtLen(w));
     drawLenBadge(g,Math.min(current.x1,current.x2),(current.y1+current.y2)/2,fmtLen(h));}
   else if(current.type==='dim'){const L=Math.hypot(current.x2-current.x1,current.y2-current.y1);drawLenBadge(g,(current.x1+current.x2)/2,(current.y1+current.y2)/2,fmtLen(L));}}
-function drawWorld(g){if(showGrid)drawGridWorld(g);for(const el of elements)if(!(el.box&&el.ptype==='haut')&&el.type!=='open')drawEl(g,el);for(const el of elements)if(el.type==='open')drawEl(g,el);for(const el of elements)if(el.box&&el.ptype==='haut')drawEl(g,el);drawWallLetters(g);}
+function drawWorld(g){if(showGrid)drawGridWorld(g);for(const el of elements)if(!(el.box&&el.ptype==='haut')&&el.type!=='open')drawEl(g,el);for(const el of elements)if(el.type==='open')drawEl(g,el);for(const el of elements)if(el.box&&el.ptype==='haut')drawEl(g,el);for(const el of elements)if(el.meas)drawMeas(g,el);drawWallLetters(g);}
 function redraw(){
   ctx.setTransform(DPR,0,0,DPR,0,0);ctx.clearRect(0,0,W,H);ctx.fillStyle='#fff';ctx.fillRect(0,0,W,H);
   ctx.setTransform(DPR*scale,0,0,DPR*scale,view.x*DPR,view.y*DPR);
-  layoutLinked();drawWorld(ctx);if(current)drawEl(ctx,current);if(GUIDES.length&&drag){ctx.save();ctx.strokeStyle='#e11d48';ctx.lineWidth=1.5/scale;ctx.setLineDash([6/scale,4/scale]);GUIDES.forEach(g=>{ctx.beginPath();ctx.moveTo(g.x1,g.y1);ctx.lineTo(g.x2,g.y2);ctx.stroke();});ctx.restore();}drawLivePreview(ctx);if(selected)drawSelection(selected);
+  layoutLinked();drawWorld(ctx);if(current){if(current.snap){ctx.save();ctx.globalAlpha=.25;drawEl(ctx,current);ctx.restore();ensureScale();drawEl(ctx,current.snap);drawMeas(ctx,current.snap);}else drawEl(ctx,current);}if(GUIDES.length&&drag){ctx.save();ctx.strokeStyle='#e11d48';ctx.lineWidth=1.5/scale;ctx.setLineDash([6/scale,4/scale]);GUIDES.forEach(g=>{ctx.beginPath();ctx.moveTo(g.x1,g.y1);ctx.lineTo(g.x2,g.y2);ctx.stroke();});ctx.restore();}drawLivePreview(ctx);if(selected)drawSelection(selected);
   ctx.setTransform(DPR,0,0,DPR,0,0);updateHistoryBtns();positionCtxBar();renderLegend();updateScaleBar();scheduleSave();}
 
 /* scale bar */
@@ -701,29 +778,33 @@ function updateScaleBar(){const el=$('#scalebar');if(!pxPerCm){el.style.display=
   el.style.display='flex';el.innerHTML='<span class="sb-bar" style="width:'+Math.max(20,sl)+'px"></span><span>'+label+'</span>';}
 
 /* selection */
-function bbox(el){if(el.type==='pen'){const xs=el.pts.map(q=>q.x),ys=el.pts.map(q=>q.y);const x=Math.min(...xs),y=Math.min(...ys);return{x,y,w:Math.max(...xs)-x,h:Math.max(...ys)-y};}
+function bbox(el){if(el.type==='poly')return ptsBBox(el.pts);if(el.type==='circle')return{x:el.cx-el.rx,y:el.cy-el.ry,w:el.rx*2,h:el.ry*2};if(el.type==='pen'){const xs=el.pts.map(q=>q.x),ys=el.pts.map(q=>q.y);const x=Math.min(...xs),y=Math.min(...ys);return{x,y,w:Math.max(...xs)-x,h:Math.max(...ys)-y};}
   if(el.type==='text'){ctx.font='600 '+(el.size||18)+'px sans-serif';return{x:el.x,y:el.y,w:ctx.measureText(el.value).width,h:(el.size||18)};}
   if(el.type==='product'&&el.box)return pBox(el);
   if(el.type==='open')return openBox(el);
   if(el.type==='product'){ctx.font='600 14px sans-serif';const tw=el.name?ctx.measureText(el.name).width+28:0;return{x:el.x-13,y:el.y-13,w:26+tw,h:26};}
   const x=Math.min(el.x1,el.x2),y=Math.min(el.y1,el.y2);return{x,y,w:Math.abs(el.x2-el.x1),h:Math.abs(el.y2-el.y1)};}
-function handles(el){if(el.type==='dim'&&el.of)return[];if(el.type==='line'||el.type==='dim')return[{x:el.x1,y:el.y1},{x:el.x2,y:el.y2}];
+function handles(el){if(el.type==='poly')return el.pts.map(q=>({x:q.x,y:q.y}));if(el.type==='circle')return[{x:el.cx+el.rx,y:el.cy},{x:el.cx,y:el.cy+el.ry}];if(el.type==='dim'&&el.of)return[];if(el.type==='line'||el.type==='dim')return[{x:el.x1,y:el.y1},{x:el.x2,y:el.y2}];
   if(el.type==='rect')return[{x:el.x1,y:el.y1},{x:el.x2,y:el.y1},{x:el.x2,y:el.y2},{x:el.x1,y:el.y2}];return[];}
 function handleAt(el,p){const hs=handles(el),r=16/scale;for(let i=0;i<hs.length;i++)if(Math.hypot(hs[i].x-p.x,hs[i].y-p.y)<r)return i;return -1;}
-function setHandle(el,i,p){if(el.type==='line'||el.type==='dim'){if(i===0){el.x1=p.x;el.y1=p.y;}else{el.x2=p.x;el.y2=p.y;}}
+function setHandle(el,i,p){if(el.type==='poly'){el.pts[i].x=p.x;el.pts[i].y=p.y;return;}
+  if(el.type==='circle'){const c=Math.abs(el.rx-el.ry)<0.5;if(i===0){el.rx=Math.max(4,Math.abs(p.x-el.cx));if(c)el.ry=el.rx;}else{el.ry=Math.max(4,Math.abs(p.y-el.cy));if(c)el.rx=el.ry;}return;}
+  if(el.type==='line'||el.type==='dim'){if(i===0){el.x1=p.x;el.y1=p.y;}else{el.x2=p.x;el.y2=p.y;}}
   else if(el.type==='rect'){if(i===0){el.x1=p.x;el.y1=p.y;}else if(i===1){el.x2=p.x;el.y1=p.y;}else if(i===2){el.x2=p.x;el.y2=p.y;}else{el.x1=p.x;el.y2=p.y;}}}
 function moveEl(el,dx,dy){if(el.type==='open'){const o=openGeom(el);if(o){el.t=o.t+dx*o.w.ux+dy*o.w.uy;el.t=Math.min(Math.max(el.t,o.wp/2),Math.max(o.wp/2,o.w.L-o.wp/2));}return;}
   if(el.type==='text'&&el.of){el.dx+=dx;el.dy+=dy;el.x+=dx;el.y+=dy;return;}
   if(el.type==='dim'&&el.of){const P=byId(el.of);if(P){const b=parentBox(P),h=el.side==='top'||el.side==='bottom',mid=h?(el.y1+dy):(el.x1+dx);
     let s,o;if(h){s=mid<b.y+b.h/2?'top':'bottom';o=s==='top'?b.y-mid:mid-b.y-b.h;}else{s=mid<b.x+b.w/2?'left':'right';o=s==='left'?b.x-mid:mid-b.x-b.w;}
     el.side=s;el.off=Math.max(10,o);el.lock=true;Object.assign(el,dimGeom(b,s,el.off));}return;}
-  if(el.type==='pen')el.pts.forEach(q=>{q.x+=dx;q.y+=dy;});else if(el.type==='text'||el.type==='product'){el.x+=dx;el.y+=dy;}else{el.x1+=dx;el.y1+=dy;el.x2+=dx;el.y2+=dy;}}
+  if(el.type==='pen'||el.type==='poly')el.pts.forEach(q=>{q.x+=dx;q.y+=dy;});else if(el.type==='circle'){el.cx+=dx;el.cy+=dy;}else if(el.type==='text'||el.type==='product'){el.x+=dx;el.y+=dy;}else{el.x1+=dx;el.y1+=dy;el.x2+=dx;el.y2+=dy;}}
 function drawSelection(el){const b=bbox(el),pad=6/scale;ctx.save();ctx.strokeStyle='#F2B705';ctx.lineWidth=1.5/scale;ctx.setLineDash([6/scale,4/scale]);
   ctx.strokeRect(b.x-pad,b.y-pad,b.w+pad*2,b.h+pad*2);ctx.setLineDash([]);const hs=6/scale;
   handles(el).forEach(h=>{ctx.fillStyle='#fff';ctx.strokeStyle='#F2B705';ctx.lineWidth=2/scale;ctx.beginPath();ctx.rect(h.x-hs,h.y-hs,hs*2,hs*2);ctx.fill();ctx.stroke();});ctx.restore();}
 function isHit(el,p){const th=Math.max(12,(el.w||4)+8)/scale;
   if(el.type==='open'){const o=openGeom(el);if(!o)return false;if(distToSeg(p,{x:o.ax,y:o.ay},{x:o.bx,y:o.by})<14/scale)return true;const b=openBox(el);return p.x>b.x&&p.x<b.x+b.w&&p.y>b.y&&p.y<b.y+b.h;}
   if(el.type==='pen')return el.pts.some(q=>Math.hypot(q.x-p.x,q.y-p.y)<th);
+  if(el.type==='poly'){const v=el.pts,n=v.length;for(let i=0;i<(el.closed?n:n-1);i++)if(distToSeg(p,v[i],v[(i+1)%n])<th)return true;return false;}
+  if(el.type==='circle'){const r=Math.hypot((p.x-el.cx)/(el.rx||1),(p.y-el.cy)/(el.ry||1));return Math.abs(r-1)*Math.min(el.rx,el.ry)<th||(r<1&&Math.min(el.rx,el.ry)<30/scale);}
   if(el.type==='line'||el.type==='dim')return distToSeg(p,{x:el.x1,y:el.y1},{x:el.x2,y:el.y2})<th;
   if(el.type==='product'&&el.box){const b=pBox(el),m=4/scale;return p.x>b.x-m&&p.x<b.x+b.w+m&&p.y>b.y-m&&p.y<b.y+b.h+m;}
   if(el.type==='product'){if(Math.hypot(el.x-p.x,el.y-p.y)<16/scale)return true;const b=bbox(el),m=4/scale;return p.x>b.x-m&&p.x<b.x+b.w+m&&p.y>b.y-m&&p.y<b.y+b.h+m;}
@@ -759,6 +840,10 @@ function fixSelected(){if(!selected)return;
     if(magnetOn){const ss=snapAnchor(s);if(ss.snapped)s=ss;const ee=snapAnchor(e);if(ee.snapped)e=ee;}const eo=ortho(s,e);
     selected.x1=s.x;selected.y1=s.y;selected.x2=eo.x;selected.y2=eo.y;redraw();flash('Ligne redressée');}}
 
+/* appui long en fin de trait : la forme se redresse tout de suite (comme sur iPad) */
+let holdT=null,penLast=null;
+function penHold(){if(!current||current.type!=='pen'||current.snap||activePointer==null)return;const r=recognize(current.pts);
+  if(!r){flash('Forme libre conservée');return;}r.color=current.color;r.w=current.w;ensureScale();current.snap=r;try{navigator.vibrate&&navigator.vibrate(18);}catch(_){}flash(r.shape+' ✓ — lâche pour valider');redraw();}
 /* pointer + gestures */
 canvas.addEventListener('pointerdown',e=>{try{canvas.setPointerCapture(e.pointerId);}catch(_){}
   pointers.set(e.pointerId,screenPos(e));
@@ -767,6 +852,7 @@ canvas.addEventListener('pointerdown',e=>{try{canvas.setPointerCapture(e.pointer
   if(pointers.size>2)return;
   activePointer=e.pointerId;const sp=screenPos(e),p=toWorld(sp);
   if(tool==='pan'){drag={mode:'pan',last:sp};canvas.style.cursor='grabbing';return;}
+  if(tool==='select'&&pxPerCm){const bh=badgeAt(p);if(bh){activePointer=null;editMeas(bh);return;}}
   if(tool==='select'){startSelect(p);return;}
   if(tool==='erase'){eraseAt(p);activePointer=null;return;}
   if(tool==='product'){const s0=snapAnchor(p);askProduct(null).then(r=>{if(!r)return;ensureScale();if(!toCm(r.w)){r.w=unit==='m'?'1':'100';flash('Largeur manquante : 100 cm par défaut, à corriger');}
@@ -781,7 +867,7 @@ canvas.addEventListener('pointerdown',e=>{try{canvas.setPointerCapture(e.pointer
       if(r.name)els.push({type:'text',of:room.id,dx:10,dy:(y2-y1)-30,x:x1+10,y:y2-30,value:r.name,size:18,color:'#1b3a5c'});
       commitEls(els);$('#btnFit').onclick();tool='product';setToolUI();flash('Étape 2 : touche le mur où ira le produit pour poser une zone');});activePointer=null;return;}
   if(tool==='text'){askValue('Note / repère',false,'').then(v=>{if(v!=null&&v.trim()){const t={type:'text',x:p.x,y:p.y,value:v.trim(),size:18,color};attachText(t);commit(t);}});activePointer=null;return;}
-  if(tool==='pen'){current={type:'pen',pts:[p],color,w:lineW};redraw();return;}
+  if(tool==='pen'){current={type:'pen',pts:[p],color,w:lineW,badge:pxPerCm?badgeAt(p):null,sp0:sp};penLast=sp;clearTimeout(holdT);redraw();return;}
   // line / rect / dim / scale : point de départ accroché
   const s=snapAnchor(p);current={type:tool,x1:s.x,y1:s.y,x2:s.x,y2:s.y,color,w:lineW};redraw();});
 
@@ -792,7 +878,9 @@ canvas.addEventListener('pointermove',e=>{if(!pointers.has(e.pointerId))return;p
   if(drag&&drag.mode==='pan'){view.x+=sp.x-drag.last.x;view.y+=sp.y-drag.last.y;drag.last=sp;redraw();return;}
   if(tool==='select'){if(drag)doDrag(p);return;}
   if(!current)return;
-  if(current.type==='pen'){current.pts.push(p);redraw();return;}
+  if(current.type==='pen'){const mv=penLast?Math.hypot(sp.x-penLast.x,sp.y-penLast.y):99;
+    if(current.snap){if(mv>14){current.snap=null;}else return;}
+    current.pts.push(p);if(mv>3){penLast=sp;clearTimeout(holdT);holdT=setTimeout(penHold,480);}redraw();return;}
   const en=resolveEnd({x:current.x1,y:current.y1},p,current.type==='rect');current.x2=en.x;current.y2=en.y;redraw();});
 
 function endPointer(e){pointers.delete(e.pointerId);
@@ -801,7 +889,8 @@ function endPointer(e){pointers.delete(e.pointerId);
   if(drag&&drag.mode==='pan'){drag=null;canvas.style.cursor='grab';return;}
   if(tool==='select'){if(drag){if(drag.pushed&&selected&&selected.box)orientToWall(selected);drag=null;GUIDES=[];redraw();}positionCtxBar();return;}
   if(!current)return;const c=current;current=null;
-  if(c.type==='pen'){if(c.pts.length>1){const out=shapeOn?cleanupPen(c):c;if(out!==c)finishShape(out);else commit(out);}else redraw();return;}
+  if(c.type==='pen'){clearTimeout(holdT);if(c.snap){finishShape(c.snap);return;}
+    if(c.badge&&strokeLen(c.pts)*scale<10){redraw();editMeas(c.badge);return;}delete c.badge;delete c.sp0;if(c.pts.length>1){const out=shapeOn?cleanupPen(c):c;if(out!==c)finishShape(out);else{delete out.snap;commit(out);}}else redraw();return;}
   if(c.type==='scale'){const L=Math.hypot(c.x2-c.x1,c.y2-c.y1);if(L<8/scale){redraw();return;}
     askValue('Longueur réelle de la référence',true,'').then(v=>{if(v!=null&&v.trim()){const val=parseFloat((''+v).replace(',','.'));
       if(val>0){const cm=unit==='m'?val*100:val;pxPerCm=L/cm;flash('Échelle définie : '+v+' '+unit);}}redraw();});return;}
@@ -810,7 +899,7 @@ function endPointer(e){pointers.delete(e.pointerId);
     askValue('Dimension mesurée',true,preset).then(v=>{if(v!=null&&v.trim()){c.value=v.trim();c.w=3;attachDim(c);commit(c);if(c.of)flash('Cote attachée à l’élément : elle le suivra');}else redraw();});return;}
   finishShape(c);}
 canvas.addEventListener('pointerup',endPointer);
-canvas.addEventListener('pointercancel',e=>{pointers.delete(e.pointerId);if(pointers.size<2)gesture=null;if(e.pointerId===activePointer){activePointer=null;current=null;drag=null;}redraw();});
+canvas.addEventListener('pointercancel',e=>{clearTimeout(holdT);pointers.delete(e.pointerId);if(pointers.size<2)gesture=null;if(e.pointerId===activePointer){activePointer=null;current=null;drag=null;}redraw();});
 canvas.addEventListener('dblclick',e=>{if(tool!=='select')return;const p=pos(e);const i=hitTest(p);if(i>=0){selectEl(elements[i]);editSelected();redraw();}});
 canvas.addEventListener('wheel',e=>{e.preventDefault();const sp=screenPos(e);zoomAt(e.deltaY<0?1.12:0.89,sp.x,sp.y);},{passive:false});
 
