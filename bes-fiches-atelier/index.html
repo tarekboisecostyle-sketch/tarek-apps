@@ -318,6 +318,36 @@ header.top::after{content:"";position:absolute;left:0;right:0;bottom:0;height:5p
 .sheet .nleg i{width:1.4cqw;height:1cqw}
 .sheet,.plate{-webkit-print-color-adjust:exact;print-color-adjust:exact}
 @media (prefers-reduced-motion:reduce){.st-type,.btn{transition:none}.st-type:hover{transform:none}}
+/* ---------- vue 3D ---------- */
+.vtabs{display:flex;gap:0;margin-bottom:8px;border-bottom:1px solid var(--ink)}
+.vtabs button{border:1px solid transparent;border-bottom:0;background:transparent;color:var(--ink-soft);font:600 13px var(--f-mono);text-transform:uppercase;letter-spacing:.06em;padding:7px 14px;cursor:pointer;margin-bottom:-1px}
+.vtabs button[aria-pressed="true"]{border-color:var(--ink);background:var(--paper);color:var(--ink)}
+.v3d-bar{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;margin-bottom:8px}
+.v3d-views button{padding:5px 10px;font-size:12.5px}
+.v3d-sel{display:inline-flex;align-items:center;gap:6px;font:500 12.5px var(--f-body);color:var(--ink-soft)}
+.v3d-sel select{font:inherit;padding:3px 4px;border:1px solid var(--line);background:var(--paper);color:var(--ink)}
+.v3d-sel input[type=range]{width:90px}
+.v3d-main{display:grid;grid-template-columns:minmax(0,1fr) 250px;gap:10px;align-items:stretch}
+@media (max-width:1250px){.v3d-main{grid-template-columns:minmax(0,1fr)}}
+.v3d-box{position:relative;height:460px;border:1px solid var(--line);background:linear-gradient(#f7f8fa,#e6e9ee);touch-action:none;overflow:hidden}
+.v3d-box canvas{display:block;width:100%!important;height:100%!important;outline:none}
+.v3d-msg{position:absolute;inset:0;display:grid;place-items:center;color:var(--ink-soft);font-size:14px;text-align:center;padding:20px}
+.v3d-tip{position:absolute;pointer-events:none;background:#121212;color:#fff;font:500 12px var(--f-body);padding:3px 8px;white-space:nowrap;transform:translate(10px,-28px)}
+.v3d-info{border:1px solid var(--line);padding:10px 12px;font-size:13px;background:var(--paper);color:var(--ink);overflow:auto;max-height:460px}
+.v3d-info h4{margin:0 0 2px;font-size:15px}
+.v3d-info .ar{font-size:14px}
+.v3d-info dl{display:grid;grid-template-columns:auto 1fr;gap:3px 10px;margin:8px 0}
+.v3d-info dt{color:var(--ink-soft)}
+.v3d-info dd{margin:0;font-weight:600}
+.v3d-edit-h{font:600 11.5px var(--f-mono);text-transform:uppercase;letter-spacing:.06em;color:var(--accent);margin:10px 0 6px;border-top:1px solid var(--line);padding-top:8px}
+.v3d-f{display:grid;gap:2px;margin-bottom:7px;font-size:12.5px;color:var(--ink-soft)}
+.v3d-f input,.v3d-f select{font:500 14px var(--f-body);padding:5px 6px;border:1px solid var(--line);background:var(--paper);color:var(--ink);width:100%}
+.v3d-f input:focus,.v3d-f select:focus{outline:2px solid var(--accent);outline-offset:-1px}
+.v3d-help{margin:6px 0 0}
+.v3d-link{border:0;background:none;color:var(--accent);padding:0;font:inherit;text-decoration:underline;cursor:pointer}
+tr.drow{cursor:pointer}
+tr.drow:hover td{background:var(--accent-soft)}
+tr.drow.on td{background:#ffe2c6;color:#121212}
 </style>
 
 <div class="wrap">
@@ -558,9 +588,40 @@ header.top::after{content:"";position:absolute;left:0;right:0;bottom:0;height:5p
     </form>
 
     <div class="plan">
+      <div class="vtabs" role="tablist" aria-label="Affichage">
+        <button type="button" data-vt="3d" aria-pressed="true">Vue 3D</button>
+        <button type="button" data-vt="2d">Plan coté 2D</button>
+      </div>
+      <div id="v3dWrap" class="v3d">
+        <div class="v3d-bar">
+          <div class="seg v3d-views" role="group" aria-label="Vue">
+            <button type="button" data-view="iso" aria-pressed="true">3D</button>
+            <button type="button" data-view="front">Face</button>
+            <button type="button" data-view="top">Dessus</button>
+            <button type="button" data-view="left">Gauche</button>
+            <button type="button" data-view="right">Droite</button>
+            <button type="button" data-view="back">Arrière</button>
+          </div>
+          <label class="v3d-sel">Façades
+            <select id="v3dFac"><option value="show">visibles</option><option value="ghost">transparentes</option><option value="hide">cachées</option></select></label>
+          <label class="v3d-sel">Éclaté <input type="range" id="v3dExp" min="0" max="100" value="0"></label>
+          <label class="v3d-sel" id="v3dScopeW" hidden>Afficher
+            <select id="v3dScope"><option value="one">ce caisson</option><option value="all">tout le projet</option></select></label>
+        </div>
+        <div class="v3d-main">
+          <div class="v3d-box" id="v3dBox"><div class="v3d-msg" id="v3dMsg">Chargement de la 3D…</div><div class="v3d-tip" id="v3dTip" hidden></div></div>
+          <aside class="v3d-info" id="v3dInfo">
+            <div id="v3dDesc"><p class="hint">Cliquez une pièce dans la 3D, ou une ligne de la liste de débit, pour la voir et changer ses réglages ici.</p></div>
+            <div id="v3dEdit"></div>
+          </aside>
+        </div>
+        <p class="hint v3d-help">Tourner : glisser · Zoom : molette ou 2 doigts · Déplacer : clic droit ou glisser à 2 doigts · Double-clic dans le vide : tout désélectionner</p>
+      </div>
+      <div id="v2dWrap" hidden>
       <div id="kitView" class="kv" hidden><div class="plan-head"><span>Cuisine · élévation</span><span>Cliquez un caisson pour le régler</span></div><div class="svgbox" id="kitBox"></div></div>
       <div class="plan-head"><span id="planTitle">Placard</span><span>Échelle auto · cotes en mm</span></div>
       <div class="svgbox" id="planBox"></div>
+      </div>
       <ul class="warns" id="warns"></ul>
     </div>
   </div>
@@ -1114,7 +1175,7 @@ function render(){queueMicrotask(()=>{try{updRelBanner();}catch(e){}});
     {const cp=KIT.pos[KIT.cur];if(cp){$('#inX').placeholder=`auto (${fmt(cp.x)})`;$('#inY').placeholder=`auto (${fmt(cp.y)})`;}}}
   r.L2=L2;r.A2=A2;
   $('#warns').innerHTML=W2.length?W2.map(w=>`<li>${esc(w)}</li>`).join(''):'<li class="ok">Toutes les pièces rentrent dans les plaques. Aucun point bloquant.</li>';
-  $('#debit').innerHTML=debitGroups(L2).map(([g,gl])=>(g?`<tr><td colspan="9"><b>${lb(g,'fr')}</b> <span class="ar muted">${lb(g,'ar')}</span></td></tr>`:'')+gl.map(p=>`<tr>
+  $('#debit').innerHTML=debitGroups(L2).map(([g,gl])=>(g?`<tr><td colspan="9"><b>${lb(g,'fr')}</b> <span class="ar muted">${lb(g,'ar')}</span></td></tr>`:'')+gl.map(p=>`<tr class="drow" data-n="${p.n}" data-rep="${esc(p.rep??'')}" title="Cliquez pour voir la pièce en 3D">
     <td><span class="rep${p.lab?' l':''}">${p.lab??p.n}</span></td>
     <td>${T[p.key].fr} <span class="ar muted">${T[p.key].ar}</span>${p.ch.rain?` <span class="muted">· rainure ${fmt(R.dosEp+.5)} × ${fmt(R.rp)} à ${fmt(R.rr)} du bord arrière${p.ch.rain2?', sur les 2 faces':''}</span>`:''}</td>
     <td>${p.mat}</td>
@@ -1132,6 +1193,7 @@ function render(){queueMicrotask(()=>{try{updRelBanner();}catch(e){}});
   renderSheets();
   if(typeof saveDraft==='function')saveDraft();
   updHeader();
+  if(typeof v3dUpdate==='function')try{v3dUpdate(r);}catch(err){console.error(err);}
 }
 
 function cartouche(pg,tot,prod,q){
@@ -1614,5 +1676,236 @@ renderComps();render();showStart();
 {const q=new URLSearchParams(location.search);if(q.get('releve')){try{window.history.replaceState(null,'',location.pathname);}catch(e){}
   (q.get('mur')?ficheFromFacade(q.get('releve'),q.get('mur')):ficheFromReleve(q.get('releve'),+q.get('p')||0)).catch(err=>{$('#rlState').innerHTML=`<span class="st-warn">${esc(err.message)}</span>`;});}}
 </script>
+<script>
+/* ================= VUE 3D (Three.js) =================
+   Construit le caisson en 3D à partir du même calcul que la liste de débit (compute()).
+   Repère : x = largeur depuis la gauche, y = hauteur depuis le sol, z = profondeur depuis la face avant (mm). */
+const V3={lib:null,three:null,sel:null,view:'iso',fac:'show',exp:0,scope:'one',meshes:[],parts:[],last:null,editFor:null};
+const V3COL={c:0xf3f1ec,dos:0xcdb894,f:0xe9e3d6,d:0xddd3bf,feet:0x333333,rod:0x9aa0a6,sel:0xf07c1f,row:0xffc794,edge:0x2b2b2b};
+function v3dLoad(){
+  if(V3.lib)return V3.lib;
+  const add=src=>new Promise((res,rej)=>{const s=document.createElement('script');s.src=src;s.onload=res;s.onerror=()=>rej(new Error(src));document.head.appendChild(s);});
+  V3.lib=(window.THREE?Promise.resolve():add('https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js'))
+    .then(()=>THREE.OrbitControls?null:add('https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js'))
+    .then(v3dInit)
+    .catch(e=>{V3.lib=null;$('#v3dMsg').hidden=false;$('#v3dMsg').textContent='La 3D a besoin d\'internet pour se charger la première fois. Vérifiez la connexion puis rouvrez l\'onglet « Vue 3D ».';throw e;});
+  return V3.lib;
+}
+function v3dInit(){
+  const box=$('#v3dBox'),T3=THREE;
+  const rd=new T3.WebGLRenderer({antialias:true,alpha:true,preserveDrawingBuffer:true});
+  rd.setPixelRatio(Math.min(2,window.devicePixelRatio||1));box.prepend(rd.domElement);
+  const sc=new T3.Scene();
+  sc.add(new T3.HemisphereLight(0xffffff,0xb9bec7,0.75));
+  const dl=new T3.DirectionalLight(0xffffff,0.55);dl.position.set(-1.2,2,1.6);sc.add(dl);
+  const dl2=new T3.DirectionalLight(0xffffff,0.25);dl2.position.set(1.5,0.6,-1);sc.add(dl2);
+  const root=new T3.Group();sc.add(root);
+  const persp=new T3.PerspectiveCamera(35,1,10,100000),ortho=new T3.OrthographicCamera(-1,1,1,-1,-100000,100000);
+  V3.three={rd,sc,root,persp,ortho,cam:persp,ctl:null,ray:new T3.Raycaster(),ptr:new T3.Vector2(),center:new T3.Vector3(),size:3000};
+  const fit=()=>{const w=box.clientWidth||600,h=box.clientHeight||400;rd.setSize(w,h,false);persp.aspect=w/h;persp.updateProjectionMatrix();v3dOrthoFrame();v3dDraw();};
+  V3.three.fit=fit;
+  if(window.ResizeObserver)new ResizeObserver(fit).observe(box);else window.addEventListener('resize',fit);
+  /* clic / survol : un clic sans glisser sélectionne la pièce */
+  let down=null;
+  rd.domElement.addEventListener('pointerdown',e=>{down={x:e.clientX,y:e.clientY};});
+  rd.domElement.addEventListener('pointerup',e=>{if(!down)return;const mv=Math.hypot(e.clientX-down.x,e.clientY-down.y);down=null;if(mv>6)return;
+    const hit=v3dPick(e);if(!hit)return;const p=hit.userData.part;
+    if(KIT&&p.mod!=null&&p.mod!==KIT.cur){V3.sel=p.id;V3.editFor=null;loadModule(p.mod);return;}
+    v3dSelect(p.id,true);});
+  rd.domElement.addEventListener('dblclick',e=>{if(!v3dPick(e)){V3.sel=null;v3dPaint();v3dInfo();}});
+  rd.domElement.addEventListener('pointermove',e=>{if(e.buttons)return;const hit=v3dPick(e),tip=$('#v3dTip');
+    if(!hit){tip.hidden=true;rd.domElement.style.cursor='';return;}
+    const p=hit.userData.part,r=box.getBoundingClientRect();tip.hidden=false;tip.style.left=(e.clientX-r.left)+'px';tip.style.top=(e.clientY-r.top)+'px';
+    tip.textContent=v3dName(p);rd.domElement.style.cursor='pointer';});
+  rd.domElement.addEventListener('pointerleave',()=>{$('#v3dTip').hidden=true;});
+  v3dSetCam('iso',true);fit();
+}
+function v3dPick(e){const t=V3.three;if(!t)return null;const r=t.rd.domElement.getBoundingClientRect();
+  t.ptr.set(((e.clientX-r.left)/r.width)*2-1,-((e.clientY-r.top)/r.height)*2+1);t.ray.setFromCamera(t.ptr,t.cam);
+  const hits=t.ray.intersectObjects(V3.meshes.filter(m=>m.visible&&m.userData.part&&m.userData.part.key),false);
+  const h=hits.find(x=>!(x.object.userData.part.kind==='f'&&V3.fac==='ghost'&&hits.some(y=>y.object.userData.part.kind!=='f')));
+  return h?h.object:null;}
+function v3dName(p){if(p.mod!=null&&V3.scope==='all'&&KIT){const m=KIT.mods[p.mod];return (m?m.rep+' · ':'')+(p.key?T[p.key].fr:'');}
+  return p.key?`${T[p.key].fr} · ${T[p.key].ar}`:'';}
+
+/* ---------- pièces 3D à partir du calcul ---------- */
+function v3dDims(r){const m=r.m;return m?{L:m.L,H:m.H,P:m.P,sc:m.base==='aucun'?0:(m.socle||0),base:m.base,plinthe:m.plinthe!==false,type:m.type}:
+  {L:S.L,H:S.H,P:S.P,sc:S.base==='aucun'?0:S.socle,base:S.base,plinthe:S.plinthe,type:S.product};}
+function v3dParts(r,mod){
+  const P=[],D=v3dDims(r),e=R.ep,L=D.L,H=D.H,sc=D.sc;
+  const box=(id,key,x0,x1,y0,y1,z0,z1,kind,ex)=>{if(x1-x0<0.2||y1-y0<0.2||z1-z0<0.2)return;P.push(Object.assign({id:(mod!=null?mod+':':'')+id,key,x0,x1,y0,y1,z0,z1,kind,mod},ex||{}));};
+  if(r.vide)return P;
+  if(r.panel){const p=r.list[0],t=r.m.type;
+    if(t==='panneau')box('pan',p.key,0,L,0,H,0,e,'c');else if(t==='joue')box('pan',p.key,0,e,0,H,0,D.P,'c');else box('pan',p.key,0,L,0,e,0,D.P,'c');return P;}
+  const g=r.g,dd=g.D,nc=g.comps.length,rail=g.rail||0;
+  const s0=D.base==='socle'?0:sc;
+  box('cote-g','cote',0,e,s0,H,0,dd.Pc,'c',{comp:0});
+  box('cote-d','cote',L-e,L,s0,H,0,dd.Pc,'c',{comp:nc-1});
+  box('dessus','dessus',e,L-e,H-e,H,0,dd.Ph,'c');
+  box('dessous','dessous',e,L-e,sc,sc+e,0,dd.Ph,'c');
+  g.comps.forEach((c,i)=>{
+    if(i<nc-1){const x=c.x+c.w,jt=g.comps[i+1].joint;box('sep-'+i,jt?'montantJ':'montant',x,x+e,sc+e,H-e,rail,jt?dd.Pc:g.Pp,'c',{comp:i});}
+    c.shelves.forEach((y,k)=>box(`et-${i}-${k}`,'etagere',c.x,c.x+c.w,y,y+e,dd.dosX-g.sd,dd.dosX,'c',{comp:i,k}));
+    if(c.tringle!=null)P.push({id:(mod!=null?mod+':':'')+'tr-'+i,key:null,rod:true,x0:c.x+2,x1:c.x+c.w-2,y:c.tringle,z:(rail+g.Pp)/2,kind:'rod',mod});
+  });
+  if(sc>0&&D.base==='socle'){box('plA','plA',e,L-e,0,sc,0,e,'c');box('plR','plR',e,L-e,0,sc,dd.Ph-e,dd.Ph,'c');}
+  if(sc>0&&D.base==='pieds'){
+    if(D.plinthe)box('plA','plA',0,L,0,sc-5,-e-8,-8,'c');
+    const xs=L<=1000?[60,L-60]:[60,L/2,L-60];xs.forEach((x,i)=>[80,D.P-80].forEach((z,j)=>P.push({id:(mod!=null?mod+':':'')+`pied-${i}-${j}`,key:null,foot:true,x,z,h:sc,kind:'feet',mod})));}
+  {const de=dd.de,rp=R.rp;let x0,x1;
+    if(dd.mode==='rainure'){x0=e-(rp-1);x1=L-e+(rp-1);}else if(dd.mode==='encastre'){x0=e;x1=L-e;}else{const j=de>=18?0:1;x0=j;x1=L-j;}
+    box('dos','dos',x0,x1,dd.dy0,dd.dy1,dd.dosX,dd.dosX+de,'dos');}
+  const ws=g.ws||g.comps.map(c=>c.w);
+  g.fronts.forEach((f,k)=>{let z0;
+    if(f.slide)z0=6+(f.rail||0)*(e+10);else if(f.inner)z0=(g.coul?rail:0)+2;else z0=-e-1;
+    box('fr-'+k,f.type==='porte'?'porte':'ftir',f.x,f.x+f.w,f.y,f.y+f.h,z0,z0+e,'f',{comp:f.comp,front:f});
+    if(f.type==='tiroir'&&f.comp>=0){const c=g.comps[f.comp],bw=(ws[f.comp]||c.w)-2*R.cj-(f.inner&&!g.coul?2*R.icale:0),bh=Math.max(60,f.h-R.tH),cl=g.cl||400;
+      const cx=c.x+c.w/2,xa=cx-bw/2,xb=cx+bw/2,y0=f.y+R.tH/2,zs=z0+e+2,ze=zs+cl,ex={comp:f.comp,drawer:k};
+      box(`tc-${k}-g`,'tcote',xa,xa+e,y0,y0+bh,zs,ze,'d',ex);box(`tc-${k}-d`,'tcote',xb-e,xb,y0,y0+bh,zs,ze,'d',ex);
+      box(`ta-${k}-av`,'tav',xa+e,xb-e,y0,y0+bh,zs,zs+e,'d',ex);box(`ta-${k}-ar`,'tav',xa+e,xb-e,y0,y0+bh,ze-e,ze,'d',ex);
+      box(`tf-${k}`,'tfond',xa,xb,y0-R.tF,y0,zs,ze,'d',ex);}
+  });
+  return P;
+}
+/* ligne de la liste de débit qui correspond à une pièce 3D (même type, mêmes dimensions) */
+function v3dRow(p,r){if(!p.key||!r||!r.list)return null;const dims=[p.x1-p.x0,p.y1-p.y0,p.z1-p.z0].sort((a,b)=>b-a),[a,b]=dims;
+  let best=null,bs=1e9;r.list.forEach(q=>{if(q.key!==p.key)return;const s=Math.min(Math.abs(q.Lf-a)+Math.abs(q.Wf-b),Math.abs(q.Lf-b)+Math.abs(q.Wf-a));if(s<bs){bs=s;best=q;}});return best;}
+
+/* ---------- construction de la scène ---------- */
+function v3dClear(){const t=V3.three;V3.meshes.forEach(m=>{m.geometry.dispose();(Array.isArray(m.material)?m.material:[m.material]).forEach(x=>x.dispose());});
+  t.root.children.slice().forEach(o=>{o.traverse(c=>{if(c.geometry&&!V3.meshes.includes(c))c.geometry.dispose();if(c.material&&!V3.meshes.includes(c))c.material.dispose();});t.root.remove(o);});V3.meshes=[];}
+function v3dBuild(){
+  const t=V3.three;if(!t||!V3.last)return;const T3=THREE,r=V3.last;v3dClear();
+  let sets;
+  if(KIT&&V3.scope==='all'&&KIT.res&&KIT.pos){const maxP=Math.max(...KIT.res.map(rm=>v3dDims(rm).P||0));
+    sets=KIT.res.map((rm,i)=>{const p=KIT.pos[i];if(!p)return null;const D=v3dDims(rm),dz=(rm.panel&&rm.m.type==='panneau')?0:maxP-D.P;return {r:rm,mod:i,ox:p.x,oy:p.y,oz:dz};}).filter(Boolean);}
+  else sets=[{r,mod:KIT?KIT.cur:null,ox:0,oy:0,oz:0}];
+  V3.parts=[];sets.forEach(st=>{v3dParts(st.r,st.mod).forEach(p=>{p.ox=st.ox;p.oy=st.oy;p.oz=st.oz;p.res=st.r;V3.parts.push(p);});});
+  if(!V3.parts.length){$('#v3dMsg').hidden=false;$('#v3dMsg').textContent=r.vide?'Espace vide : rien à fabriquer, pas de 3D.':'Rien à afficher.';v3dDraw();return;}
+  $('#v3dMsg').hidden=true;
+  /* boîte englobante pour centrer et éclater */
+  const bb=new T3.Box3();V3.parts.forEach(p=>{if(p.x0!=null&&p.y0!=null)bb.expandByPoint(new T3.Vector3(p.ox+p.x0,p.oy+p.y0,-(p.oz+p.z0)));if(p.x1!=null&&p.y1!=null)bb.expandByPoint(new T3.Vector3(p.ox+p.x1,p.oy+p.y1,-(p.oz+p.z1)));});
+  const c=bb.getCenter(new T3.Vector3()),sz=bb.getSize(new T3.Vector3());t.center.copy(c);t.size=Math.max(sz.x,sz.y,sz.z,300);
+  const ex=V3.exp/100;
+  V3.parts.forEach(p=>{let mesh;
+    if(p.rod){const g=new T3.CylinderGeometry(12,12,p.x1-p.x0,16);g.rotateZ(Math.PI/2);mesh=new T3.Mesh(g,new T3.MeshStandardMaterial({color:V3COL.rod,metalness:.6,roughness:.35}));
+      mesh.position.set(p.ox+(p.x0+p.x1)/2,p.oy+p.y,-(p.oz+p.z));}
+    else if(p.foot){const g=new T3.CylinderGeometry(18,22,p.h,14);mesh=new T3.Mesh(g,new T3.MeshStandardMaterial({color:V3COL.feet,roughness:.8}));mesh.position.set(p.ox+p.x,p.oy+p.h/2,-(p.oz+p.z));}
+    else{const w=p.x1-p.x0,h=p.y1-p.y0,d=p.z1-p.z0,g=new T3.BoxGeometry(w,h,d);
+      const isF=p.kind==='f',fm=isF&&R.matF&&/gris/i.test(R.matF)?0x8d939b:isF&&R.matF&&/noir/i.test(R.matF)?0x3a3a3a:null;
+      const mat=new T3.MeshStandardMaterial({color:fm??V3COL[p.kind]??V3COL.c,roughness:isF&&R.matF&&/gloss|brillant/i.test(R.matF)?.25:.85,metalness:0,transparent:true,opacity:1,polygonOffset:true,polygonOffsetFactor:1,polygonOffsetUnits:1});
+      mesh=new T3.Mesh(g,mat);
+      const ed=new T3.LineSegments(new T3.EdgesGeometry(g),new T3.LineBasicMaterial({color:V3COL.edge,transparent:true,opacity:.7}));mesh.add(ed);mesh.userData.edges=ed;
+      mesh.position.set(p.ox+p.x0+w/2,p.oy+p.y0+h/2,-(p.oz+p.z0+d/2));}
+    /* éclaté : chaque pièce s'écarte du centre */
+    if(ex>0){const dv=mesh.position.clone().sub(c);if(p.kind==='f')dv.z+=t.size*.25;mesh.position.add(dv.multiplyScalar(ex*0.9));}
+    mesh.userData.part=p;t.root.add(mesh);V3.meshes.push(mesh);});
+  v3dPaint();v3dOrthoFrame();
+  const fk=V3.scope+'|'+(V3.scope==='one'&&KIT?KIT.cur:'');if(!V3.framed||V3.fk!==fk){V3.framed=true;V3.fk=fk;v3dSetCam(V3.view,true);}
+  v3dDraw();
+}
+function v3dPaint(){
+  const selP=V3.parts.find(p=>p.id===V3.sel),selRow=selP?v3dRow(selP,selP.res):null;
+  V3.meshes.forEach(m=>{const p=m.userData.part;if(!m.material||!m.material.color||p.rod||p.foot)return;
+    const base=p.kind==='f'&&R.matF&&/gris/i.test(R.matF)?0x8d939b:p.kind==='f'&&R.matF&&/noir/i.test(R.matF)?0x3a3a3a:(V3COL[p.kind]??V3COL.c);
+    const on=p.id===V3.sel,same=!on&&selRow&&p.res===selP.res&&v3dRow(p,p.res)===selRow;
+    m.material.color.setHex(on?V3COL.sel:same?V3COL.row:base);
+    const isF=p.kind==='f';m.visible=!(isF&&V3.fac==='hide'&&!on);
+    const ghost=isF&&V3.fac==='ghost'&&!on;m.material.opacity=ghost?.18:1;m.material.depthWrite=!ghost;
+    if(m.userData.edges)m.userData.edges.material.opacity=ghost?.35:.7;});
+  document.querySelectorAll('#debit tr.drow').forEach(tr=>{const on=selRow&&+tr.dataset.n===selRow.n&&(!KIT||tr.dataset.rep===(selP.res.m?selP.res.m.rep:''));tr.classList.toggle('on',!!on);});
+  v3dDraw();
+}
+
+/* ---------- caméra et vues ---------- */
+function v3dOrthoFrame(){const t=V3.three;if(!t)return;const box=$('#v3dBox'),a=(box.clientWidth||600)/(box.clientHeight||400),s=t.size*0.68*(1+V3.exp/100*0.8);
+  t.ortho.left=-s*a;t.ortho.right=s*a;t.ortho.top=s;t.ortho.bottom=-s;t.ortho.updateProjectionMatrix();}
+function v3dSetCam(view,force){const t=V3.three;if(!t)return;V3.view=view;
+  const T3=THREE,c=t.center,d=t.size*2.4*(1+V3.exp/100*0.6);
+  const iso=view==='iso',cam=iso?t.persp:t.ortho;
+  const dir={iso:[0.75,0.55,1],front:[0,0,1],back:[0,0,-1],left:[-1,0,0],right:[1,0,0],top:[0,1,0.0001]}[view]||[0.75,0.55,1];
+  const v=new T3.Vector3(...dir).normalize().multiplyScalar(iso?d:t.size*4);
+  cam.up.set(0,1,0);if(view==='top')cam.up.set(0,0,-1);
+  cam.position.copy(c).add(v);cam.lookAt(c);if(!iso){cam.zoom=1;cam.updateProjectionMatrix();}
+  if(t.cam!==cam||!t.ctl||force){if(t.ctl)t.ctl.dispose();t.cam=cam;t.ctl=new T3.OrbitControls(cam,t.rd.domElement);t.ctl.enableDamping=false;t.ctl.screenSpacePanning=true;
+    t.ctl.enableRotate=iso;t.ctl.addEventListener('change',v3dDraw);}
+  t.ctl.target.copy(c);t.ctl.update();
+  document.querySelectorAll('.v3d-views button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.view===view));
+  v3dDraw();}
+function v3dDraw(){const t=V3.three;if(!t)return;if(V3.raf)return;V3.raf=requestAnimationFrame(()=>{V3.raf=0;t.rd.render(t.sc,t.cam);});}
+
+/* ---------- sélection et panneau de réglages ---------- */
+function v3dSelect(id,fromClick){V3.sel=id;v3dPaint();v3dInfo();
+  if(fromClick){const tr=document.querySelector('#debit tr.drow.on');if(tr&&window.innerWidth>900){/* garde la 3D à l'écran */}}}
+function v3dInfo(){
+  const p=V3.parts.find(x=>x.id===V3.sel),desc=$('#v3dDesc'),ed=$('#v3dEdit');
+  if(!p){desc.innerHTML='<p class="hint">Cliquez une pièce dans la 3D, ou une ligne de la liste de débit, pour la voir et changer ses réglages ici.</p>';ed.innerHTML='';V3.editFor=null;return;}
+  const r=p.res,row=v3dRow(p,r),q=r.m?r.m.q:S.q,rep=r.m?r.m.rep:'';
+  const pos=p.key==='etagere'?` ${p.k+1} du compartiment ${p.comp+1}`:p.key==='montant'||p.key==='montantJ'?` entre compartiments ${p.comp+1} et ${p.comp+2}`:(p.key==='porte'||p.key==='ftir')&&p.comp>=0?` · compartiment ${p.comp+1}`:p.id.endsWith('cote-g')?' gauche':p.id.endsWith('cote-d')?' droit':'';
+  desc.innerHTML=`<h4>${esc(T[p.key].fr)}${esc(pos)}</h4><div class="ar">${esc(T[p.key].ar)}</div>`+
+   (row?`<dl><dt>N° débit</dt><dd>${KIT?esc(rep)+'-':''}${row.n}</dd><dt>Coupe</dt><dd>${fmt(row.Lc)} × ${fmt(row.Wc)} mm</dd><dt>Finie</dt><dd>${fmt(row.Lf)} × ${fmt(row.Wf)}</dd>
+     <dt>Quantité</dt><dd>${row.qty*q} (même pièce en orange clair)</dd><dt>Matière</dt><dd>${esc(row.mat)}</dd><dt>Chant</dt><dd>${chantIcon(row.ch).replace('<svg','<svg style="width:44px;height:22px;vertical-align:middle"')}</dd>
+     ${row.ch.rain?`<dt>Rainure</dt><dd>${fmt(R.dosEp+.5)} × ${fmt(R.rp)} à ${fmt(R.rr)} du bord arrière</dd>`:''}</dl>
+     <button type="button" class="v3d-link" id="v3dGoRow">Voir dans la liste de débit</button>`:'');
+  const gr=$('#v3dGoRow');if(gr)gr.onclick=()=>{const tr=document.querySelector('#debit tr.drow.on');if(tr)tr.scrollIntoView({behavior:'smooth',block:'center'});};
+  /* réglages : on ne reconstruit les champs que si la pièce change (sinon on perdrait la saisie en cours) */
+  const fields=v3dFields(p),sig=p.id+'|'+fields.map(f=>f[0]).join(',');
+  if(V3.editFor===sig){fields.forEach(([id])=>{const o=document.getElementById(id),m=document.getElementById('v3e_'+id);if(o&&m&&document.activeElement!==m){m.value=o.type==='checkbox'?o.checked:o.value;if(m.tagName==='INPUT')m.placeholder=o.placeholder||'';}});return;}
+  V3.editFor=sig;
+  if(KIT&&V3.scope==='all'&&p.mod!==KIT.cur){ed.innerHTML=`<div class="v3d-edit-h">Réglages</div><p class="hint">Ce caisson n'est pas celui ouvert dans le formulaire.</p><button type="button" class="btn solid" id="v3dOpenMod">Ouvrir ${esc(KIT.mods[p.mod]?.rep||'')}</button>`;
+    $('#v3dOpenMod').onclick=()=>{const id=p.id;loadModule(p.mod);V3.sel=id;V3.editFor=null;v3dInfo();};return;}
+  if(!fields.length){ed.innerHTML='';return;}
+  ed.innerHTML='<div class="v3d-edit-h">Modifier directement</div>'+fields.map(([id,lab])=>{const o=document.getElementById(id);
+    if(o.tagName==='SELECT')return `<label class="v3d-f">${esc(lab)}<select id="v3e_${id}" data-src="${id}">${[...o.options].map(op=>`<option value="${esc(op.value)}"${op.value===o.value?' selected':''}${op.disabled?' disabled':''}${op.hidden?' hidden':''}>${esc(op.textContent)}</option>`).join('')}</select></label>`;
+    return `<label class="v3d-f">${esc(lab)}<input id="v3e_${id}" data-src="${id}" type="${o.type==='number'?'number':'text'}" step="${o.step||'any'}" value="${esc(o.value)}" placeholder="${esc(o.placeholder||'')}"${o.disabled?' disabled':''}></label>`;}).join('')
+    +'<p class="hint" style="margin:4px 0 0">Les changements passent tout de suite dans le formulaire, la 3D, le débit et la fiche.</p>';
+  ed.querySelectorAll('[data-src]').forEach(m=>{const push=()=>{const o=document.getElementById(m.dataset.src);if(!o)return;o.value=m.value;
+      o.dispatchEvent(new Event('input',{bubbles:true}));if(o.tagName==='SELECT')o.dispatchEvent(new Event('change',{bubbles:true}));};
+    m.addEventListener(m.tagName==='SELECT'?'change':'input',push);});
+}
+function v3dFields(p){
+  const i=p.comp,L=[['inL','Largeur L du meuble (mm)'],['inH','Hauteur H (mm)'],['inP','Profondeur P (mm)']],c=S.comps[i]||{},out=[];
+  const add=(id,lab)=>{if(document.getElementById(id))out.push([id,lab]);};
+  switch(p.key){
+    case 'cote':case 'dessus':case 'dessous':L.forEach(f=>add(...f));add('inBase','Sous le meuble');break;
+    case 'plA':case 'plR':add('inSocle','Hauteur du dessous / socle (mm)');add('inBase','Sous le meuble');add('inL','Largeur L du meuble (mm)');break;
+    case 'dos':add('inDosEp','Épaisseur du dos');add('inDosMode','Montage du dos');add('inH','Hauteur H (mm)');add('inL','Largeur L du meuble (mm)');break;
+    case 'montant':case 'montantJ':add('cw'+i,`Largeur intérieure compartiment ${i+1} (vide = auto)`);add('cw'+(i+1),`Largeur intérieure compartiment ${i+2} (vide = auto)`);add('inP','Profondeur P (mm)');break;
+    case 'etagere':add('cn'+i,`Nombre d'étagères (compartiment ${i+1})`);add('csp'+i,'Espaces de bas en haut (vide = égaux)');add('cw'+i,'Largeur intérieure (vide = auto)');add('ct'+i,'Type du compartiment');add('inFix','Fixation des étagères');break;
+    case 'porte':add('inDoors','Type de portes');if(S.doors==='coul')add('inNc','Nombre de portes coulissantes');else{add('cdp'+i,`Portes du compartiment ${i+1}`);add('ccut'+i,'Portes en hauteur');add('csplit'+i,'Porte du bas (hauteur)');}
+      add('rMatF','Matière des façades');add('rJp','Jeu autour des portes (mm)');add('rJj','Jeu entre portes (mm)');break;
+    case 'ftir':case 'tcote':case 'tav':case 'tfond':add('cnt'+i,`Nombre de tiroirs (compartiment ${i+1})`);for(let k=0;k<(c.nt||0);k++)add(`cthk${i}_${k}`,`Hauteur façade tiroir ${k+1}${k===0?' (en haut)':''}`);
+      add('ctin'+i,'Tiroirs');add('rCj','Jeu coulisse par côté (mm)');add('rTh','Caisson plus bas que la façade de (mm)');if(p.key==='ftir')add('rMatF','Matière des façades');break;
+    default:L.forEach(f=>add(...f));}
+  if(r_isPanelKey(p.key)){out.length=0;add('inL','Largeur L (mm)');add('inH','Hauteur H (mm)');add('inP','Profondeur P (mm)');}
+  return out;}
+const r_isPanelKey=k=>k==='hab'||k==='joue'||k==='tab';
+
+/* ---------- mise à jour à chaque calcul ---------- */
+function v3dUpdate(r){V3.last=r;$('#v3dScopeW').hidden=!KIT||KIT.mods.length<2;if(!KIT&&V3.scope==='all')V3.scope='one';
+  const nm=KIT?KIT.mods.length:0;if(nm!==V3.nm){if(nm>1&&(V3.nm||0)<2){V3.scope='all';V3.framed=false;}if(nm<2&&V3.scope==='all'){V3.scope='one';V3.framed=false;}V3.nm=nm;$('#v3dScope').value=V3.scope;}
+  if(!V3.three||$('#v3dWrap').hidden)return;
+  const had=V3.sel;v3dBuild();
+  if(had&&!V3.parts.some(p=>p.id===had))V3.sel=null;
+  v3dPaint();v3dInfo();}
+function v3dShowTab(k){document.querySelectorAll('.vtabs button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.vt===k));
+  $('#v3dWrap').hidden=k!=='3d';$('#v2dWrap').hidden=k!=='2d';try{localStorage.setItem('bes_fa_vtab',k);}catch(e){}
+  if(k==='3d')v3dLoad().then(()=>{V3.three.fit();if(last)v3dUpdate(last);}).catch(()=>{});}
+document.querySelector('.vtabs').addEventListener('click',e=>{const b=e.target.closest('[data-vt]');if(b)v3dShowTab(b.dataset.vt);});
+document.querySelector('.v3d-views').addEventListener('click',e=>{const b=e.target.closest('[data-view]');if(b)v3dSetCam(b.dataset.view,true);});
+$('#v3dFac').addEventListener('change',e=>{V3.fac=e.target.value;v3dPaint();});
+$('#v3dExp').addEventListener('input',e=>{V3.exp=+e.target.value;v3dBuild();v3dSetCam(V3.view,false);});
+$('#v3dScope').addEventListener('change',e=>{V3.scope=e.target.value;V3.framed=false;V3.sel=null;v3dBuild();v3dInfo();});
+/* clic sur une ligne du débit → la pièce s'allume dans la 3D */
+$('#debit').addEventListener('click',e=>{const tr=e.target.closest('tr.drow');if(!tr)return;const n=+tr.dataset.n,rep=tr.dataset.rep;
+  const go=()=>{if($('#v3dWrap').hidden)v3dShowTab('3d');
+    const tryIt=()=>{const p=V3.parts.find(q=>q.key&&(!KIT||!rep||(q.res.m&&q.res.m.rep===rep))&&(v3dRow(q,q.res)||{}).n===n);
+      if(p){v3dSelect(p.id);$('#v3dWrap').scrollIntoView({behavior:'smooth',block:'nearest'});}};
+    if(V3.three)tryIt();else v3dLoad().then(()=>{V3.three.fit();v3dUpdate(last);tryIt();}).catch(()=>{});};
+  if(KIT&&rep&&V3.scope!=='all'){const i=KIT.mods.findIndex(m=>m.rep===rep);if(i>=0&&i!==KIT.cur){loadModule(i);}}
+  go();});
+{let k='3d';try{k=localStorage.getItem('bes_fa_vtab')||'3d';}catch(e){}v3dShowTab(k);}
+</script>
+
 
 </html>

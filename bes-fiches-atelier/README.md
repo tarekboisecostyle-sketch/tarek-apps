@@ -5,6 +5,15 @@ Application de production de BOIS ECO-STYLE : saisie des meubles (placards, cuis
 - Application : `index.html` (fichier unique, sans installation)
 - Enregistrement des projets : navigateur (local) et Supabase (table `fiches_projets`)
 
+## Vue 3D
+
+Onglet « Vue 3D » à côté du plan coté (Three.js, chargé depuis internet la première fois) : le caisson est construit avec le même calcul que la liste de débit.
+
+- Vues 3D · Face · Dessus · Gauche · Droite · Arrière, façades visibles / transparentes / cachées, curseur « Éclaté » pour voir les pièces une par une
+- Clic sur une pièce (ou sur une ligne du débit) : elle passe en orange, les pièces identiques en orange clair, avec n° de débit, cotes de coupe, chant et matière
+- « Modifier directement » : les réglages de la pièce cliquée (cotes du meuble, étagères du compartiment, portes, tiroirs, dos, socle) se changent dans le panneau et tout se recalcule
+- Projets à plusieurs produits (cuisine) : « tout le projet » affiche tous les caissons à leur place ; cliquer un caisson l'ouvre dans le formulaire
+
 ## Relevé de chantier
 
 Méthode en 3 étapes : 1. **Espace** (type de pièce, longueur × largeur, plafond) · 2. **Zones** de produit le long des murs (longueur, profondeur, hauteur) · 3. **Détailler** : la fiche s'ouvre avec la longueur de la zone et vérifie que caissons bas, colonnes, vides (et hauts) retombent exactement sur la mesure relevée (boutons « + caisson / + espace vide du reste »).
