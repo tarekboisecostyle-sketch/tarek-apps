@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>POD Studio — TAREK STUDIO</title>
+<style>
+  :root {
+    --bg: #f6f5f2; --surface: #ffffff; --ink: #1d1d1b; --muted: #6b6a66; --line: #e3e1dc;
+    --accent: #1f6f5c; --accent-ink: #ffffff; --accent-soft: #e4f1ed;
+    --warn: #a55a00; --warn-soft: #fdf1e1; --bad: #a32222; --bad-soft: #fbe9e9; --good: #1f6f3a; --good-soft: #e5f4e8;
+    --r: 10px; --r-s: 6px; --s1: 4px; --s2: 8px; --s3: 12px; --s4: 16px; --s5: 24px; --s6: 32px;
+    --f: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; --fs-s: 13px; --fs: 15px; --fs-l: 20px; --fs-xl: 26px;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: var(--f); font-size: var(--fs); color: var(--ink); background: var(--bg); }
+  header { display: flex; align-items: center; gap: var(--s4); padding: var(--s3) var(--s5); background: var(--surface); border-bottom: 1px solid var(--line); flex-wrap: wrap; }
+  header h1 { font-size: var(--fs-l); margin: 0; }
+  header h1 span { color: var(--accent); }
+  nav { display: flex; gap: var(--s1); flex-wrap: wrap; }
+  nav a { text-decoration: none; color: var(--ink); padding: var(--s2) var(--s3); border-radius: var(--r-s); }
+  nav a.on, nav a:hover { background: var(--accent-soft); color: var(--accent); }
+  main { max-width: 1200px; margin: 0 auto; padding: var(--s5); }
+  h2 { font-size: var(--fs-xl); margin: 0 0 var(--s2); }
+  h3 { margin: var(--s5) 0 var(--s2); }
+  .lead { color: var(--muted); margin: 0 0 var(--s5); }
+  .card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: var(--s4); margin-bottom: var(--s4); }
+  .grid { display: grid; gap: var(--s4); grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); }
+  .row { display: flex; gap: var(--s3); flex-wrap: wrap; align-items: end; }
+  label { display: block; font-size: var(--fs-s); color: var(--muted); margin-bottom: var(--s1); }
+  input, select, textarea { font: inherit; padding: var(--s2) var(--s3); border: 1px solid var(--line); border-radius: var(--r-s); background: var(--surface); width: 100%; }
+  textarea { min-height: 90px; }
+  input:focus, select:focus, textarea:focus, button:focus-visible, a:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+  .field { flex: 1 1 180px; }
+  button, .btn { font: inherit; cursor: pointer; border: 1px solid var(--line); background: var(--surface); color: var(--ink); padding: var(--s2) var(--s4); border-radius: var(--r-s); text-decoration: none; display: inline-block; }
+  button.primary, .btn.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+  button.danger { color: var(--bad); }
+  button:disabled { opacity: .5; cursor: not-allowed; }
+  table { width: 100%; border-collapse: collapse; background: var(--surface); }
+  th, td { text-align: left; padding: var(--s2); border-bottom: 1px solid var(--line); font-size: var(--fs-s); vertical-align: top; }
+  th { cursor: pointer; user-select: none; white-space: nowrap; }
+  .table-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: var(--r); }
+  .badge { display: inline-block; padding: 2px var(--s2); border-radius: 99px; font-size: var(--fs-s); background: var(--accent-soft); color: var(--accent); }
+  .badge.warn { background: var(--warn-soft); color: var(--warn); } .badge.bad { background: var(--bad-soft); color: var(--bad); } .badge.good { background: var(--good-soft); color: var(--good); }
+  .score { font-size: 44px; font-weight: 700; line-height: 1; }
+  .muted { color: var(--muted); font-size: var(--fs-s); }
+  .empty { text-align: center; padding: var(--s6); color: var(--muted); }
+  .toast { position: fixed; bottom: var(--s5); left: 50%; transform: translateX(-50%); background: var(--ink); color: var(--surface); padding: var(--s3) var(--s4); border-radius: var(--r-s); opacity: 0; transition: opacity .2s; pointer-events: none; }
+  .toast.show { opacity: 1; }
+  .clip { max-width: 360px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .tags span { display: inline-block; margin: 2px; padding: 2px var(--s2); border-radius: var(--r-s); background: var(--bg); font-size: var(--fs-s); }
+  pre.prompt { white-space: pre-wrap; background: var(--bg); padding: var(--s3); border-radius: var(--r-s); font-family: var(--f); }
+  .note { background: var(--warn-soft); color: var(--warn); padding: var(--s2) var(--s3); border-radius: var(--r-s); font-size: var(--fs-s); }
+  @media (max-width: 600px) { main { padding: var(--s3); } header { padding: var(--s3); } .score { font-size: 34px; } }
+</style>
+</head>
+<body>
+<header>
+  <h1>POD <span>Studio</span></h1>
+  <nav aria-label="Menu">
+    <a href="#/">Accueil</a>
+    <a href="#/recherche">Rechercher</a>
+    <a href="#/niches">Niches</a>
+    <a href="#/fiches">Fiches design</a>
+    <a href="#/donnees">Données</a>
+  </nav>
+</header>
+<main id="app" tabindex="-1"></main>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+'use strict';
+/* =========================================================================
+   Couche de données. Même signatures que la future version Supabase :
+   seul ce bloc changera quand le projet Supabase sera choisi.
+   Stockage : navigateur (localStorage), avec repli en mémoire.
+   ========================================================================= */
+const KEY = 'podstudio:v1';
+const mem = { data: null };
+function blank() { return { products: [], niches: [], analyses: [], briefs: [], searches: [] }; }
+function load() {
+  if (mem.data) return mem.data;
+  let d = null;
+  try { d = JSON.parse(localStorage.getItem(KEY) || 'null'); } catch (e) { d = null; }
+  mem.data = Object.assign(blank(), d || {});
+  return mem.data;
+}
+function save() {
+  mem.data.savedAt = new Date().toISOString();
+  try { localStorage.setItem(KEY, JSON.stringify(mem.data)); } catch (e) { toast('Sauvegarde du navigateur impossible : exporte tes données.'); }
+}
+const uid = () => (crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(36) + Math.random().toString(36).slice(2));
+const now = () => new Date().toISOString();
+
+const db = {
+  listNiches() { return load().niches.slice().sort((a, b) => (b.score ?? -1) - (a.score ?? -1)); },
+  getNiche(id) { return load().niches.find(n => n.id === id); },
+  upsertNiche(n) {
+    const d = load();
+    let ex = n.id ? d.niches.find(x => x.id === n.id) : d.niches.find(x => x.name.toLowerCase() === n.name.toLowerCase() && x.marketplace === n.marketplace);
+    if (ex) Object.assign(ex, n, { id: ex.id, updated_at: now() });
+    else { ex = Object.assign({ id: uid(), keywords: [], favorite: false, created_at: now(), updated_at: now() }, n); d.niches.push(ex); }
+    save(); return ex;
+  },
+  deleteNiche(id) {
+    const d = load();
+    d.niches = d.niches.filter(n => n.id !== id);
+    d.products.forEach(p => { p.niche_ids = (p.niche_ids || []).filter(x => x !== id); });
+    d.briefs.forEach(b => { if (b.niche_id === id) b.niche_id = null; });
+    save();
+  },
+  productsOfNiche(id) { return load().products.filter(p => (p.niche_ids || []).includes(id)); },
+  upsertProducts(list, nicheId) {
+    const d = load(); let added = 0;
+    list.forEach(p => {
+      const key = (p.marketplace || 'amazon_us') + '|' + (p.asin || p.title);
+      let ex = d.products.find(x => ((x.marketplace || 'amazon_us') + '|' + (x.asin || x.title)) === key);
+      if (ex) { Object.assign(ex, clean(p), { updated_at: now(), seen_at: now() }); }
+      else { ex = Object.assign({ id: uid(), niche_ids: [], favorite: false, created_at: now(), seen_at: now() }, clean(p)); d.products.push(ex); added++; }
+      if (nicheId && !ex.niche_ids.includes(nicheId)) ex.niche_ids.push(nicheId);
+    });
+    save(); return added;
+  },
+  updateProduct(id, patch) { const p = load().products.find(x => x.id === id); if (p) { Object.assign(p, patch, { updated_at: now() }); save(); } return p; },
+  getAnalysis(productId) { return load().analyses.find(a => a.product_id === productId); },
+  analysesOfNiche(id) { return load().analyses.filter(a => a.niche_id === id); },
+  saveAnalysis(a) {
+    const d = load();
+    let ex = d.analyses.find(x => x.product_id === a.product_id);
+    if (ex) Object.assign(ex, a, { updated_at: now() });
+    else { ex = Object.assign({ id: uid(), created_at: now(), updated_at: now(), analyzed_by: 'manual' }, a); d.analyses.push(ex); }
+    save(); return ex;
+  },
+  listBriefs() { return load().briefs.slice().sort((a, b) => b.created_at.localeCompare(a.created_at)); },
+  getBrief(id) { return load().briefs.find(b => b.id === id); },
+  saveBrief(b) {
+    const d = load();
+    let ex = b.id && d.briefs.find(x => x.id === b.id);
+    if (ex) Object.assign(ex, b, { updated_at: now() });
+    else { ex = Object.assign({ id: uid(), status: 'draft', favorite: false, colors: [], keywords: [], created_at: now(), updated_at: now() }, b); d.briefs.push(ex); }
+    save(); return ex;
+  },
+  deleteBrief(id) { const d = load(); d.briefs = d.briefs.filter(b => b.id !== id); save(); },
+  exportAll() { return JSON.stringify(load(), null, 2); },
+  importAll(obj) { mem.data = Object.assign(blank(), obj); save(); },
+};
+function clean(p) {
+  const num = v => { if (v === '' || v == null) return null; const n = Number(String(v).replace(/[^0-9.,-]/g, '').replace(',', '.')); return isFinite(n) ? n : null; };
+  const o = {
+    marketplace: p.marketplace || 'amazon_us', asin: (p.asin || '').trim() || null, title: String(p.title || '').trim(),
+    brand: p.brand ? String(p.brand).trim() : null, price: num(p.price), bsr: num(p.bsr), reviews: num(p.reviews),
+    rating: num(p.rating), published_on: p.published_on || p.date || null, product_url: p.product_url || p.url || null,
+    image_url: p.image_url || p.image || null, is_official_brand: !!p.is_official_brand, source: p.source || 'manual',
+  };
+  o.est_monthly_sales = o.bsr ? estSales(o.bsr) : null;
+  return o;
+}
+
+/* =========================================================================
+   Estimations et score — toujours affichés comme estimations (fix 4).
+   ========================================================================= */
+// Ventes mensuelles estimées pour un t-shirt Amazon US à partir du BSR (courbe approximative).
+function estSales(bsr) {
+  if (!bsr || bsr <= 0) return null;
+  if (bsr <= 1000) return 600; if (bsr <= 10000) return Math.round(300 - (bsr - 1000) * 0.022);
+  if (bsr <= 100000) return Math.max(10, Math.round(100 - (bsr - 10000) * 0.001));
+  if (bsr <= 300000) return Math.max(3, Math.round(10 - (bsr - 100000) * 0.000035));
+  if (bsr <= 1000000) return bsr <= 600000 ? 2 : 1;
+  return 0;
+}
+function nicheScore(products, resultCount) {
+  const withBsr = products.filter(p => p.bsr && !p.is_official_brand);
+  if (!withBsr.length) return null;
+  const strong = withBsr.filter(p => p.bsr < 300000).length;
+  const sorted = withBsr.map(p => p.bsr).sort((a, b) => a - b);
+  const median = sorted[Math.floor(sorted.length / 2)];
+  const demand = Math.round(Math.min(100, (strong / withBsr.length) * 70 + (median < 100000 ? 30 : median < 300000 ? 18 : median < 800000 ? 8 : 0)));
+  const official = products.filter(p => p.is_official_brand).length / Math.max(1, products.length);
+  let comp = resultCount ? (resultCount < 500 ? 15 : resultCount < 2000 ? 35 : resultCount < 10000 ? 60 : 85) : 50;
+  comp = Math.round(Math.min(100, comp + official * 30));
+  const score = Math.round(Math.max(0, Math.min(100, demand * 0.65 + (100 - comp) * 0.35)));
+  return { demand, competition: comp, score, median, strong, total: withBsr.length };
+}
+function scoreBadge(s) {
+  if (s == null) return '<span class="badge warn">pas encore de score</span>';
+  const c = s >= 65 ? 'good' : s >= 40 ? '' : 'bad';
+  const t = s >= 65 ? 'bonne niche' : s >= 40 ? 'à creuser' : 'saturée ou faible';
+  return `<span class="badge ${c}">${s}/100 · ${t}</span>`;
+}
+
+/* =========================================================================
+   Import : collage de résultats (tableau copié), JSON (export, POD Radar).
+   ========================================================================= */
+const COLS = {
+  title: ['title', 'titre', 'name', 'nom', 'product'], brand: ['brand', 'marque'], price: ['price', 'prix'],
+  bsr: ['bsr', 'rank', 'sales rank', 'classement'], reviews: ['reviews', 'avis', 'review count'], rating: ['rating', 'note'],
+  asin: ['asin', 'id'], published_on: ['date', 'published', 'upload date', 'date upload', 'published_on'],
+  product_url: ['url', 'link', 'lien', 'product_url'], image_url: ['image', 'image_url', 'img'],
+};
+function mapRow(obj) {
+  const out = {}; const keys = Object.keys(obj);
+  for (const [k, names] of Object.entries(COLS)) {
+    const hit = keys.find(x => names.includes(String(x).toLowerCase().trim()));
+    if (hit != null) out[k] = obj[hit];
+  }
+  return out;
+}
+function parsePasted(text) {
+  const lines = text.split(/\r?\n/).filter(l => l.trim());
+  if (!lines.length) return [];
+  const sep = lines[0].includes('\t') ? '\t' : (lines[0].split(';').length > lines[0].split(',').length ? ';' : ',');
+  const split = l => l.split(sep).map(s => s.trim().replace(/^"|"$/g, ''));
+  const head = split(lines[0]).map(h => h.toLowerCase());
+  const known = Object.values(COLS).flat();
+  if (head.some(h => known.includes(h))) {
+    return lines.slice(1).map(l => { const c = split(l); const o = {}; head.forEach((h, i) => o[h] = c[i]); return mapRow(o); }).filter(r => r.title);
+  }
+  // sans en-tête : titre, marque, prix, bsr, avis
+  return lines.map(l => { const c = split(l); return { title: c[0], brand: c[1], price: c[2], bsr: c[3], reviews: c[4] }; }).filter(r => r.title);
+}
+function parseJsonProducts(obj) {
+  // Accepte : un export POD Studio, un tableau de produits, ou un rapport POD Radar ({niches:[{name, produits/products:[...]}]} etc.)
+  if (obj && obj.products && obj.niches && obj.briefs) return { full: obj };
+  const groups = [];
+  const asList = x => Array.isArray(x) ? x : null;
+  if (asList(obj)) groups.push({ name: null, items: obj });
+  else if (obj && typeof obj === 'object') {
+    const niches = asList(obj.niches) || asList(obj.resultats) || asList(obj.results);
+    if (niches) niches.forEach(n => groups.push({ name: n.name || n.nom || n.niche || n.keyword || n.mot_cle || null, items: asList(n.products) || asList(n.produits) || asList(n.items) || [], keywords: n.keywords || n.mots_cles || [] }));
+    const prods = asList(obj.products) || asList(obj.produits);
+    if (prods) groups.push({ name: obj.niche || obj.keyword || null, items: prods });
+  }
+  return { groups: groups.map(g => ({ name: g.name, keywords: g.keywords || [], items: g.items.map(x => Object.assign(mapRow(x), { source: 'pod_radar' })).filter(r => r.title) })) };
+}
+
+/* =========================================================================
+   Outils d'affichage
+   ========================================================================= */
+const $ = s => document.querySelector(s);
+const app = $('#app');
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const fmt = n => n == null ? '—' : Number(n).toLocaleString('fr-FR');
+function toast(msg) { const t = $('#toast'); t.textContent = msg; t.classList.add('show'); clearTimeout(toast.t); toast.t = setTimeout(() => t.classList.remove('show'), 2600); }
+function download(name, text, type) { const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([text], { type })); a.download = name; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 1000); }
+function copy(text) { (navigator.clipboard ? navigator.clipboard.writeText(text) : Promise.reject()).then(() => toast('Copié'), () => { prompt('Copie ce texte :', text); }); }
+function marketplaceOptions(sel) {
+  const m = { amazon_us: 'Amazon US', amazon_uk: 'Amazon UK', amazon_de: 'Amazon DE', amazon_fr: 'Amazon FR', redbubble: 'Redbubble', teepublic: 'TeePublic', spreadshirt: 'Spreadshirt' };
+  return Object.entries(m).map(([k, v]) => `<option value="${k}" ${k === sel ? 'selected' : ''}>${v}</option>`).join('');
+}
+function amazonSearchUrl(kw, mp) {
+  const host = { amazon_us: 'www.amazon.com', amazon_uk: 'www.amazon.co.uk', amazon_de: 'www.amazon.de', amazon_fr: 'www.amazon.fr' }[mp] || 'www.amazon.com';
+  return `https://${host}/s?k=${encodeURIComponent(kw)}&i=fashion-novelty&rh=p_6%3AATVPDKIKX0DER&s=featured`;
+}
+
+/* =========================================================================
+   Écrans
+   ========================================================================= */
+const routes = {
+  '': dashboard, 'recherche': search, 'niches': niches, 'niche': niche, 'analyse': analyse, 'fiches': briefs, 'fiche': brief, 'donnees': data,
+};
+function render() {
+  const [, name = '', id = '', sub = ''] = location.hash.split('/');
+  document.querySelectorAll('nav a').forEach(a => a.classList.toggle('on', a.getAttribute('href') === '#/' + (name === 'niche' || name === 'analyse' ? 'niches' : name === 'fiche' ? 'fiches' : name)));
+  (routes[name] || dashboard)(decodeURIComponent(id), sub);
+  app.focus({ preventScroll: true });
+}
+window.addEventListener('hashchange', render);
+
+// S01 — Accueil
+function dashboard() {
+  const d = load(); const top = db.listNiches().slice(0, 6); const todo = d.briefs.filter(b => b.status === 'draft' || b.status === 'ready');
+  app.innerHTML = `
+    <h2>Accueil</h2>
+    <p class="lead">Savoir quoi créer avant de créer : trouve ce qui se vend, comprends pourquoi, prépare la fiche du design.</p>
+    <div class="grid">
+      <div class="card"><div class="muted">Niches suivies</div><div class="score">${d.niches.length}</div></div>
+      <div class="card"><div class="muted">Produits lus</div><div class="score">${d.products.length}</div></div>
+      <div class="card"><div class="muted">Fiches à créer</div><div class="score">${todo.length}</div></div>
+    </div>
+    <h3>Meilleures niches</h3>
+    ${top.length ? `<div class="grid">${top.map(n => `<a class="card btn" style="text-align:left" href="#/niche/${n.id}"><strong>${esc(n.name)}</strong><br>${scoreBadge(n.score)}<div class="muted">${fmt(db.productsOfNiche(n.id).length)} produits</div></a>`).join('')}</div>`
+      : `<div class="card empty">Aucune niche pour l'instant.<br><br><a class="btn primary" href="#/recherche">Faire une première recherche</a></div>`}
+    <h3>Fiches à créer</h3>
+    ${todo.length ? `<div class="grid">${todo.slice(0, 6).map(briefCard).join('')}</div>` : `<div class="card empty">Pas de fiche en attente.</div>`}`;
+}
+
+// S02 — Recherche
+function search() {
+  app.innerHTML = `
+    <h2>Rechercher</h2>
+    <p class="lead">Tape une niche ou un mot-clé, ouvre la recherche Amazon (vendeurs Merch seulement), puis colle les résultats ou importe un rapport POD Radar.</p>
+    <div class="card">
+      <div class="row">
+        <div class="field"><label for="kw">Niche ou mot-clé</label><input id="kw" placeholder="ex. dog mom, fishing dad, sabr" autocomplete="off"></div>
+        <div class="field" style="flex:0 1 180px"><label for="mp">Marketplace</label><select id="mp">${marketplaceOptions('amazon_us')}</select></div>
+        <div class="field" style="flex:0 1 180px"><label for="rc">Nombre de résultats (optionnel)</label><input id="rc" inputmode="numeric" placeholder="ex. 3 200"></div>
+        <button id="open">Ouvrir sur Amazon</button>
+      </div>
+      <p class="muted">Le lien filtre les t-shirts « novelty » vendus par Amazon (Merch). Le nombre de résultats sert au score de concurrence.</p>
+    </div>
+    <div class="card">
+      <label for="paste">Coller les résultats (tableau copié d'Excel ou CSV : titre, marque, prix, BSR, avis… avec ou sans en-tête)</label>
+      <textarea id="paste" placeholder="title	brand	price	bsr	reviews	date	url"></textarea>
+      <div class="row" style="margin-top:var(--s3)">
+        <button class="primary" id="add">Ajouter à la niche</button>
+        <label class="btn" for="file" style="margin:0">Importer un fichier JSON (POD Radar)</label>
+        <input type="file" id="file" accept=".json,application/json" hidden>
+      </div>
+      <p class="muted" id="preview"></p>
+    </div>`;
+  const kw = $('#kw'), mp = $('#mp');
+  $('#open').onclick = () => { if (!kw.value.trim()) { toast('Écris d\'abord un mot-clé'); kw.focus(); return; } window.open(amazonSearchUrl(kw.value.trim(), mp.value), '_blank', 'noopener'); };
+  $('#paste').oninput = e => { const r = parsePasted(e.target.value); $('#preview').textContent = r.length ? `${r.length} produit(s) reconnu(s).` : ''; };
+  $('#add').onclick = () => {
+    const name = kw.value.trim(); const rows = parsePasted($('#paste').value);
+    if (!name) { toast('Écris le nom de la niche'); kw.focus(); return; }
+    if (!rows.length) { toast('Aucun produit reconnu dans le collage'); return; }
+    const n = db.upsertNiche({ name, marketplace: mp.value, keywords: [name], result_count: Number(String($('#rc').value).replace(/\D/g, '')) || null });
+    rows.forEach(r => r.marketplace = mp.value);
+    db.upsertProducts(rows, n.id); refreshScore(n.id);
+    location.hash = '#/niche/' + n.id;
+  };
+  $('#file').onchange = e => {
+    const f = e.target.files[0]; if (!f) return;
+    f.text().then(t => {
+      let obj; try { obj = JSON.parse(t); } catch (err) { toast('Fichier JSON illisible'); return; }
+      const res = parseJsonProducts(obj);
+      if (res.full) { if (confirmBox('Ce fichier est une sauvegarde complète. Remplacer les données actuelles ?')) { db.importAll(res.full); toast('Données restaurées'); render(); } return; }
+      let count = 0, nn = 0;
+      res.groups.forEach(g => {
+        const name = g.name || kw.value.trim() || ('Import ' + new Date().toLocaleDateString('fr-FR'));
+        const n = db.upsertNiche({ name, marketplace: mp.value, keywords: g.keywords.length ? g.keywords : [name] });
+        count += g.items.length; nn++; db.upsertProducts(g.items, n.id); refreshScore(n.id);
+      });
+      toast(count ? `${count} produit(s) importé(s) dans ${nn} niche(s)` : 'Aucun produit reconnu dans ce fichier');
+      if (count) location.hash = '#/niches';
+    });
+  };
+}
+function confirmBox(msg) { try { return window.confirm(msg); } catch (e) { return false; } }
+function refreshScore(id) {
+  const n = db.getNiche(id); const s = nicheScore(db.productsOfNiche(id), n.result_count);
+  db.upsertNiche({ id, score: s ? s.score : null, demand_score: s ? s.demand : null, competition_score: s ? s.competition : null });
+}
+
+// Liste des niches
+function niches() {
+  const list = db.listNiches();
+  app.innerHTML = `<h2>Niches</h2><p class="lead">Classées par score (estimation).</p>
+    ${list.length ? `<div class="table-wrap"><table><thead><tr><th>Niche</th><th>Score</th><th>Produits</th><th>Analyses</th><th>Mise à jour</th></tr></thead><tbody>
+      ${list.map(n => `<tr><td><a href="#/niche/${n.id}">${esc(n.name)}</a> ${n.favorite ? '★' : ''}</td><td>${scoreBadge(n.score)}</td><td>${db.productsOfNiche(n.id).length}</td><td>${db.analysesOfNiche(n.id).length}</td><td class="muted">${new Date(n.updated_at).toLocaleDateString('fr-FR')}</td></tr>`).join('')}
+    </tbody></table></div>` : `<div class="card empty">Aucune niche. <a href="#/recherche">Lancer une recherche</a></div>`}`;
+}
+
+// S04 — Niche
+function niche(id) {
+  const n = db.getNiche(id); if (!n) { app.innerHTML = `<div class="card empty">Niche introuvable. <a href="#/niches">Retour aux niches</a></div>`; return; }
+  let prods = db.productsOfNiche(id); const s = nicheScore(prods, n.result_count);
+  const sortKey = niche.sort || 'bsr';
+  prods = prods.slice().sort((a, b) => (a[sortKey] ?? Infinity) - (b[sortKey] ?? Infinity));
+  const hideOfficial = niche.hide !== false;
+  const shown = hideOfficial ? prods.filter(p => !p.is_official_brand) : prods;
+  app.innerHTML = `
+    <p><a href="#/niches">← Niches</a></p>
+    <h2>${esc(n.name)} ${n.favorite ? '★' : ''}</h2>
+    <div class="grid">
+      <div class="card"><div class="muted">Score de la niche</div><div class="score">${s ? s.score : '—'}</div>${scoreBadge(s && s.score)}</div>
+      <div class="card"><div class="muted">Demande</div><div class="score">${s ? s.demand : '—'}</div><div class="muted">${s ? `${s.strong} sur ${s.total} sous 300 000 de BSR · BSR médian ${fmt(s.median)}` : 'il faut des BSR'}</div></div>
+      <div class="card"><div class="muted">Concurrence</div><div class="score">${s ? s.competition : '—'}</div><div class="muted">${n.result_count ? fmt(n.result_count) + ' résultats' : 'nombre de résultats inconnu (50 par défaut)'}</div></div>
+    </div>
+    <p class="note">Estimations : les ventes viennent du BSR (courbe approximative t-shirts Amazon US), pas des vraies ventes. Données lues le ${prods[0] ? new Date(prods[0].seen_at).toLocaleDateString('fr-FR') : '—'}.</p>
+    <div class="row" style="margin:var(--s4) 0">
+      <a class="btn primary" href="#/analyse/${n.id}">Analyser les designs gagnants</a>
+      <button id="fav">${n.favorite ? 'Retirer des favoris' : 'Ajouter aux favoris'}</button>
+      <button id="more">Ajouter des produits</button>
+      <label class="muted" style="display:flex;gap:var(--s2);align-items:center;margin:0"><input type="checkbox" id="hide" style="width:auto" ${hideOfficial ? 'checked' : ''}> Cacher les marques officielles</label>
+      <button id="csv">Export CSV</button>
+      <button class="danger" id="del">Supprimer la niche</button>
+    </div>
+    ${shown.length ? `<div class="table-wrap"><table><thead><tr>
+      <th data-k="title">Titre</th><th data-k="brand">Marque</th><th data-k="price">Prix</th><th data-k="bsr">BSR ↑</th><th data-k="est_monthly_sales">Ventes/mois (est.)</th><th data-k="reviews">Avis</th><th>Officielle</th><th>Analyse</th></tr></thead><tbody>
+      ${shown.map(p => `<tr>
+        <td class="clip">${p.product_url ? `<a href="${esc(p.product_url)}" target="_blank" rel="noopener">${esc(p.title)}</a>` : esc(p.title)}</td>
+        <td>${esc(p.brand || '—')}</td><td>${p.price != null ? p.price.toFixed(2) : '—'}</td><td>${fmt(p.bsr)}</td><td>${fmt(p.est_monthly_sales)}</td><td>${fmt(p.reviews)}</td>
+        <td><input type="checkbox" style="width:auto" data-off="${p.id}" ${p.is_official_brand ? 'checked' : ''} aria-label="Marque officielle"></td>
+        <td>${db.getAnalysis(p.id) ? '<span class="badge good">faite</span>' : '<span class="muted">—</span>'}</td></tr>`).join('')}
+    </tbody></table></div>` : `<div class="card empty">Aucun produit à afficher.</div>`}`;
+  app.querySelectorAll('th[data-k]').forEach(th => th.onclick = () => { niche.sort = th.dataset.k; niche(id); });
+  app.querySelectorAll('[data-off]').forEach(cb => cb.onchange = () => { db.updateProduct(cb.dataset.off, { is_official_brand: cb.checked }); refreshScore(id); niche(id); });
+  $('#hide').onchange = e => { niche.hide = e.target.checked; niche(id); };
+  $('#fav').onclick = () => { db.upsertNiche({ id, favorite: !n.favorite }); niche(id); };
+  $('#more').onclick = () => { location.hash = '#/recherche'; setTimeout(() => { const k = $('#kw'); if (k) { k.value = n.name; $('#mp').value = n.marketplace; } }, 0); };
+  $('#csv').onclick = () => {
+    const head = ['title', 'brand', 'price', 'bsr', 'est_monthly_sales', 'reviews', 'is_official_brand', 'product_url'];
+    const q = v => '"' + String(v ?? '').replace(/"/g, '""') + '"';
+    download(`niche-${n.name}.csv`, [head.join(','), ...prods.map(p => head.map(h => q(p[h])).join(','))].join('\n'), 'text/csv');
+  };
+  $('#del').onclick = () => { if (confirmBox('Supprimer cette niche ? Les produits restent dans les données.')) { db.deleteNiche(id); location.hash = '#/niches'; } };
+}
+
+// S07 — Analyse des designs gagnants
+const FIELDS = [
+  ['motif', 'Motif (ce que montre l\'illustration)'], ['motif_style', 'Style du motif (vintage, cartoon, line art, texte seul…)'],
+  ['design_text', 'Texte écrit sur le design'], ['font_style', 'Police (serif gras, script, distressed…)'],
+  ['layout', 'Placement (texte au-dessus, en dessous, en arc…)'], ['colors', 'Couleurs (séparées par des virgules)'],
+  ['combination', 'Comment motif et texte se répondent'], ['why_it_sells', 'Pourquoi ça se vend, à ton avis'],
+];
+function analyse(id) {
+  const n = db.getNiche(id); if (!n) { app.innerHTML = `<div class="card empty">Niche introuvable.</div>`; return; }
+  const prods = db.productsOfNiche(id).filter(p => !p.is_official_brand).sort((a, b) => (a.bsr ?? Infinity) - (b.bsr ?? Infinity)).slice(0, 20);
+  const done = db.analysesOfNiche(id); const common = commonPoints(done);
+  app.innerHTML = `
+    <p><a href="#/niche/${id}">← ${esc(n.name)}</a></p>
+    <h2>Designs gagnants : ${esc(n.name)}</h2>
+    <p class="lead">Les 20 meilleurs BSR (marques officielles exclues). Pour chacun, décris la recette : motif, texte, police, placement, couleurs. Claude peut remplir ces fiches pendant la routine POD.</p>
+    <div class="card">
+      <h3 style="margin-top:0">Ce qui revient chez les gagnants (${done.length} analysé${done.length > 1 ? 's' : ''})</h3>
+      ${done.length ? `<div class="grid">${Object.entries(common).map(([k, v]) => `<div><div class="muted">${labelOf(k)}</div><div class="tags">${v.length ? v.map(x => `<span>${esc(x[0])} ×${x[1]}</span>`).join('') : '<span>—</span>'}</div></div>`).join('')}</div>
+        <div class="row" style="margin-top:var(--s4)"><button class="primary" id="mk">Créer une fiche design à partir de ces points</button></div>`
+        : '<p class="muted">Analyse au moins 3 designs pour voir les points communs.</p>'}
+    </div>
+    ${prods.length ? prods.map(p => { const a = db.getAnalysis(p.id) || {}; return `
+      <details class="card" ${a.id ? '' : ''}>
+        <summary><strong>${esc(p.title)}</strong> · BSR ${fmt(p.bsr)} ${a.id ? '<span class="badge good">analysé</span>' : ''} ${p.product_url ? `· <a href="${esc(p.product_url)}" target="_blank" rel="noopener">voir le produit</a>` : ''}</summary>
+        <form data-p="${p.id}" style="margin-top:var(--s3)"><div class="grid">
+          ${FIELDS.map(([k, l]) => `<div><label for="${k}-${p.id}">${l}</label><input id="${k}-${p.id}" name="${k}" value="${esc(Array.isArray(a[k]) ? a[k].join(', ') : a[k] || '')}"></div>`).join('')}
+        </div><div class="row" style="margin-top:var(--s3)"><button class="primary">Enregistrer l'analyse</button></div></form>
+      </details>`; }).join('') : `<div class="card empty">Pas encore de produits dans cette niche.</div>`}`;
+  app.querySelectorAll('form[data-p]').forEach(f => f.onsubmit = e => {
+    e.preventDefault(); const fd = new FormData(f); const a = { product_id: f.dataset.p, niche_id: id };
+    FIELDS.forEach(([k]) => { const v = String(fd.get(k) || '').trim(); a[k] = k === 'colors' ? v.split(',').map(s => s.trim()).filter(Boolean) : v; });
+    db.saveAnalysis(a); toast('Analyse enregistrée'); analyse(id);
+  });
+  const mk = $('#mk'); if (mk) mk.onclick = () => {
+    const pick = k => (common[k][0] || [''])[0];
+    const b = db.saveBrief({ niche_id: id, idea: `Design pour la niche « ${n.name} »`, design_text: '', motif_style: pick('motif_style'), font_style: pick('font_style'), layout: pick('layout'), colors: common.colors.slice(0, 3).map(x => x[0]), motif: pick('motif'), keywords: n.keywords || [n.name] });
+    location.hash = '#/fiche/' + b.id;
+  };
+}
+function labelOf(k) { const f = FIELDS.find(x => x[0] === k); return f ? f[1].replace(/ \(.*\)/, '') : k; }
+function commonPoints(list) {
+  const keys = ['motif', 'motif_style', 'font_style', 'layout', 'colors'];
+  const out = {};
+  keys.forEach(k => {
+    const c = {};
+    list.forEach(a => (Array.isArray(a[k]) ? a[k] : [a[k]]).filter(Boolean).forEach(v => { const t = String(v).toLowerCase().trim(); c[t] = (c[t] || 0) + 1; }));
+    out[k] = Object.entries(c).sort((x, y) => y[1] - x[1]).slice(0, 5);
+  });
+  return out;
+}
+
+// Fiches design
+function briefCard(b) {
+  const n = b.niche_id && db.getNiche(b.niche_id);
+  const st = { draft: ['brouillon', 'warn'], ready: ['prête', ''], generated: ['générée', ''], published: ['publiée', 'good'], dropped: ['abandonnée', 'bad'] }[b.status] || ['?', ''];
+  return `<a class="card btn" style="text-align:left" href="#/fiche/${b.id}"><strong>${esc(b.design_text || b.idea)}</strong><br><span class="badge ${st[1]}">${st[0]}</span><div class="muted">${n ? esc(n.name) : 'sans niche'}</div></a>`;
+}
+function briefs() {
+  const list = db.listBriefs();
+  app.innerHTML = `<h2>Fiches design</h2><p class="lead">La recette de chaque design à créer, avec le prompt prêt pour Ideogram ou Gemini.</p>
+    <div class="row" style="margin-bottom:var(--s4)"><button class="primary" id="new">Nouvelle fiche</button></div>
+    ${list.length ? `<div class="grid">${list.map(briefCard).join('')}</div>` : `<div class="card empty">Aucune fiche. Crée-en une depuis l'analyse d'une niche.</div>`}`;
+  $('#new').onclick = () => { const b = db.saveBrief({ idea: 'Nouveau design' }); location.hash = '#/fiche/' + b.id; };
+}
+function buildPrompt(b) {
+  const colors = (b.colors || []).filter(Boolean).join(', ');
+  const parts = [
+    `T-shirt print design, ${b.motif_style || 'clean vector illustration'} style`,
+    b.motif ? `showing ${b.motif}` : '',
+    b.design_text ? `with the text "${b.design_text}" in ${b.font_style || 'bold, highly legible'} lettering` : '',
+    b.layout ? `layout: ${b.layout}` : '',
+    colors ? `limited color palette: ${colors}` : 'limited color palette',
+    'isolated on a plain solid background, centered, no mockup, no shirt, no frame, high contrast, crisp edges, print-ready',
+  ].filter(Boolean);
+  return parts.join(', ') + '.';
+}
+// S08 — Fiche design
+function brief(id) {
+  const b = db.getBrief(id); if (!b) { app.innerHTML = `<div class="card empty">Fiche introuvable. <a href="#/fiches">Retour</a></div>`; return; }
+  const ns = db.listNiches();
+  const val = k => esc(Array.isArray(b[k]) ? b[k].join(', ') : b[k] || '');
+  app.innerHTML = `
+    <p><a href="#/fiches">← Fiches design</a></p>
+    <h2>Fiche design</h2>
+    <form id="f" class="card"><div class="grid">
+      <div><label for="idea">Idée</label><input id="idea" name="idea" value="${val('idea')}"></div>
+      <div><label for="niche_id">Niche</label><select id="niche_id" name="niche_id"><option value="">—</option>${ns.map(n => `<option value="${n.id}" ${n.id === b.niche_id ? 'selected' : ''}>${esc(n.name)}</option>`).join('')}</select></div>
+      <div><label for="design_text">Texte du design</label><input id="design_text" name="design_text" value="${val('design_text')}" placeholder="le texte écrit sur le t-shirt"></div>
+      <div><label for="motif">Motif</label><input id="motif" name="motif" value="${val('motif')}"></div>
+      <div><label for="motif_style">Style du motif</label><input id="motif_style" name="motif_style" value="${val('motif_style')}"></div>
+      <div><label for="font_style">Police</label><input id="font_style" name="font_style" value="${val('font_style')}"></div>
+      <div><label for="layout">Placement</label><input id="layout" name="layout" value="${val('layout')}"></div>
+      <div><label for="colors">Couleurs</label><input id="colors" name="colors" value="${val('colors')}"></div>
+      <div><label for="keywords">Mots-clés du listing</label><input id="keywords" name="keywords" value="${val('keywords')}"></div>
+      <div><label for="generator">Générateur</label><select id="generator" name="generator">${['ideogram', 'gemini', 'fooocus', 'other'].map(g => `<option ${g === b.generator ? 'selected' : ''}>${g}</option>`).join('')}</select></div>
+      <div><label for="status">Statut</label><select id="status" name="status">${[['draft', 'brouillon'], ['ready', 'prête'], ['generated', 'générée'], ['published', 'publiée'], ['dropped', 'abandonnée']].map(([k, l]) => `<option value="${k}" ${k === b.status ? 'selected' : ''}>${l}</option>`).join('')}</select></div>
+    </div></form>
+    <div class="card">
+      <h3 style="margin-top:0">Prompt de génération</h3>
+      <pre class="prompt" id="prompt">${esc(b.prompt || buildPrompt(b))}</pre>
+      <div class="row">
+        <button class="primary" id="cp">Copier le prompt</button>
+        <a class="btn" href="https://ideogram.ai/" target="_blank" rel="noopener">Ouvrir Ideogram</a>
+        <a class="btn" href="https://gemini.google.com/" target="_blank" rel="noopener">Ouvrir Gemini</a>
+      </div>
+      <p class="muted">Méthode POD : Ideogram pour la base (surtout avec texte), Gemini pour un motif sans watermark visible. Texte, retouches et ajouts dans VectorCraft. Vérifie les marques avant de publier.</p>
+    </div>
+    <div class="row"><button class="danger" id="del">Supprimer la fiche</button><span class="muted" id="saved">Enregistré automatiquement</span></div>`;
+  const f = $('#f');
+  f.oninput = f.onchange = () => {
+    const fd = new FormData(f); const patch = { id };
+    for (const [k, v] of fd.entries()) patch[k] = (k === 'colors' || k === 'keywords') ? String(v).split(',').map(s => s.trim()).filter(Boolean) : String(v);
+    if (!patch.niche_id) patch.niche_id = null;
+    const nb = db.saveBrief(patch); nb.prompt = buildPrompt(nb); db.saveBrief({ id, prompt: nb.prompt });
+    $('#prompt').textContent = nb.prompt; $('#saved').textContent = 'Enregistré à ' + new Date().toLocaleTimeString('fr-FR');
+  };
+  $('#cp').onclick = () => copy($('#prompt').textContent);
+  $('#del').onclick = () => { if (confirmBox('Supprimer cette fiche ?')) { db.deleteBrief(id); location.hash = '#/fiches'; } };
+}
+
+// Données : sauvegarde / restauration
+function data() {
+  const d = load();
+  app.innerHTML = `<h2>Données</h2>
+    <p class="lead">Pour l'instant les données restent dans ce navigateur. Exporte une sauvegarde régulièrement. Le passage sur Supabase est prévu dès que le projet est choisi.</p>
+    <div class="card">
+      <p>${d.niches.length} niches · ${d.products.length} produits · ${d.analyses.length} analyses · ${d.briefs.length} fiches${d.savedAt ? ' · dernière sauvegarde ' + new Date(d.savedAt).toLocaleString('fr-FR') : ''}</p>
+      <div class="row">
+        <button class="primary" id="exp">Exporter une sauvegarde (JSON)</button>
+        <label class="btn" for="imp" style="margin:0">Restaurer une sauvegarde</label><input type="file" id="imp" accept=".json" hidden>
+        <button class="danger" id="wipe">Tout effacer</button>
+      </div>
+    </div>`;
+  $('#exp').onclick = () => download(`pod-studio-${new Date().toISOString().slice(0, 10)}.json`, db.exportAll(), 'application/json');
+  $('#imp').onchange = e => { const f = e.target.files[0]; if (!f) return; f.text().then(t => { try { const o = JSON.parse(t); if (!o.niches) throw 0; if (confirmBox('Remplacer les données actuelles par cette sauvegarde ?')) { db.importAll(o); toast('Sauvegarde restaurée'); data(); } } catch (err) { toast('Ce fichier n\'est pas une sauvegarde POD Studio'); } }); };
+  $('#wipe').onclick = () => { if (confirmBox('Tout effacer ? Exporte d\'abord une sauvegarde.')) { db.importAll(blank()); data(); } };
+}
+
+render();
+</script>
+</body>
+</html>

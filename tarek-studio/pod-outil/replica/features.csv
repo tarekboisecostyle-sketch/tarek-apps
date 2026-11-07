@@ -1,17 +1,17 @@
 feature,area,priority,original,clone,notes
-Recherche par mot-clé sur Amazon Merch (résultats Merch seulement),recherche,must,yes,no,Merch Informer Product Search / MerchPivot
-Filtres BSR prix avis date type de produit marketplace,recherche,must,yes,no,
-Ventes estimées à partir du BSR,recherche,must,yes,no,MerchRex / Merch Informer
+Recherche par mot-clé sur Amazon Merch (résultats Merch seulement),recherche,must,yes,partial,Merch Informer Product Search / MerchPivot | lien de recherche Amazon filtré Merch + collage ou import POD Radar ; pas de lecture automatique
+Filtres BSR prix avis date type de produit marketplace,recherche,must,yes,partial,tri par colonne et marketplace ; pas encore de filtres plage
+Ventes estimées à partir du BSR,recherche,must,yes,yes,MerchRex / Merch Informer | courbe approximative t-shirts US
 Fiche produit (titre marque ASIN prix BSR avis date),recherche,must,yes,no,
-Score de niche demande contre concurrence,niches,must,yes,no,Merch Hunter / MerchFlux ; formule à définir
+Score de niche demande contre concurrence,niches,must,yes,yes,"Merch Hunter / MerchFlux ; formule à définir | formule maison, marquée estimation"
 Suggestions de mots-clés Amazon (préfixes suffixes longue traîne),mots-clés,must,yes,no,MerchRex / MerchFlux autocomplete
-Exclure les marques officielles des résultats,recherche,must,yes,no,MerchFlux « hide brand » ; Merch Ninja « Official Brands »
+Exclure les marques officielles des résultats,recherche,must,yes,yes,MerchFlux « hide brand » ; Merch Ninja « Official Brands » | case à cocher par produit + filtre
 Vérification des marques déposées USPTO sur titre bullets et texte du design,marques,must,yes,no,Merch Titans trademark engine
 Alternatives proposées pour un mot à risque,marques,must,yes,no,Merch Titans swap automatique
-Analyse IA des designs gagnants (motif texte police placement couleurs combinaison),analyse,must,no,no,notre différence
-Résumé des points communs d'une niche (ce qui revient chez les gagnants),analyse,must,no,no,notre différence
-Fiche design avec prompt de génération,fiche,must,no,no,notre différence
-Favoris et export CSV,organisation,must,yes,no,Merch Informer Favorites
+Analyse IA des designs gagnants (motif texte police placement couleurs combinaison),analyse,must,no,partial,notre différence | fiche d analyse remplie à la main ou par Claude ; pas encore d analyse automatique
+Résumé des points communs d'une niche (ce qui revient chez les gagnants),analyse,must,no,yes,notre différence
+Fiche design avec prompt de génération,fiche,must,no,yes,notre différence | prompt Ideogram/Gemini automatique
+Favoris et export CSV,organisation,must,yes,partial,Merch Informer Favorites | favoris sur niches ; export CSV par niche
 Historique BSR en graphique,recherche,should,yes,no,MerchFlux
 Tendances du jour (Google Trends) et calendrier des événements,tendances,should,yes,no,MerchRex / Merch Informer Trend Hunter
 Recherche Etsy et Pinterest des niches et tags,tendances,should,yes,no,Merch Informer Social Hunter
@@ -19,7 +19,7 @@ Archives saisonnières des top ventes passées,tendances,should,yes,no,Merch Inf
 Listing généré par IA (titre bullets description) avec compteur de caractères,listing,should,yes,no,Merch Titans AI SEO
 Recherche Redbubble TeePublic Spreadshirt,recherche,should,partial,no,les références sont surtout Amazon
 Badge tendance sur les produits qui montent,recherche,should,yes,no,MerchFlux
-Lien vers génération d'image (Gemini Ideogram Fooocus) depuis la fiche,fiche,should,no,no,notre ajout
+Lien vers génération d'image (Gemini Ideogram Fooocus) depuis la fiche,fiche,should,no,yes,notre ajout
 Upload en masse multi-plateformes,upload,should,yes,no,Merch Titans ; déjà fait par la routine POD de Tarek dans son navigateur
 Recherche par vendeur (Merchant Search),recherche,could,yes,no,Merch Informer
 Competition Checker sur les mots-clés d'un listing,listing,could,yes,no,Merch Informer
@@ -31,7 +31,7 @@ Packs graphiques et polices sous licence,design,skip,yes,no,contenu sous licence
 Designer drag and drop intégré,design,skip,yes,no,Tarek génère avec l'IA et VectorCraft
 Communauté Facebook Discord et formation,communauté,skip,yes,no,c'est leur réseau pas une fonction
 Vraies ventes des concurrents,recherche,skip,no,no,Amazon ne les publie pas ; estimation par BSR seulement
-Garder le travail en cours si la page se coupe (sauvegarde automatique),stabilité,must,no,no,fix 2 : blocages et déconnexions (Capterra Merch Titans)
+Garder le travail en cours si la page se coupe (sauvegarde automatique),stabilité,must,no,yes,fix 2 : blocages et déconnexions (Capterra Merch Titans) | sauvegarde à chaque saisie dans le navigateur + export JSON
 Afficher la fiabilité des estimations de ventes,recherche,should,no,no,fix 4 : chiffres opaques
 Lien vers la fiche USPTO et filtre classe 025 dans la vérification des marques,marques,should,no,no,fix 5 : vérification basique chez Merch Informer
 Changer email et abonnement sans le support,compte,could,no,no,fix 6 : « cannot even change your email »

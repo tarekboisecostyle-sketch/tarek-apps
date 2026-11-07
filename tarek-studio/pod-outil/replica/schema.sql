@@ -101,6 +101,7 @@ create table pod_design_briefs (
   user_id uuid not null default auth.uid() references auth.users(id) on delete cascade,
   niche_id uuid references pod_niches(id) on delete set null,
   idea text not null,
+  motif text,
   design_text text,
   motif_style text,
   font_style text,
