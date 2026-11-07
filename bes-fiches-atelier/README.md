@@ -11,6 +11,12 @@ Application de production de BOIS ECO-STYLE : saisie des meubles (placards, cuis
 - **Électroménager** : un espace vide peut recevoir lave-vaisselle, machine à laver, réfrigérateur, cuisinière (bas) ou hotte, micro-ondes (haut) ; un caisson bas peut porter un évier ou une plaque de cuisson. Visible en 3D et nommé sur l'élévation 2D (rien dans le débit)
 - **Rendu client** (bouton dans la Vue 3D) : sol carrelé, mur, ombres, finition des façades (blanc, crème, chêne, noyer, gris brillant, noir, vert sauge) et du plan de travail (marbre, granit, chêne, béton, blanc) ; « Télécharger l'image » enregistre un PNG 2400 × 1500 à montrer au client ou à joindre au devis
 
+## Hauteurs par défaut, appareils encastrés, cuisine en L
+
+- Par défaut : caissons bas H 870 + plan de travail 30 = **900** ; dessous des hauts à **1500** du sol
+- **Appareil encastré** dans un compartiment « Étagères » : four (niche 600 × 600, à 900 du sol dans une colonne, sous le plan dans un bas), micro-ondes (390), hotte encastrée (180, en bas du caisson haut). Portes au-dessus / au-dessous et étagères de la niche calculées (débit juste). Modèles prêts : « Colonne avec four encastré », « Caisson bas avec four encastré », « Caisson haut avec hotte encastrée » ; la cuisine de départ en a déjà un de chaque
+- **Cuisine en L** : « Mur de ce caisson » = Mur A ou Mur B (retour en L), retour à gauche ou à droite du mur A, longueur du mur B. Élévation développée (Mur A puis Mur B, cotes par mur), 3D avec l'angle (mur B tourné de 90°, il commence devant les façades du mur A), plan de travail par mur, page « Vue 3D du projet » avec les deux murs
+
 ## Ensemble sur un mur
 
 Dans la barre « Produits du projet » :
