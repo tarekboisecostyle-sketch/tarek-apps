@@ -403,12 +403,12 @@ async function radar() {
         <td><button class="primary" data-go="${esc(x.mot_cle)}" data-n="${esc(x.niche)}" data-s="${x.score}">Analyser</button></td></tr>`).join('')}
     </tbody></table></div>` : ''}
     <div class="row" style="margin-top:var(--s4)"><label class="btn" for="rfile" style="margin:0">Importer radar_dernier.json</label><input type="file" id="rfile" accept=".json" hidden></div>
-    <p class="muted">« Analyser » crée (ou complète) la niche avec ce mot-clé et ouvre l'étape 2 pour lire les produits qui se vendent.</p>`;
+    <p class="muted">« Analyser » crée la niche avec ce mot-clé, l'envoie à Claude pour la prochaine routine POD, et ouvre l'étape 2 si tu veux la faire toi-même.</p>`;
   const rf = $('#rf'); if (rf) rf.onchange = e => { radar.filter = e.target.value; radar(); };
   app.querySelectorAll('[data-go]').forEach(b => b.onclick = () => {
     const n = db.upsertNiche({ name: b.dataset.n, marketplace: 'amazon_us' });
     const kws = new Set(n.keywords || []); kws.add(b.dataset.go);
-    db.upsertNiche({ id: n.id, keywords: [...kws], radar_score: Number(b.dataset.s) || null });
+    db.upsertNiche({ id: n.id, keywords: [...kws], radar_score: Number(b.dataset.s) || null, todo: true, todo_at: now() });
     search.prefill = b.dataset.go; location.hash = '#/recherche';
   });
   $('#rfile').onchange = e => {
@@ -421,12 +421,23 @@ async function radar() {
 function search() {
   app.innerHTML = `
     <h2>Rechercher</h2>
-    <p class="lead">Tape une niche ou un mot-clé, ouvre la recherche Amazon (vendeurs Merch seulement), puis colle les résultats ou importe un rapport POD Radar.</p>
+    <p class="lead">Deux façons de faire cette étape :</p>
+    <div class="card">
+      <strong>A. Laisser Claude chercher (le plus simple, marche depuis le téléphone)</strong>
+      <p class="muted">Écris le mot-clé et appuie sur « Envoyer à Claude ». La niche est ajoutée à sa liste : à la prochaine routine POD, Claude lit les produits sur Amazon, analyse les designs gagnants et remplit la niche et les fiches ici.</p>
+    </div>
+    <div class="card">
+      <strong>B. Le faire toi-même (sur PC)</strong>
+      <p class="muted">« Ouvrir sur Amazon » affiche les t-shirts Merch qui se vendent pour ce mot-clé. Copie les produits (titre, marque, prix, BSR, avis) dans un tableau Excel ou un fichier, puis colle-les plus bas et appuie sur « Ajouter à la niche ».</p>
+    </div>
     <div class="card">
       <div class="row">
         <div class="field"><label for="kw">Niche ou mot-clé</label><input id="kw" placeholder="ex. dog mom, fishing dad, sabr" autocomplete="off"></div>
         <div class="field" style="flex:0 1 180px"><label for="mp">Marketplace</label><select id="mp">${marketplaceOptions('amazon_us')}</select></div>
         <div class="field" style="flex:0 1 180px"><label for="rc">Nombre de résultats (optionnel)</label><input id="rc" inputmode="numeric" placeholder="ex. 3 200"></div>
+      </div>
+      <div class="row" style="margin-top:var(--s3)">
+        <button class="primary" id="todo">Envoyer à Claude</button>
         <button id="open">Ouvrir sur Amazon</button>
       </div>
       <p class="muted">Le lien filtre les t-shirts « novelty » vendus par Amazon (Merch). Le nombre de résultats sert au score de concurrence.</p>
@@ -443,6 +454,14 @@ function search() {
     </div>`;
   const kw = $('#kw'), mp = $('#mp');
   if (search.prefill) { kw.value = search.prefill; search.prefill = null; }
+  $('#todo').onclick = () => {
+    const name = kw.value.trim(); if (!name) { toast('Écris d\'abord un mot-clé'); kw.focus(); return; }
+    const n = db.upsertNiche({ name, marketplace: mp.value });
+    const kws = new Set(n.keywords || []); kws.add(name);
+    db.upsertNiche({ id: n.id, keywords: [...kws], todo: true, todo_at: now() });
+    toast('Envoyé à Claude : il analysera cette niche à la prochaine routine POD');
+    location.hash = '#/niches';
+  };
   $('#open').onclick = () => { if (!kw.value.trim()) { toast('Écris d\'abord un mot-clé'); kw.focus(); return; } window.open(amazonSearchUrl(kw.value.trim(), mp.value), '_blank', 'noopener'); };
   $('#paste').oninput = e => { const r = parsePasted(e.target.value); $('#preview').textContent = r.length ? `${r.length} produit(s) reconnu(s).` : ''; };
   $('#add').onclick = () => {
@@ -482,7 +501,7 @@ function niches() {
   const list = db.listNiches();
   app.innerHTML = `<h2>Niches</h2><p class="lead">Classées par score (estimation).</p>
     ${list.length ? `<div class="table-wrap"><table><thead><tr><th>Niche</th><th>Score</th><th>Produits</th><th>Analyses</th><th>Mise à jour</th></tr></thead><tbody>
-      ${list.map(n => `<tr><td><a href="#/niche/${n.id}">${esc(n.name)}</a> ${n.favorite ? '★' : ''}</td><td>${scoreBadge(n.score)}</td><td>${db.productsOfNiche(n.id).length}</td><td>${db.analysesOfNiche(n.id).length}</td><td class="muted">${new Date(n.updated_at).toLocaleDateString('fr-FR')}</td></tr>`).join('')}
+      ${list.map(n => `<tr><td><a href="#/niche/${n.id}">${esc(n.name)}</a> ${n.favorite ? '★' : ''} ${n.todo ? '<span class="badge warn">chez Claude</span>' : ''}</td><td>${scoreBadge(n.score)}</td><td>${db.productsOfNiche(n.id).length}</td><td>${db.analysesOfNiche(n.id).length}</td><td class="muted">${new Date(n.updated_at).toLocaleDateString('fr-FR')}</td></tr>`).join('')}
     </tbody></table></div>` : `<div class="card empty">Aucune niche. <a href="#/recherche">Lancer une recherche</a></div>`}`;
 }
 
