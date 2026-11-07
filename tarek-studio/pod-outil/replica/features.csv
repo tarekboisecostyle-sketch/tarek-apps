@@ -31,3 +31,7 @@ Packs graphiques et polices sous licence,design,skip,yes,no,contenu sous licence
 Designer drag and drop intégré,design,skip,yes,no,Tarek génère avec l'IA et VectorCraft
 Communauté Facebook Discord et formation,communauté,skip,yes,no,c'est leur réseau pas une fonction
 Vraies ventes des concurrents,recherche,skip,no,no,Amazon ne les publie pas ; estimation par BSR seulement
+Garder le travail en cours si la page se coupe (sauvegarde automatique),stabilité,must,no,no,fix 2 : blocages et déconnexions (Capterra Merch Titans)
+Afficher la fiabilité des estimations de ventes,recherche,should,no,no,fix 4 : chiffres opaques
+Lien vers la fiche USPTO et filtre classe 025 dans la vérification des marques,marques,should,no,no,fix 5 : vérification basique chez Merch Informer
+Changer email et abonnement sans le support,compte,could,no,no,fix 6 : « cannot even change your email »
