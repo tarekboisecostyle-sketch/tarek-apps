@@ -5,6 +5,10 @@ Application de production de BOIS ECO-STYLE : saisie des meubles (placards, cuis
 - Application : `index.html` (fichier unique, sans installation)
 - Enregistrement des projets : navigateur (local) et Supabase (table `fiches_projets`)
 
+## Liste d'achat
+
+Sous le plan de découpe, et en page imprimée « Liste d'achat » avec cases à cocher : nombre de plaques par matière et format, mètres de chant par matière (côtés chantés de chaque pièce + surlongueur par côté réglable, 30 mm par défaut, arrondi au mètre), quincaillerie.
+
 ## Vue 3D
 
 Onglet « Vue 3D » à côté du plan coté (Three.js, chargé depuis internet la première fois) : le caisson est construit avec le même calcul que la liste de débit.
