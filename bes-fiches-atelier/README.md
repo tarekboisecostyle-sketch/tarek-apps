@@ -16,6 +16,7 @@ Application de production de BOIS ECO-STYLE : saisie des meubles (placards, cuis
 - Par défaut : caissons bas H 870 + plan de travail 30 = **900** ; dessous des hauts à **1500** du sol
 - **Appareil encastré** dans un compartiment « Étagères » : four (niche 600 × 600, à 900 du sol dans une colonne, sous le plan dans un bas), micro-ondes (390), hotte encastrée (180, en bas du caisson haut). Portes au-dessus / au-dessous et étagères de la niche calculées (débit juste). Modèles prêts : « Colonne avec four encastré », « Caisson bas avec four encastré », « Caisson haut avec hotte encastrée » ; la cuisine de départ en a déjà un de chaque
 - **Cuisine en L** : « Mur de ce caisson » = Mur A ou Mur B (retour en L), retour à gauche ou à droite du mur A, longueur du mur B. Élévation développée (Mur A puis Mur B, cotes par mur), 3D avec l'angle (mur B tourné de 90°, il commence devant les façades du mur A), plan de travail par mur, page « Vue 3D du projet » avec les deux murs
+- **Angle en L** : pas d'espace vide, une **réglette d'angle** RG (bas et haut) entre les façades du mur A et le premier caisson du mur B. Largeur auto = porte + saillie des poignées + 2 mm (50 mm par défaut, réglable dans « Règles de l'atelier »), elle passe dans le débit, les plans de découpe, la 3D et l'élévation. Messages si la réglette tapée est trop petite, ou si le caisson du coin du mur A a sa façade cachée par le mur B (largeur conseillée du caisson d'angle)
 
 ## Ensemble sur un mur
 
