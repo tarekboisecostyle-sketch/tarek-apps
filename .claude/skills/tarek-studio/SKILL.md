@@ -63,4 +63,4 @@ Une fois les apps nécessaires construites et les ventes lancées : renforcer la
 
 | Dossier | Produit | Étape |
 |---|---|---|
-| `tarek-studio/pod-outil/` | Outil POD : trouver ce qui se vend, analyser les designs gagnants, générer gratuitement | recon fait, prochaine étape : entrepreneur |
+| `tarek-studio/pod-outil/` | Outil POD : trouver ce qui se vend, analyser les designs gagnants, générer gratuitement | recon, entrepreneur, architecture faits ; tranche verticale en ligne (pod-studio/) ; reste : marques, Supabase |
