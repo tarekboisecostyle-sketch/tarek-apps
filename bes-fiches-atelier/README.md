@@ -5,6 +5,12 @@ Application de production de BOIS ECO-STYLE : saisie des meubles (placards, cuis
 - Application : `index.html` (fichier unique, sans installation)
 - Enregistrement des projets : navigateur (local) et Supabase (table `fiches_projets`)
 
+## Cuisine : plan de travail, électroménager, rendu client
+
+- **Plan de travail** (30 mm, 20 mm devant les façades) dessiné en 3D au-dessus des caissons bas de la cuisine, coupé au droit d'un frigo ou d'une cuisinière ; longueur et profondeur dans la liste d'achat
+- **Électroménager** : un espace vide peut recevoir lave-vaisselle, machine à laver, réfrigérateur, cuisinière (bas) ou hotte, micro-ondes (haut) ; un caisson bas peut porter un évier ou une plaque de cuisson. Visible en 3D et nommé sur l'élévation 2D (rien dans le débit)
+- **Rendu client** (bouton dans la Vue 3D) : sol carrelé, mur, ombres, finition des façades (blanc, crème, chêne, noyer, gris brillant, noir, vert sauge) et du plan de travail (marbre, granit, chêne, béton, blanc) ; « Télécharger l'image » enregistre un PNG 2400 × 1500 à montrer au client ou à joindre au devis
+
 ## Ensemble sur un mur
 
 Dans la barre « Produits du projet » :
