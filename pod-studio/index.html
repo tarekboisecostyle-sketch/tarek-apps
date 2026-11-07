@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>POD Studio — TAREK STUDIO</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 <style>
   :root {
     --bg: #f6f5f2; --surface: #ffffff; --ink: #1d1d1b; --muted: #6b6a66; --line: #e3e1dc;
@@ -64,6 +65,8 @@
     <a href="#/fiches">Fiches design</a>
     <a href="#/donnees">Données</a>
   </nav>
+  <span class="muted" id="sync" style="margin-left:auto"></span>
+  <button id="logout" hidden>Déconnexion</button>
 </header>
 <main id="app" tabindex="-1"></main>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
@@ -88,6 +91,68 @@ function load() {
 function save() {
   mem.data.savedAt = new Date().toISOString();
   try { localStorage.setItem(KEY, JSON.stringify(mem.data)); } catch (e) { toast('Sauvegarde du navigateur impossible : exporte tes données.'); }
+  cloud.push();
+}
+
+/* =========================================================================
+   Cloud : Supabase (projet partagé avec Zwaq Vectorizer, tables pod_ séparées).
+   Une ligne pod_state par compte, historique des 200 dernières versions.
+   ========================================================================= */
+const SB_URL = 'https://gsxoxywecdscsxuehlgf.supabase.co';
+const SB_KEY = 'sb_publishable_kzPAjqPpWTnEuSKAwhXqzA_3McQdw-q';
+const cloud = {
+  sb: null, user: null, timer: null, ok: false,
+  status(t) { const el = document.getElementById('sync'); if (el) el.textContent = t; },
+  init() { try { this.sb = window.supabase.createClient(SB_URL, SB_KEY); } catch (e) { this.sb = null; } return this.sb; },
+  async session() { if (!this.sb) return null; const { data } = await this.sb.auth.getSession(); this.user = data.session ? data.session.user : null; return this.user; },
+  async pull() {
+    const { data, error } = await this.sb.from('pod_state').select('data, updated_at').eq('user_id', this.user.id).maybeSingle();
+    if (error) throw error;
+    const local = load();
+    const hasLocal = local.niches.length || local.products.length || local.briefs.length;
+    if (data && data.data && (!hasLocal || (data.data.savedAt || '') >= (local.savedAt || ''))) {
+      mem.data = Object.assign(blank(), data.data);
+      try { localStorage.setItem(KEY, JSON.stringify(mem.data)); } catch (e) {}
+    } else if (hasLocal) { this.ok = true; await this.flush(); }
+    this.ok = true; this.status('Enregistré dans le cloud');
+  },
+  push() { if (!this.ok || !this.user) return; this.status('Enregistrement…'); clearTimeout(this.timer); this.timer = setTimeout(() => this.flush(), 1200); },
+  async flush() {
+    const { error } = await this.sb.from('pod_state').upsert({ user_id: this.user.id, data: mem.data, device: navigator.userAgent.slice(0, 120), updated_at: new Date().toISOString() });
+    this.status(error ? 'Pas enregistré dans le cloud (gardé dans le navigateur)' : 'Enregistré dans le cloud à ' + new Date().toLocaleTimeString('fr-FR'));
+  },
+};
+function loginScreen(msg) {
+  document.querySelector('nav').hidden = true;
+  app.innerHTML = `<div class="card" style="max-width:420px;margin:var(--s6) auto">
+    <h2>Connexion</h2><p class="muted">POD Studio garde tes niches et tes fiches dans ton compte.</p>
+    ${msg ? `<p class="note">${esc(msg)}</p>` : ''}
+    <form id="lg"><label for="em">Email</label><input id="em" type="email" autocomplete="email" required>
+    <label for="pw" style="margin-top:var(--s3)">Mot de passe</label><input id="pw" type="password" autocomplete="current-password" minlength="8" required>
+    <div class="row" style="margin-top:var(--s4)"><button class="primary" name="in">Se connecter</button><button type="button" id="su">Créer mon compte</button></div></form></div>`;
+  const go = async signup => {
+    const email = $('#em').value.trim(), password = $('#pw').value;
+    if (!email || password.length < 8) { toast('Email et mot de passe de 8 caractères minimum'); return; }
+    const r = signup ? await cloud.sb.auth.signUp({ email, password, options: { emailRedirectTo: location.href.split('#')[0] } })
+                     : await cloud.sb.auth.signInWithPassword({ email, password });
+    if (r.error) { toast(r.error.message); return; }
+    if (signup && !r.data.session) { loginScreen('Compte créé. Ouvre le lien reçu par email pour le confirmer, puis connecte-toi.'); return; }
+    start();
+  };
+  $('#lg').onsubmit = e => { e.preventDefault(); go(false); };
+  $('#su').onclick = () => go(true);
+}
+async function start() {
+  if (!cloud.init()) { cloud.status('Hors ligne : données dans le navigateur'); render(); return; }
+  const user = await cloud.session();
+  if (!user) { loginScreen(); return; }
+  document.querySelector('nav').hidden = false;
+  const lo = document.getElementById('logout'); lo.hidden = false; lo.onclick = async () => { await cloud.sb.auth.signOut(); location.reload(); };
+  try { await cloud.pull(); }
+  catch (e) { cloud.status('Cloud indisponible : données dans le navigateur'); }
+  const { data: ok } = await cloud.sb.rpc('pod_autorise');
+  if (ok === false) { cloud.ok = false; cloud.status('Compte non autorisé pour POD Studio'); toast('Ce compte n\'a pas accès à POD Studio'); }
+  render();
 }
 const uid = () => (crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(36) + Math.random().toString(36).slice(2));
 const now = () => new Date().toISOString();
@@ -522,7 +587,7 @@ function brief(id) {
 function data() {
   const d = load();
   app.innerHTML = `<h2>Données</h2>
-    <p class="lead">Pour l'instant les données restent dans ce navigateur. Exporte une sauvegarde régulièrement. Le passage sur Supabase est prévu dès que le projet est choisi.</p>
+    <p class="lead">Tes données sont enregistrées dans ton compte (Supabase), avec une copie dans ce navigateur et les 200 dernières versions gardées. Tu peux aussi exporter une sauvegarde JSON.</p>
     <div class="card">
       <p>${d.niches.length} niches · ${d.products.length} produits · ${d.analyses.length} analyses · ${d.briefs.length} fiches${d.savedAt ? ' · dernière sauvegarde ' + new Date(d.savedAt).toLocaleString('fr-FR') : ''}</p>
       <div class="row">
@@ -536,7 +601,7 @@ function data() {
   $('#wipe').onclick = () => { if (confirmBox('Tout effacer ? Exporte d\'abord une sauvegarde.')) { db.importAll(blank()); data(); } };
 }
 
-render();
+start();
 </script>
 </body>
 </html>

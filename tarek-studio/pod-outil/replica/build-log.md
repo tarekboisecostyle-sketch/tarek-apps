@@ -11,3 +11,4 @@
 
 Tranche verticale testée de bout en bout (Playwright, 1440 px et 390 px) : collage de 12 produits → niche avec score →
 3 analyses → points communs → fiche design avec prompt. Aucune erreur console. Captures dans `clone-screens/`.
+| Cloud | 2026-11-07 | fait | — | projet Supabase partagé avec Zwaq Vectorizer, tables pod_state + historique, accès par liste d'emails (testé : email inconnu refusé) |

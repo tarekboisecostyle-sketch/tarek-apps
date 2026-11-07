@@ -21,10 +21,12 @@ pas de serveur à gérer : Claude peut tout lire et modifier (règle de Tarek).
 | paiement | aucun pour l'instant ; licence Gumroad pour la version à vendre | comme zwaq-vectorizer |
 | hébergement | GitHub Pages du dépôt tarek-apps ; dépôt séparé pour la version à vendre | règle du studio |
 
-**Décision à prendre par Tarek :** le compte Supabase gratuit permet 2 projets actifs, et il en a déjà 2
-(BES et zwaq-deco-vectorizer). Un 3e projet sera payant. Options : payer le projet, ou mettre POD Studio dans le
-projet zwaq-deco-vectorizer (pas BES) avec des tables `pod_`. En attendant, la tranche verticale garde ses
-données dans le navigateur avec export/import JSON, et passe sur Supabase dès que le projet est choisi.
+**Décision de Tarek (7 nov. 2026) :** POD Studio partage le projet Supabase de Zwaq Vectorizer
+(`gsxoxywecdscsxuehlgf`), avec ses propres tables `pod_`. BES n'est pas touché.
+Version 1 en ligne : une ligne `pod_state` (JSON) par compte, historique des 200 dernières versions
+(`pod_state_history`), accès limité aux emails de `pod_acces` (fonction `pod_autorise()`).
+Les tables détaillées de `schema.sql` restent la cible de la version 2 (quand Claude écrira les produits
+directement par SQL pendant la routine).
 
 ## Schema
 
