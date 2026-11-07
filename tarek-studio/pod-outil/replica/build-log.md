@@ -12,3 +12,4 @@
 Tranche verticale testée de bout en bout (Playwright, 1440 px et 390 px) : collage de 12 produits → niche avec score →
 3 analyses → points communs → fiche design avec prompt. Aucune erreur console. Captures dans `clone-screens/`.
 | Cloud | 2026-11-07 | fait | — | projet Supabase partagé avec Zwaq Vectorizer, tables pod_state + historique, accès par liste d'emails (testé : email inconnu refusé) |
+| S00 POD Radar | 2026-11-07 | fait | — | POD Radar (PC) envoie son rapport à Supabase via pod_radar_ingest (jeton privé dans pod_studio.cfg sur le PC, jamais dans GitHub) ; section 1 de POD Studio |

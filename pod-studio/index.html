@@ -14,6 +14,8 @@
     --f: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; --fs-s: 13px; --fs: 15px; --fs-l: 20px; --fs-xl: 26px;
   }
   * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
+  main:focus { outline: none; }
   body { margin: 0; font-family: var(--f); font-size: var(--fs); color: var(--ink); background: var(--bg); }
   header { display: flex; align-items: center; gap: var(--s4); padding: var(--s3) var(--s5); background: var(--surface); border-bottom: 1px solid var(--line); flex-wrap: wrap; }
   header h1 { font-size: var(--fs-l); margin: 0; }
@@ -59,10 +61,11 @@
 <header>
   <h1>POD <span>Studio</span></h1>
   <nav aria-label="Menu">
+    <a href="#/radar">1. POD Radar</a>
+    <a href="#/recherche">2. Rechercher</a>
+    <a href="#/niches">3. Niches</a>
+    <a href="#/fiches">4. Fiches design</a>
     <a href="#/">Accueil</a>
-    <a href="#/recherche">Rechercher</a>
-    <a href="#/niches">Niches</a>
-    <a href="#/fiches">Fiches design</a>
     <a href="#/donnees">Données</a>
   </nav>
   <span class="muted" id="sync" style="margin-left:auto"></span>
@@ -321,7 +324,7 @@ function amazonSearchUrl(kw, mp) {
    Écrans
    ========================================================================= */
 const routes = {
-  '': dashboard, 'recherche': search, 'niches': niches, 'niche': niche, 'analyse': analyse, 'fiches': briefs, 'fiche': brief, 'donnees': data,
+  '': dashboard, 'radar': radar, 'recherche': search, 'niches': niches, 'niche': niche, 'analyse': analyse, 'fiches': briefs, 'fiche': brief, 'donnees': data,
 };
 function render() {
   const [, name = '', id = '', sub = ''] = location.hash.split('/');
@@ -337,6 +340,8 @@ function dashboard() {
   app.innerHTML = `
     <h2>Accueil</h2>
     <p class="lead">Savoir quoi créer avant de créer : trouve ce qui se vend, comprends pourquoi, prépare la fiche du design.</p>
+    <div class="card"><strong>Le chemin :</strong> 1. POD Radar (ce que les gens cherchent) → 2. Rechercher (les produits qui se vendent) → 3. Niche et analyse des designs gagnants → 4. Fiche design et prompt.
+      <div class="row" style="margin-top:var(--s3)"><a class="btn primary" href="#/radar">Commencer par POD Radar</a></div></div>
     <div class="grid">
       <div class="card"><div class="muted">Niches suivies</div><div class="score">${d.niches.length}</div></div>
       <div class="card"><div class="muted">Produits lus</div><div class="score">${d.products.length}</div></div>
@@ -347,6 +352,69 @@ function dashboard() {
       : `<div class="card empty">Aucune niche pour l'instant.<br><br><a class="btn primary" href="#/recherche">Faire une première recherche</a></div>`}
     <h3>Fiches à créer</h3>
     ${todo.length ? `<div class="grid">${todo.slice(0, 6).map(briefCard).join('')}</div>` : `<div class="card empty">Pas de fiche en attente.</div>`}`;
+}
+
+// S00 — POD Radar : première étape. Les rapports arrivent tout seuls depuis POD Radar (PC de Tarek).
+async function radarReport() {
+  if (cloud.ok && cloud.sb) {
+    const { data, error } = await cloud.sb.from('pod_radar_reports').select('report_date, data, created_at').order('created_at', { ascending: false }).limit(1).maybeSingle();
+    if (!error && data) return { date: data.report_date, data: data.data, at: data.created_at, from: 'cloud' };
+  }
+  const local = load().radar;
+  return local ? { date: local.date, data: local, at: local.importedAt, from: 'local' } : null;
+}
+const RADAR_EVENTS = [
+  ['thanksgiving', '2026-11-26'], ['christmas', '2026-12-25'], ['new year', '2027-01-01'], ['valentines', '2027-02-14'],
+  ['ramadan', '2027-02-08'], ['eid', '2027-03-10'], ['st patricks', '2027-03-17'], ['easter', '2027-03-28'], ['mothers day', '2027-05-09'],
+  ['eid al adha', '2027-05-17'], ['graduation', '2027-05-25'], ['fathers day', '2027-06-20'], ['4th of july', '2027-07-04'],
+  ['back to school', '2027-08-15'], ['halloween', '2027-10-31'], ['thanksgiving', '2027-11-25'], ['christmas', '2027-12-25'],
+];
+function radarCalendar(rep) {
+  if (rep && Array.isArray(rep.calendrier) && rep.calendrier.length) return rep.calendrier;
+  const today = new Date(new Date().toISOString().slice(0, 10));
+  return RADAR_EVENTS.map(([e, d]) => { const dd = new Date(d); const jours = Math.round((dd - today) / 864e5); const pub = new Date(dd - 75 * 864e5); return { evenement: e, date: d, jours, publier_des: pub.toISOString().slice(0, 10) }; }).filter(x => x.jours >= 0 && x.jours <= 200);
+}
+async function radar() {
+  app.innerHTML = `<h2>1. POD Radar</h2><p class="lead">Chargement du dernier rapport…</p>`;
+  const r = await radarReport();
+  const rep = r ? r.data : null;
+  const TM_EXTRA = /\b(roblox|pacsun|osrs|runescape|minecraft|fortnite|disney|marvel|nfl|nba|pokemon|barbie|shein|temu)\b/i;
+  const rows = rep && Array.isArray(rep.top) ? rep.top.filter(x => !x.marque && !TM_EXTRA.test(x.mot_cle)) : [];
+  const nicheList = [...new Set(rows.map(x => x.niche))];
+  const f = radar.filter || '';
+  const shown = f ? rows.filter(x => x.niche === f) : rows;
+  const today = new Date().toISOString().slice(0, 10);
+  const cal = radarCalendar(rep);
+  app.innerHTML = `
+    <h2>1. POD Radar</h2>
+    <p class="lead">Ce que les gens tapent en ce moment sur Amazon et Google autour de tes niches. C'est le point de départ : choisis un mot-clé, puis vérifie les produits qui se vendent.</p>
+    ${r ? `<p class="muted">Rapport du ${new Date(r.date).toLocaleDateString('fr-FR')} · ${rows.length} mots-clés sans marque · ${r.from === 'cloud' ? 'envoyé automatiquement par POD Radar' : 'importé à la main'}</p>`
+        : `<div class="card empty">Aucun rapport pour l'instant. POD Radar envoie son rapport ici chaque fois qu'il tourne sur ton PC (tous les jours à 13h20).<br><br>Tu peux aussi importer <code>radar_dernier.json</code> à la main ci-dessous.</div>`}
+    <div class="card">
+      <h3 style="margin-top:0">Quand publier</h3>
+      <div class="tags">${cal.map(c => `<span>${esc(c.evenement)} · dans ${c.jours} j · ${c.publier_des <= today ? '<strong>publier maintenant</strong>' : 'à partir du ' + new Date(c.publier_des).toLocaleDateString('fr-FR')}</span>`).join('')}</div>
+    </div>
+    ${rows.length ? `
+    <div class="row" style="margin-bottom:var(--s3)">
+      <div class="field" style="flex:0 1 240px"><label for="rf">Niche</label><select id="rf"><option value="">Toutes (${rows.length})</option>${nicheList.map(n => `<option ${n === f ? 'selected' : ''}>${esc(n)}</option>`).join('')}</select></div>
+    </div>
+    <div class="table-wrap"><table><thead><tr><th>#</th><th>Mot-clé</th><th>Niche</th><th>Score</th><th>Vu</th><th>Google</th><th>Événement</th><th></th></tr></thead><tbody>
+      ${shown.map((x, i) => `<tr><td>${i + 1}</td><td><strong>${esc(x.mot_cle)}</strong></td><td>${esc(x.niche)}</td><td>${fmt(x.score)}</td><td>${fmt(x.vu)}</td><td>${x.google ? 'oui' : ''}</td><td>${esc(x.evenement || '')}</td>
+        <td><button class="primary" data-go="${esc(x.mot_cle)}" data-n="${esc(x.niche)}" data-s="${x.score}">Analyser</button></td></tr>`).join('')}
+    </tbody></table></div>` : ''}
+    <div class="row" style="margin-top:var(--s4)"><label class="btn" for="rfile" style="margin:0">Importer radar_dernier.json</label><input type="file" id="rfile" accept=".json" hidden></div>
+    <p class="muted">« Analyser » crée (ou complète) la niche avec ce mot-clé et ouvre l'étape 2 pour lire les produits qui se vendent.</p>`;
+  const rf = $('#rf'); if (rf) rf.onchange = e => { radar.filter = e.target.value; radar(); };
+  app.querySelectorAll('[data-go]').forEach(b => b.onclick = () => {
+    const n = db.upsertNiche({ name: b.dataset.n, marketplace: 'amazon_us' });
+    const kws = new Set(n.keywords || []); kws.add(b.dataset.go);
+    db.upsertNiche({ id: n.id, keywords: [...kws], radar_score: Number(b.dataset.s) || null });
+    search.prefill = b.dataset.go; location.hash = '#/recherche';
+  });
+  $('#rfile').onchange = e => {
+    const file = e.target.files[0]; if (!file) return;
+    file.text().then(t => { try { const o = JSON.parse(t); if (!Array.isArray(o.top)) throw 0; o.importedAt = now(); load().radar = o; save(); toast('Rapport importé'); radar(); } catch (err) { toast('Ce fichier n\'est pas un rapport POD Radar'); } });
+  };
 }
 
 // S02 — Recherche
@@ -374,6 +442,7 @@ function search() {
       <p class="muted" id="preview"></p>
     </div>`;
   const kw = $('#kw'), mp = $('#mp');
+  if (search.prefill) { kw.value = search.prefill; search.prefill = null; }
   $('#open').onclick = () => { if (!kw.value.trim()) { toast('Écris d\'abord un mot-clé'); kw.focus(); return; } window.open(amazonSearchUrl(kw.value.trim(), mp.value), '_blank', 'noopener'); };
   $('#paste').oninput = e => { const r = parsePasted(e.target.value); $('#preview').textContent = r.length ? `${r.length} produit(s) reconnu(s).` : ''; };
   $('#add').onclick = () => {
