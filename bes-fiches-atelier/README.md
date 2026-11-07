@@ -18,6 +18,12 @@ Application de production de BOIS ECO-STYLE : saisie des meubles (placards, cuis
 - **Cuisine en L** : « Mur de ce caisson » = Mur A ou Mur B (retour en L), retour à gauche ou à droite du mur A, longueur du mur B. Élévation développée (Mur A puis Mur B, cotes par mur), 3D avec l'angle (mur B tourné de 90°, il commence devant les façades du mur A), plan de travail par mur, page « Vue 3D du projet » avec les deux murs
 - **Angle en L** : pas d'espace vide, une **réglette d'angle** RG (bas et haut) entre les façades du mur A et le premier caisson du mur B. Largeur auto = porte + saillie des poignées + 2 mm (50 mm par défaut, réglable dans « Règles de l'atelier »), elle passe dans le débit, les plans de découpe, la 3D et l'élévation. Messages si la réglette tapée est trop petite, ou si le caisson du coin du mur A a sa façade cachée par le mur B (largeur conseillée du caisson d'angle)
 
+## Gola, push, caisson au-dessus d'un appareil, joues de finition
+
+- **Prise des portes** (Règles de l'atelier) : caissons bas en **Gola** par défaut (façades 30 mm plus basses que le caisson = profil L, 30 mm entre façades de tiroirs = profil C) ; caissons hauts en **push / touch-latch**. Quincaillerie : longueurs de profil Gola L et C (mm), nombre de push. Sans poignée, la réglette d'angle minimum passe à 20 mm
+- **Caisson au-dessus d'un appareil** (machine à laver, petit frigo) : sélectionner l'espace vide de l'appareil puis « Ajouter → Caisson au-dessus d'un appareil » : il se pose dessus à 90 cm du sol (l'espace passe à 900), le plan de travail s'arrête à cet endroit
+- **Joue de finition** (cache-côté, couleur des façades) : réglage par caisson (gauche, droite, les deux). Elle descend jusqu'au sol pour un caisson bas ou posé sur un appareil, profondeur = caisson + porte ; dans le débit (repère C6-J), la 3D, l'élévation et la longueur du mur
+
 ## Ensemble sur un mur
 
 Dans la barre « Produits du projet » :

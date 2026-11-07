@@ -483,7 +483,7 @@ tr.drow.on td{background:#ffe2c6;color:#121212}
       <label class="f">Ajouter
         <select id="kAddType">
           <optgroup label="Placard / dressing"><option value="placard">Placard complet · portes battantes</option><option value="placard-coul">Placard coulissant</option><option value="dressing">Dressing ouvert (sans portes)</option></optgroup>
-          <optgroup label="Cuisine"><option value="grp:cuisine">Cuisine complète · modèle de départ</option><option value="col-four">Colonne avec four encastré (60 × 60)</option><option value="bas-four">Caisson bas avec four encastré</option><option value="haut-hotte">Caisson haut avec hotte encastrée</option><option value="bas-porte">Caisson bas avec porte</option><option value="bas-tir">Caisson bas à tiroirs</option><option value="bas-mix">Caisson bas tiroir + porte</option><option value="bas-niche">Caisson bas ouvert / frigo</option><option value="haut">Caisson haut (mural)</option><option value="col">Colonne (2 portes)</option></optgroup>
+          <optgroup label="Cuisine"><option value="grp:cuisine">Cuisine complète · modèle de départ</option><option value="col-four">Colonne avec four encastré (60 × 60)</option><option value="bas-four">Caisson bas avec four encastré</option><option value="haut-hotte">Caisson haut avec hotte encastrée</option><option value="sur-app">Caisson au-dessus d'un appareil (dès 90 cm du sol)</option><option value="bas-porte">Caisson bas avec porte</option><option value="bas-tir">Caisson bas à tiroirs</option><option value="bas-mix">Caisson bas tiroir + porte</option><option value="bas-niche">Caisson bas ouvert / frigo</option><option value="haut">Caisson haut (mural)</option><option value="col">Colonne (2 portes)</option></optgroup>
           <optgroup label="Meuble TV / bibliothèque"><option value="grp:tv">Meuble TV avec habillage · modèle</option><option value="tv-susp">Meuble TV suspendu seul</option><option value="biblio">Bibliothèque</option><option value="etag-ouv">Étagère ouverte</option></optgroup>
           <optgroup label="Salle de bain"><option value="vasque">Meuble vasque suspendu</option></optgroup>
           <optgroup label="Habillage"><option value="panneau">Panneau d'habillage mural (derrière TV, tête de lit…)</option><option value="joue">Joue de côté (flanc de meuble)</option><option value="fileur">Fileur (bande de finition contre le mur)</option><option value="tablette">Tablette murale</option></optgroup>
@@ -544,6 +544,9 @@ tr.drow.on td{background:#ffe2c6;color:#121212}
           </label>
           <label class="f">Position X (depuis la gauche)<span class="unit"><input id="inX" type="number" step="10" placeholder="auto"></span></label>
           <label class="f">Position Y (dessous, depuis le sol)<span class="unit"><input id="inY" type="number" step="10" placeholder="auto"></span></label>
+        </div>
+        <div class="grid2" id="joueRow" hidden>
+          <label class="f">Joue de finition (cache-côté couleur façade)<select id="inJoue"><option value="">Aucune</option><option value="g">Côté gauche</option><option value="d">Côté droit</option><option value="gd">Les deux côtés</option></select></label>
         </div>
         <div class="grid2" id="wallRow" hidden>
           <label class="f">Mur de ce caisson<select id="inWall"><option value="">Mur A (principal)</option><option value="B">Mur B (retour en L)</option></select></label>
@@ -647,7 +650,11 @@ tr.drow.on td{background:#ffe2c6;color:#121212}
           <label class="f">Trait de scie<span class="unit"><input id="rKerf" type="number" step=".5" value="4"></span></label>
           <label class="f">Délignage des bords de plaque<span class="unit"><input id="rTrim" type="number" step="1" value="10"></span></label>
           <label class="f">Chant : surlongueur par côté chanté<span class="unit"><input id="rSurl" type="number" step="5" value="30"></span></label>
-          <label class="f">Cuisine en L : saillie des poignées (0 = sans poignée)<span class="unit"><input id="rPoign" type="number" step="5" value="30"></span></label>
+          <label class="f">Caissons bas : prise des portes<select id="rPriseB"><option value="gola" selected>Gola (profil L en haut, C entre tiroirs)</option><option value="poign">Poignées</option></select></label>
+          <label class="f">Caissons hauts : ouverture<select id="rPriseH"><option value="push" selected>Push / touch-latch (pression)</option><option value="poign">Poignées</option></select></label>
+          <label class="f">Gola L : façades plus basses que le caisson de<span class="unit"><input id="rGola" type="number" step="1" value="30"></span></label>
+          <label class="f">Gola C : espace entre façades de tiroirs<span class="unit"><input id="rGolaC" type="number" step="1" value="30"></span></label>
+          <label class="f">Saillie des poignées (si poignées)<span class="unit"><input id="rPoign" type="number" step="5" value="30"></span></label>
           <label class="f">Cuisine en L : largeur de la réglette d'angle<span class="unit"><input id="rRegl" type="number" step="5" placeholder="auto"></span></label>
           <label class="check"><input id="rFil" type="checkbox"> Décor avec sens (bois) : ne pas tourner les pièces</label>
         </div>
@@ -798,7 +805,7 @@ const T={
  rowbas:{fr:'Bas',ar:'تحتاني'}, vide:{fr:'Espace vide',ar:'فراغ'}, rowhaut:{fr:'Haut',ar:'فوقاني'}, rowcol:{fr:'Colonne',ar:'عمود'}, caissons:{fr:'Caissons',ar:'الخزانات'}, facs:{fr:'Façades (portes et tiroirs)',ar:'الواجهات (البيبان والتيروار)'}, strc:{fr:'Caissons, étagères et tiroirs',ar:'الخزانات والرفوف والتيروار'}, ptrav:{fr:'plan de travail',ar:'بلان دو ترافاي'}, caisson:{fr:'Caisson bas',ar:'خزانة سفلية'},
  ftir:{fr:'Façade tiroir',ar:'واجهة التيروار'}, tcote:{fr:'Côté tiroir',ar:'جنب التيروار'}, tav:{fr:'Avant / arrière tiroir',ar:'قدام / ورا التيروار'}, tfond:{fr:'Fond tiroir',ar:'قاع التيروار'},
  coul:{fr:'Coulisses (paires)',ar:'سكك التيروار (زوج)'}, pieds:{fr:'Pieds réglables',ar:'رجلين بلاستيك'}, railH:{fr:'Rail haut coulissant',ar:'سكة الفوق'}, railB:{fr:'Rail bas coulissant',ar:'سكة التحت'}, kitC:{fr:'Kits roulettes (1 / porte)',ar:'روايض (1 لكل باب)'}, poignC:{fr:'Poignées cuvette',ar:'مقابض مدفونة'}, tass:{fr:'Tasseaux',ar:'تاسو (حامل الرف)'}, noDed:{fr:'NE PAS DÉDUIRE LE CHANT : il est déjà déduit. Couper à la cote écrite.',ar:'لا تنقص السينتا: راه محسوب. قطع على المقاس المكتوب.'}, montantJ:{fr:'Séparation joint du dos',ar:'فاصل وصلة الظهر'}, rain:{fr:'rainure',ar:'مجرى (رينور)'}, nest:{fr:'Plan de découpe',ar:'مخطط التقطيع على الألواح'}, plaque:{fr:'Plaque',ar:'لوح'},
- rend:{fr:'Rendement',ar:'المردودية'}, app_lv:{fr:'Lave-vaisselle',ar:'غسالة الأواني'}, app_ml:{fr:'Machine à laver',ar:'غسالة الملابس'}, app_frigo:{fr:'Réfrigérateur',ar:'الثلاجة'}, app_cuis:{fr:'Cuisinière',ar:'الطباخة'}, app_hotte:{fr:'Hotte',ar:'الشفاط'}, app_mo:{fr:'Micro-ondes',ar:'الميكروند'}, app_four:{fr:'Four',ar:'الفرن'}, regl:{fr:"Réglette d'angle",ar:'ريكليت الزاوية'}, ptravA:{fr:'Plan de travail',ar:'بلان دو ترافاي'}, achat:{fr:"Liste d'achat",ar:'لائحة الشراء'}, plaques:{fr:'Plaques',ar:'الألواح'}, chantM:{fr:'Chant (mètres, surlongueur comprise)',ar:'السينتا (بالمتر، مع الزيادة)'}, fmtP:{fr:'Format',ar:'القياس'}, nbP:{fr:'Pièces chantées',ar:'القطع اللي فيها السينتا'}, ok:{fr:'Pris',ar:'تاخذ'}, mont:{fr:'Montage en 3D',ar:'التركيب بالثلاثي الأبعاد'}, v3a:{fr:'Meuble monté (façades transparentes)',ar:'الأثاث مركب (الواجهات شفافة)'}, v3e:{fr:'Pièces écartées, sans façades : le numéro = la ligne de la liste de débit',ar:'القطع مفرقة بلا واجهات: الرقم = السطر في لائحة التقطيع'}, v3p:{fr:'Vue 3D du projet',ar:'الرسم الثلاثي الأبعاد'}, avis:{fr:'Votre avis sur la fiche',ar:'رأيكم في ورقة الورشة'}, pend:{fr:'Penderie',ar:'شماعة'}, total:{fr:'Total pièces',ar:'مجموع القطع'}
+ rend:{fr:'Rendement',ar:'المردودية'}, app_lv:{fr:'Lave-vaisselle',ar:'غسالة الأواني'}, app_ml:{fr:'Machine à laver',ar:'غسالة الملابس'}, app_frigo:{fr:'Réfrigérateur',ar:'الثلاجة'}, app_cuis:{fr:'Cuisinière',ar:'الطباخة'}, app_hotte:{fr:'Hotte',ar:'الشفاط'}, app_mo:{fr:'Micro-ondes',ar:'الميكروند'}, app_four:{fr:'Four',ar:'الفرن'}, golaL:{fr:'Profil Gola L (mm)',ar:'بروفيل ݣولا L (مم)'}, golaC:{fr:'Profil Gola C (mm)',ar:'بروفيل ݣولا C (مم)'}, push:{fr:'Push / touch-latch (ouverture par pression)',ar:'پوش (كيتحل بالضغط)'}, regl:{fr:"Réglette d'angle",ar:'ريكليت الزاوية'}, ptravA:{fr:'Plan de travail',ar:'بلان دو ترافاي'}, achat:{fr:"Liste d'achat",ar:'لائحة الشراء'}, plaques:{fr:'Plaques',ar:'الألواح'}, chantM:{fr:'Chant (mètres, surlongueur comprise)',ar:'السينتا (بالمتر، مع الزيادة)'}, fmtP:{fr:'Format',ar:'القياس'}, nbP:{fr:'Pièces chantées',ar:'القطع اللي فيها السينتا'}, ok:{fr:'Pris',ar:'تاخذ'}, mont:{fr:'Montage en 3D',ar:'التركيب بالثلاثي الأبعاد'}, v3a:{fr:'Meuble monté (façades transparentes)',ar:'الأثاث مركب (الواجهات شفافة)'}, v3e:{fr:'Pièces écartées, sans façades : le numéro = la ligne de la liste de débit',ar:'القطع مفرقة بلا واجهات: الرقم = السطر في لائحة التقطيع'}, v3p:{fr:'Vue 3D du projet',ar:'الرسم الثلاثي الأبعاد'}, avis:{fr:'Votre avis sur la fiche',ar:'رأيكم في ورقة الورشة'}, pend:{fr:'Penderie',ar:'شماعة'}, total:{fr:'Total pièces',ar:'مجموع القطع'}
 };
 /* remplacées par le module 3D plus bas (images 3D de la fiche) */
 var snapImg=()=>'',snapHas=()=>false,montBody=()=>'';
@@ -826,7 +833,7 @@ function read(){
    $('#hHint').textContent=b==='pieds'?'H = hauteur totale avec les pieds, sans le plan de travail. Les côtés font H − hauteur des pieds.':b==='socle'?'H = hauteur totale. Les côtés descendent jusqu\'au sol.':'H = hauteur totale, le dessous est posé au sol.';}
   Object.assign(S,{L:v('inL'),H:v('inH'),P:v('inP'),socle:Math.max(0,v('inSocle')),base:$('#inBase').value,doors:$('#inDoors').value,nc:+$('#inNc').value,plinthe:$('#inPlinthe').checked,q:Math.max(1,v('inQ')),
     chantier:$('#inChantier').value,fix:$('#inFix').value,produit:$('#inProduit').value});
-  R={ep:v('rEp')||18,chant:+$('#rChant').value,ded:$('#rDed').checked,jp:v('rJp'),jj:v('rJj'),dosEp:+$('#inDosEp').value,dosMode:$('#inDosMode').value,dosPl:$('#inDosPl').value,rp:v('rRainP'),rr:v('rRainR'),ret:v('rRet'),kerf:v('rKerf'),icale:v('rIcale'),rail:v('rRail'),cmin:v('rCmin')||650,rec:v('rRec'),cded:v('rCded'),cj:v('rCj'),tH:v('rTh'),tF:+$('#rTf').value,trim:v('rTrim'),surl:document.getElementById('rSurl')?v('rSurl'):30,poign:document.getElementById('rPoign')?v('rPoign'):30,regl:document.getElementById('rRegl')?v('rRegl'):0,fil:$('#rFil').checked,matF:(($('#rMatF')||{}).value||'').trim(),sepF:!$('#rSepF')||$('#rSepF').checked};
+  R={ep:v('rEp')||18,chant:+$('#rChant').value,ded:$('#rDed').checked,jp:v('rJp'),jj:v('rJj'),dosEp:+$('#inDosEp').value,dosMode:$('#inDosMode').value,dosPl:$('#inDosPl').value,rp:v('rRainP'),rr:v('rRainR'),ret:v('rRet'),kerf:v('rKerf'),icale:v('rIcale'),rail:v('rRail'),cmin:v('rCmin')||650,rec:v('rRec'),cded:v('rCded'),cj:v('rCj'),tH:v('rTh'),tF:+$('#rTf').value,trim:v('rTrim'),surl:document.getElementById('rSurl')?v('rSurl'):30,poign:document.getElementById('rPoign')?v('rPoign'):30,priseB:($('#rPriseB')||{}).value||'gola',priseH:($('#rPriseH')||{}).value||'push',gola:document.getElementById('rGola')?v('rGola'):30,golaC:document.getElementById('rGolaC')?v('rGolaC'):30,regl:document.getElementById('rRegl')?v('rRegl'):0,fil:$('#rFil').checked,matF:(($('#rMatF')||{}).value||'').trim(),sepF:!$('#rSepF')||$('#rSepF').checked};
 }
 
 const plateOf=m=>{const dm=R.dosEp===3?'HDF 3':'MDF '+R.dosEp;if(m===dm&&R.dosEp<18&&R.dosPl)return R.dosPl.split('x').map(Number);return m==='HDF 3'?[2440,1220]:[2800,2100];};
@@ -873,7 +880,8 @@ function compute(){
   if(sc>0&&S.base==='socle'){add('plA',1,S.L-2*e,sc,{l1:1});add('plR',1,S.L-2*e,sc,{});}
   if(sc>0&&S.base==='pieds'&&S.plinthe)add('plA',1,S.L,sc-5,{l1:1});
   // façades : portes et tiroirs calés sur chaque compartiment
-  const fronts=[],fz=[],y0f=sc+R.jp,y1f=S.H-R.jp,Hp=y1f-y0f,drawers=[];
+  const gola=S.row==='bas'&&R.priseB==='gola'&&S.product!=='placard',jT=gola?R.golaC:R.jj;
+  const fronts=[],fz=[],y0f=sc+R.jp,y1f=S.H-R.jp-(gola?R.gola:0),Hp=y1f-y0f,drawers=[];
   const parseH=(spec,n)=>String(spec||'').split(/[;,\s]+/).filter(Boolean).slice(0,n).map(x=>parseFloat(x)>0?parseFloat(x):0);
   if(coul){const iw=S.L-2*e,n=S.nc>0?S.nc:Math.max(2,Math.floor((iw-R.rec)/(R.cmin-R.rec))),dw=(iw+(n-1)*R.rec)/n,dh=Hi-R.cded,y=sc+e+R.cded/2;
     for(let k=0;k<n;k++)fronts.push({type:'porte',slide:true,rail:k%2,x:e+k*(dw-R.rec),y,w:dw,h:dh,comp:-1});
@@ -890,7 +898,7 @@ function compute(){
     const z={floor:sc+e,ceil:S.H-e,shelf:null};
     let hs=[];
     if(nt>0){const t=parseH(c.th,nt);
-      if(dp===0){const tot=Hp-(nt-1)*R.jj,au=t.map((v,k)=>v?-1:k).filter(k=>k>=0);while(t.length<nt){t.push(0);au.push(t.length-1);}
+      if(dp===0){const tot=Hp-(nt-1)*jT,au=t.map((v,k)=>v?-1:k).filter(k=>k>=0);while(t.length<nt){t.push(0);au.push(t.length-1);}
         const fixedSum=t.reduce((a,b)=>a+b,0);const rest=au.length?(tot-fixedSum)/au.length:0;au.forEach(k=>t[k]=rest);
         if(!au.length&&Math.abs(fixedSum-tot)>.5){t[nt-1]+=tot-fixedSum;warns.push(`Compartiment ${i+1} : hauteurs de tiroirs ajustées, le dernier passe à ${fmt(t[nt-1])} mm.`);}}
       else while(t.length<nt)t.push(0);
@@ -927,9 +935,9 @@ function compute(){
       if(hb<200)warns.push(`Compartiment ${i+1} : la porte du bas ne fait que ${fmt(hb)} mm.`);
       if(!onShelf)z.split=y0f+hb+R.jj/2-e/2;fz.push(z);return;}
     let cur, doorB=y0f, doorT=y1f;
-    if(nt>0&&pos==='haut'){cur=y1f;hs.forEach((h,k)=>{fronts.push({type:'tiroir',x:fl,y:cur-h,w:fw,h,comp:i});drawers.push({comp:i,h});cur=cur-h-R.jj;});
+    if(nt>0&&pos==='haut'){cur=y1f;hs.forEach((h,k)=>{fronts.push({type:'tiroir',x:fl,y:cur-h,w:fw,h,comp:i});drawers.push({comp:i,h});cur=cur-h-jT;});
       doorT=cur;z.ceil=cur+R.jj/2;}
-    else if(nt>0){cur=y0f;[...hs].reverse().forEach((h,k)=>{fronts.push({type:'tiroir',x:fl,y:cur,w:fw,h,comp:i});drawers.push({comp:i,h});cur=cur+h+R.jj;});
+    else if(nt>0){cur=y0f;[...hs].reverse().forEach((h,k)=>{fronts.push({type:'tiroir',x:fl,y:cur,w:fw,h,comp:i});drawers.push({comp:i,h});cur=cur+h+jT;});
       doorB=cur;if(dp>0||c.type!=='etag'||c.n>0){z.shelf=cur-R.jj/2-e/2;z.floor=z.shelf+e;}}
     const dh=doorT-doorB;
     if(dp>0&&nt>0&&dh<200)warns.push(`Compartiment ${i+1} : il ne reste que ${fmt(dh)} mm pour les portes, les tiroirs sont trop hauts.`);
@@ -998,7 +1006,13 @@ function compute(){
   if(dr.length&&!coul){const nch=h=>h<=900?2:h<=1500?3:h<=2000?4:5,rl=dr.filter(f=>f.hinge==='T'),bt=dr.filter(f=>f.hinge!=='T');
     if(bt.length)acc.push({k:'charn',v:bt.reduce((a,f)=>a+nch(f.h),0)*S.q,note:`2 à 5 / porte selon la hauteur`});
     if(rl.length){acc.push({k:'charn',v:rl.reduce((a,f)=>a+nch(f.w),0)*S.q,note:`portes relevables : en haut, selon la largeur`});acc.push({k:'verin',v:rl.length*2*S.q,note:`2 / porte relevable`});}}
-  if(fronts.length)acc.push({k:coul?'poignC':'poign',v:fronts.length*S.q});
+  const pushH=S.row==='haut'&&R.priseH==='push';
+  if(fronts.length){
+    if(gola){acc.push({k:'golaL',v:Math.round(S.L*S.q),note:'1 / caisson'});
+      let lc=0;S.comps.forEach((c,i)=>{const fs=fronts.filter(f=>f.comp===i&&!f.inner).sort((a,b)=>a.y-b.y);for(let k=1;k<fs.length;k++)if(fs[k].y-(fs[k-1].y+fs[k-1].h)>=jT-0.5)lc+=ws[i]+e;});
+      if(lc)acc.push({k:'golaC',v:Math.round(lc*S.q),note:'entre tiroirs'});}
+    else if(pushH)acc.push({k:'push',v:fronts.filter(f=>f.type==='porte').length*S.q,note:'1 / porte'});
+    else acc.push({k:coul?'poignC':'poign',v:fronts.length*S.q});}
   if(coul){acc.push({k:'railH',v:S.q,note:`${fmt(S.L-2*e)} mm`});acc.push({k:'railB',v:S.q,note:`${fmt(S.L-2*e)} mm`});acc.push({k:'kitC',v:fronts.length*S.q});}
   if(drawers.length)acc.push({k:'coul',v:drawers.length*S.q,note:`${cl} mm`});
   if(sc>0&&S.base==='pieds')acc.push({k:'pieds',v:(S.L<=1000?4:6)*S.q,note:`${fmt(sc)} mm`});
@@ -1300,6 +1314,7 @@ function render(){queueMicrotask(()=>{try{updRelBanner();}catch(e){}});
     W2=KIT.res.flatMap(rm=>rm.warns.map(w=>rm.m.rep+' : '+w));
     const am=new Map();KIT.res.forEach(rm=>rm.acc.forEach(a=>{const k=a.k+'|'+(a.note||'');const o=am.get(k)||{k:a.k,note:a.note,v:0};o.v+=a.v;am.set(k,o);}));A2=[...am.values()];
     KIT.pos=kitLayout(KIT.res);KIT.lc=null;if(typeof lCorner==='function'){const lc=lCorner();KIT.lc=lc;L2=L2.concat(lc.rows);W2=W2.concat(lc.warns);}
+    KIT.jo=null;if(typeof jouesCalc==='function'){const jo=jouesCalc();KIT.jo=jo;L2=L2.concat(jo.rows);}
     $('#kitBox').innerHTML=kitchenSVG(KIT.res,1000);renderKitList();if(typeof kitExtras==='function')kitExtras();
     {const cp=KIT.pos[KIT.cur];if(cp){$('#inX').placeholder=`auto (${fmt(cp.x)})`;$('#inY').placeholder=`auto (${fmt(cp.y)})`;}}}
   r.L2=L2;r.A2=A2;
@@ -1418,6 +1433,7 @@ const KPRE={
   'col':{row:'col',L:600,H:2200,P:560,base:'pieds',socle:100,comps:[{type:'etag',kind:'',n:4,hp:0,hc:350,dp:1,nt:0,split:1350}]},
   'col-four':{row:'col',L:600,H:2200,P:560,base:'pieds',socle:100,comps:[{type:'etag',kind:'',n:1,hp:0,hc:350,dp:1,nt:0,app:'four'}]},
   'bas-four':{row:'bas',L:600,H:870,P:560,base:'pieds',socle:100,comps:[{type:'etag',kind:'',n:0,hp:0,hc:350,dp:1,nt:0,app:'four'}]},
+  'sur-app':{row:'col',L:600,H:1300,P:560,base:'aucun',socle:0,y:900,comps:[{type:'etag',kind:'',n:2,hp:0,hc:350,dp:1,nt:0}]},
   'haut-hotte':{row:'haut',L:600,H:700,P:330,base:'aucun',socle:0,comps:[{type:'etag',kind:'',n:1,hp:0,hc:350,dp:1,nt:0,app:'hotte'}]},
   'placard':{type:'placard',row:'col',L:1200,H:2400,P:580,base:'socle',socle:100,doors:'battant',nc:2,comps:[{type:'pend',n:0,hp:0,hc:350,dp:2,nt:0},{type:'etag',kind:'',n:4,hp:0,hc:350,dp:2,nt:0}]},
   'etag-ouv':{row:'col',L:400,H:1800,P:300,base:'socle',socle:60,comps:[{type:'etag',kind:'',n:4,hp:0,hc:350,dp:0,nt:0}]},
@@ -1432,7 +1448,7 @@ const KPRE={
   'fileur':{type:'panneau',row:'bas',L:50,H:720,P:18,base:'aucun',socle:0,comps:[]},
   'vide-bas':{type:'vide',row:'bas',L:600,H:870,P:560,base:'socle',socle:0,plinthe:false,comps:[]},
   'vide-haut':{type:'vide',row:'haut',L:600,H:700,P:330,base:'aucun',socle:0,plinthe:false,comps:[]}};
-const COPYK=['bas-porte','bas-tir','bas-mix','bas-niche','haut','col','col-four','bas-four','haut-hotte'];
+const COPYK=['bas-porte','bas-tir','bas-mix','bas-niche','haut','col','col-four','bas-four','haut-hotte','sur-app'];
 const PANEL=['panneau','joue','tablette'],isPanel=m=>PANEL.includes(m.type),isVide=m=>m.type==='vide';
 const TYPE_LB={caisson:'Caisson',placard:'Placard',panneau:'Panneau habillage',joue:'Joue de côté',tablette:'Tablette',vide:'Espace vide'};
 let UID=1;const mkMod=(k,over={})=>{const p=JSON.parse(JSON.stringify(KPRE[k]));return Object.assign({type:'caisson',q:1,fix:'vis',plinthe:true,x:null,y:null,anchor:null,id:'m'+(UID++)},p,over);};
@@ -1456,7 +1472,7 @@ function snapModule(){if(!KIT)return;const m=KIT.mods[KIT.cur];if(!m)return;
   if(pv.startsWith('up:')||pv.startsWith('right:')){const [side,to]=pv.split(':');m.anchor={side,to};}else m.anchor=null;
   const libre=pv==='libre';
   Object.assign(m,{L:S.L,H:S.H,P:S.P,base:S.base,socle:S.socle,plinthe:S.plinthe,q:S.q,fix:S.fix,rep:S.produit||m.rep,row:$('#inRow').value,comps:S.comps,doors:S.doors,nc:S.nc,x:libre&&xv!==''?+xv:null,y:libre&&yv!==''?+yv:null});
-  if(!$('#appWrap').hidden)m.app=$('#inApp').value;if(!$('#topWrap').hidden)m.top=$('#inTop').value;if(!$('#wallRow').hidden)m.wall=$('#inWall').value==='B'?'B':'';}
+  if(!$('#appWrap').hidden)m.app=$('#inApp').value;if(!$('#topWrap').hidden)m.top=$('#inTop').value;if(!$('#wallRow').hidden)m.wall=$('#inWall').value==='B'?'B':'';if(!$('#joueRow').hidden)m.joue=$('#inJoue').value;}
 function loadModule(i){KIT.cur=i;const m=KIT.mods[i];
   $('#inL').value=m.L;$('#inH').value=m.H;$('#inP').value=m.P;$('#inBase').value=m.base;$('#inSocle').value=m.socle;$('#inPlinthe').checked=m.plinthe!==false;
   $('#inQ').value=m.q;$('#inFix').value=m.fix||'vis';$('#inProduit').value=m.rep;$('#inRow').value=m.row;S.comps=m.comps;
@@ -1465,7 +1481,7 @@ function loadModule(i){KIT.cur=i;const m=KIT.mods[i];
   const pn=isPanel(m)||isVide(m);['fsDos','fsEtag','fsComps','baseWrap','socWrap','plWrap','hHint'].forEach(id=>{const el=document.getElementById(id);if(el)el.hidden=pn;});
   $('#panelHint').hidden=!pn;$('#panelHint').textContent=m.type==='panneau'?'Panneau d\'habillage : seules L et H comptent (MDF 18, chant sur les 4 côtés).':m.type==='joue'?'Joue : seules P (largeur de la joue) et H comptent. Sur le dessin elle fait 18 mm de large.':m.type==='tablette'?'Tablette murale : seules L et P comptent. Sur le dessin elle fait 18 mm de haut.':m.type==='vide'?'Espace vide : seules la largeur L et la hauteur H comptent. Il sépare les caissons, aucune pièce à découper. Rangée Bas = au sol, Haut = à la hauteur des hauts.':'';
   {const vd=isVide(m),bas=!vd&&!isPanel(m)&&m.row==='bas'&&KIT.mode==='cuisine';$('#appWrap').hidden=!vd;$('#topWrap').hidden=!bas;$('#appRow').hidden=!vd&&!bas;
-   $('#inApp').value=m.app||'';$('#inTop').value=m.top||'';$('#wallRow').hidden=KIT.mode!=='cuisine';$('#inWall').value=m.wall==='B'?'B':'';
+   $('#inApp').value=m.app||'';$('#inTop').value=m.top||'';$('#wallRow').hidden=KIT.mode!=='cuisine';$('#inWall').value=m.wall==='B'?'B':'';$('#joueRow').hidden=vd||isPanel(m);$('#inJoue').value=m.joue||'';
    [...$('#inApp').options].forEach(o=>{o.hidden=!!o.value&&(m.row==='haut'?!['hotte','mo'].includes(o.value):['hotte','mo'].includes(o.value));});}
   renderComps();render();}
 function computePanel(m){const d=R.ded?R.chant:0,ch=m.type==='tablette'?{l1:1,w1:1,w2:1}:{l1:1,l2:1,w1:1,w2:1};
@@ -1479,8 +1495,8 @@ function computeVide(m){const W=620,Hh=380,s=Math.min((W-120)/Math.max(m.L,1),(H
   const svg=`<svg class="dw" viewBox="0 0 ${W} ${Hh}" xmlns="http://www.w3.org/2000/svg"><rect x="${x}" y="${y}" width="${w}" height="${hh}" fill="none" stroke="#121212" stroke-width="1.15" stroke-dasharray="6 5"/>
     <text class="ts" x="${W/2}" y="${y+hh/2+4}" text-anchor="middle">${lb('vide')}</text>${dimH(x,x+w,y+hh+40,y+hh,fmt(m.L))}${dimV(y+hh,y,x-40,x,fmt(m.H))}</svg>`;
   return {m,list:[],warns:[],acc:[],g:{fronts:[],comps:[]},panel:false,vide:true,svg,by:()=>null};}
-function computeModule(m){if(isPanel(m))return computePanel(m);if(isVide(m))return computeVide(m);const keys=['L','H','P','base','socle','plinthe','q','fix','produit','comps','product','doors','nc'],bak={};keys.forEach(k=>bak[k]=S[k]);
-  Object.assign(S,{L:m.L,H:m.H,P:m.P,base:m.base,socle:m.socle,plinthe:m.plinthe,q:m.q,fix:m.fix,produit:m.rep,comps:m.comps,product:m.type==='placard'?'placard':'caisson',doors:m.type==='placard'?(m.doors||'battant'):(m.doors==='relev'?'relev':'battant'),nc:m.nc??0});
+function computeModule(m){if(isPanel(m))return computePanel(m);if(isVide(m))return computeVide(m);const keys=['row','L','H','P','base','socle','plinthe','q','fix','produit','comps','product','doors','nc'],bak={};keys.forEach(k=>bak[k]=S[k]);
+  Object.assign(S,{row:m.row,L:m.L,H:m.H,P:m.P,base:m.base,socle:m.socle,plinthe:m.plinthe,q:m.q,fix:m.fix,produit:m.rep,comps:m.comps,product:m.type==='placard'?'placard':'caisson',doors:m.type==='placard'?(m.doors||'battant'):(m.doors==='relev'?'relev':'battant'),nc:m.nc??0});
   const r=compute();r.m=m;r.svg=overview(r,1000);keys.forEach(k=>S[k]=bak[k]);return r;}
 const rowLb=(row,l=LANG)=>lb(row==='haut'?'rowhaut':row==='col'?'rowcol':'rowbas',l);
 function modSummary(rm){if(rm.panel||rm.vide)return TYPE_LB[rm.m.type];const f=rm.g.fronts,np=f.filter(x=>x.type==='porte').length,nt=f.filter(x=>x.type==='tiroir').length;
@@ -1497,7 +1513,7 @@ function renderKitList(){fillPos();$('#kitList').innerHTML=KIT.mods.map((m,i)=>{
 /* cuisine en L : chaque mur est placé séparément ; en 2D le mur B est dessiné à droite du mur A (élévation développée) */
 const LGAP=700;
 /* réglette d'angle : épaisseur de la porte + saillie de la poignée + 2 mm de jeu (ou la largeur tapée) */
-const reglMin=()=>Math.ceil((R.ep||18)+(R.poign??30)+2),reglW=()=>R.regl>0?R.regl:reglMin();
+const handleP=()=>(R.priseB==='poign'||R.priseH==='poign')?(R.poign??30):0,reglMin=()=>Math.ceil((R.ep||18)+handleP()+2),reglW=()=>R.regl>0?R.regl:reglMin();
 function kitLayout(res){if(!res.some(rm=>rm.m.wall==='B'))return kitLayout1(res);
   const ia=[],ib=[];res.forEach((rm,i)=>(rm.m.wall==='B'?ib:ia).push(i));
   const pa=kitLayout1(ia.map(i=>res[i])),pb=kitLayout1(ib.map(i=>res[i])),TA=Math.max(0,...pa.filter(Boolean).map(p=>p.x+p.w)),pos=[];
@@ -1562,6 +1578,7 @@ function kitchenSVG(res,W=1000,lang=LANG,sel=true){
     el.filter(p=>p.w>=40&&!p.rm.panel).forEach(p=>out+=dimH(X(p.x),X(p.x+p.w),Y(p.y)+44,Y(p.y),fmt(p.w)));}}
   if(basH&&!pos.some(p=>p.y>0&&(!cuis||p.rm.m.row!=='haut')))out+=dimV(Y(basH),Y(0),X(0)-52,X(0),fmt(basH));
   const tall=Math.max(0,...pos.map(p=>p.y+p.h));if(tall>basH)out+=dimV(Y(tall),Y(0),X(0)-80,X(0),fmt(tall),'tb');
+  if(KIT&&KIT.jo)KIT.jo.geo.forEach(gq=>{const p=pos[gq.mod];if(!p)return;const w=Math.max(R.ep*s,2),x=gq.side==='g'?X(p.x)-w:X(p.x+p.w);out+=`<rect class="pf" x="${x}" y="${Y(gq.y1)}" width="${w}" height="${(gq.y1-gq.y0)*s}" style="fill:#d9cfbf"/>`;});
   if(KIT&&KIT.lc&&pos.some(p=>p&&p.wall==='B'))KIT.lc.geo.forEach(gq=>{const x=X(gq.x2),w=KIT.lc.w*s,y=Y(gq.y1),hh=(gq.y1-gq.y0)*s;out+=`<rect class="pf" x="${x}" y="${y}" width="${Math.max(w,2)}" height="${hh}" style="fill:#ffe9c7"/><text class="ts" transform="translate(${x+w/2+3} ${y+hh/2}) rotate(-90)" text-anchor="middle">RG-${gq.n} · ${fmt(KIT.lc.w)}</text>`;});
   pos.forEach(p=>{if(!p||!p.rm.g||!p.rm.g.comps)return;p.rm.g.comps.forEach(c=>{if(!c.app)return;const A=c.app,x=X(p.x+c.x),y=Y(p.y+A.yt),w=c.w*s,hh=(A.yt-A.yb)*s;if(w<20)return;out+=`<rect x="${x}" y="${y}" width="${w}" height="${hh}" fill="none" stroke="#121212" stroke-width="1" stroke-dasharray="5 4"/><text class="ts" x="${x+w/2}" y="${y+hh/2+4}" text-anchor="middle">${lb('app_'+A.type,lang)}</text>`;});});
   return `<svg class="dw" viewBox="0 0 ${W} ${Hs.toFixed(1)}" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Élévation">${out}</svg>`;}
@@ -1608,13 +1625,14 @@ $('#kAddBtn').addEventListener('click',()=>{const k=$('#kAddType').value;
     loadModule(base);pjMsg(k==='grp:cuisine'?'Cuisine complète ajoutée : colonne, 4 caissons bas et 3 hauts. Réglez chaque caisson dans la barre.':'Meuble TV avec habillage ajouté.');return;}
   const m=mkMod(k);m.k=k;m.rep=nextRep(m);
   const cur=KIT.mods[KIT.cur],cp=KIT.pos&&KIT.pos[KIT.cur],place=$('#kPlace').value;let at=KIT.mods.length;
-  if(cur&&cp&&place==='up'){m.anchor={side:'up',to:cur.id};if(m.type!=='joue')m.L=cp.w;if(!isPanel(m)&&!isPanel(cur))m.P=cur.P;if(m.type==='joue')m.P=cur.P;m.row=cur.row==='haut'?'haut':m.row;at=KIT.cur+1;}
+  if(cur&&cp&&(place==='up'||(k==='sur-app'&&isVide(cur)))){m.anchor={side:'up',to:cur.id};if(m.type!=='joue')m.L=cp.w;if(!isPanel(m)&&!isPanel(cur))m.P=cur.P;if(m.type==='joue')m.P=cur.P;m.row=cur.row==='haut'?'haut':m.row;at=KIT.cur+1;}
   else if(cur&&cp&&(cur.x!=null||cur.y!=null||cur.anchor)){m.anchor={side:'right',to:cur.id};if(!isPanel(m)&&!isPanel(cur)&&COPYK.includes(k))Object.assign(m,{H:cur.H,P:cur.P,base:cur.base,socle:cur.socle,plinthe:cur.plinthe});at=KIT.cur+1;}
   else if(cur&&cur.row===m.row&&!isPanel(cur)&&!isPanel(m)&&COPYK.includes(k)&&COPYK.includes(cur.k||'bas-porte')){Object.assign(m,{H:cur.H,P:cur.P,base:cur.base,socle:cur.socle,plinthe:cur.plinthe,y:cur.y});at=KIT.cur+1;}
   else if(cur&&!isPanel(m)){at=KIT.cur+1;}
   else if(m.row!=='haut'){const lh=KIT.mods.findIndex(x=>x.row==='haut');if(lh>=0)at=lh;}
   if(isVide(m)&&cur&&!isPanel(cur)&&!isVide(cur)&&cur.row===m.row&&place!=='up'){m.H=cur.H;m.P=cur.P;}
   if(m.type==='joue'&&cur&&!isPanel(cur)&&place!=='up'){m.H=cur.H;m.P=cur.P;if(cur.y)m.y=cur.y;}
+  if(k==='sur-app'&&cur&&isVide(cur)&&cur.H<900)cur.H=900;
   if(cur&&cur.wall==='B'&&!isPanel(m))m.wall='B';
   KIT.mods.splice(at,0,m);loadModule(at);});
 $('#inPos').addEventListener('change',e=>{if(e.target.value==='libre'){const cp=KIT.pos&&KIT.pos[KIT.cur];if(cp){if($('#inX').value==='')$('#inX').value=cp.x;if($('#inY').value==='')$('#inY').value=cp.y;}}});
@@ -1902,6 +1920,8 @@ function v3dParts(r,mod){
     if(t==='panneau')box('pan',p.key,0,L,0,H,0,e,'c');else if(t==='joue')box('pan',p.key,0,e,0,H,0,D.P,'c');else box('pan',p.key,0,L,0,e,0,D.P,'c');return P;}
   const g=r.g,dd=g.D,nc=g.comps.length,rail=g.rail||0;
   if(r.m&&r.m.top&&r.m.row==='bas')topParts(r.m,D,box,P,mod);
+  if(r.m&&r.m.row==='bas'&&R.priseB==='gola'&&r.m.type!=='placard'&&g.fronts.length){const gz=Math.max(20,R.gola),gcol={col:0x9a9fa5,metal:1};box('gl',null,0,L,H-gz-R.jp,H-1,6,26,'app',gcol);
+    const fs=g.fronts.filter(f=>!f.inner);g.comps.forEach((c,i)=>{const ff=fs.filter(f=>f.comp===i).sort((a,b)=>a.y-b.y);for(let k=1;k<ff.length;k++){const y0=ff[k-1].y+ff[k-1].h,y1=ff[k].y;if(y1-y0>=R.golaC-0.5)box('gc-'+i+'-'+k,null,c.x-e/2,c.x+c.w+e/2,y0,y1,6,26,'app',gcol);}});}
   const s0=D.base==='socle'?0:sc;
   box('cote-g','cote',0,e,s0,H,0,dd.Pc,'c',{comp:0});
   box('cote-d','cote',L-e,L,s0,H,0,dd.Pc,'c',{comp:nc-1});
@@ -1968,7 +1988,7 @@ function wtParts(sets,wl){const P=[];if(!KIT||KIT.mode!=='cuisine')return P;
   const bas=sets.filter(st=>st.r.m&&st.r.m.row==='bas'&&!st.r.panel&&!st.r.vide&&!(st.oy>0));if(!bas.length)return P;
   const H=Math.max(...bas.map(st=>st.r.m.H)),z1=Math.max(...bas.map(st=>(st.oz||0)+st.r.m.P)),z0=Math.min(...bas.map(st=>st.oz||0))-R.ep-WT.deb;
   let x0=Math.min(...bas.map(st=>st.ox||0)),x1=Math.max(...bas.map(st=>(st.ox||0)+st.r.m.L));
-  const cut=sets.filter(st=>st.r.vide&&st.r.m.row!=='haut'&&['frigo','cuis'].includes(st.r.m.app)).map(st=>[st.ox||0,(st.ox||0)+st.r.m.L]).sort((a,b)=>a[0]-b[0]);
+  const cut=sets.filter(st=>st.r.vide&&st.r.m.row!=='haut'&&(['frigo','cuis'].includes(st.r.m.app)||(KIT&&KIT.mods.some(o=>o.anchor&&o.anchor.side==='up'&&o.anchor.to===st.r.m.id)))).map(st=>[st.ox||0,(st.ox||0)+st.r.m.L]).sort((a,b)=>a[0]-b[0]);
   const segs=[];let a=x0;cut.forEach(([c0,c1])=>{if(c1<=a||c0>=x1)return;if(c0>a)segs.push([a,c0]);a=Math.max(a,c1);});if(a<x1)segs.push([a,x1]);
   segs.forEach(([s0,s1],i)=>P.push({id:'wt-'+(wl||'A')+'-'+i,key:null,x0:s0,x1:s1,y0:H,y1:H+WT.ep,z0,z1,kind:'top',ox:0,oy:0,oz:0,wt:1,len:s1-s0,prof:z1-z0}));
   return P;}
@@ -1986,14 +2006,25 @@ function lXf(p,G,tot){tot=tot||G.TotB;const left=G.side!=='d',X=zl=>left?G.maxPB
 function v3dAllParts(sets){const G=lGeo(sets),out=[];
   sets.forEach(st=>v3dParts(st.r,st.mod).forEach(p=>{p.ox=st.ox||0;p.oy=st.oy||0;p.oz=st.oz||0;p.res=st.r;if(G&&st.wall==='B')lXf(p,G,(st.r.m&&st.r.m.row==='haut'?G.endH:G.endL)||G.TotB);out.push(p);}));
   ['A','B'].forEach(wl=>{const ss=sets.filter(st=>(st.wall||'A')===wl);if(!ss.length||(wl==='B'&&!G))return;wtParts(ss,wl).forEach(p=>{p.res=null;if(wl==='B')lXf(p,G,G.endL||G.TotB);out.push(p);});});
+  if(KIT&&KIT.jo&&KIT.pos)KIT.jo.geo.forEach(gq=>{const st=sets.find(x=>x.mod===gq.mod);if(!st)return;const pp=KIT.pos[gq.mod],py=pp?pp.y:0,L=v3dDims(st.r).L,e=R.ep,x0=gq.side==='g'?-e:L;
+    const p={id:'jo-'+gq.mod+'-'+gq.side,key:'joue',x0,x1:x0+e,y0:gq.y0-py,y1:gq.y1-py,z0:-e,z1:gq.P,ox:st.ox||0,oy:st.oy||0,oz:st.oz||0,kind:'f',res:gq.res,mod:st.mod};
+    if(G&&st.wall==='B')lXf(p,G,(st.r.m&&st.r.m.row==='haut'?G.endH:G.endL)||G.TotB);out.push(p);});
   if(G&&KIT.lc&&KIT.lc.res)KIT.lc.geo.forEach(gq=>{const w=KIT.lc.w,tot=(gq.row==='haut'?G.endH:G.endL)||G.TotB,x0=G.side!=='d'?tot:-w,p={id:'rg-'+gq.n,key:'regl',x0,x1:x0+w,y0:gq.y0,y1:gq.y1,z0:-R.ep,z1:40,kind:'f',ox:0,oy:0,oz:G.maxPB-gq.P,res:KIT.lc.res,mod:null};lXf(p,G,tot);out.push(p);});
   return out;}
 /* (angle) */
 
+/* ---------- joues de finition (cache-côté couleur façade) ---------- */
+function jouesCalc(){const out={rows:[],geo:[]};if(!KIT||!KIT.pos)return out;const e=R.ep,d=R.ded?R.chant:0;
+  KIT.pos.forEach((p,i)=>{if(!p)return;const m=p.rm.m;if(!m.joue||p.rm.panel||p.rm.vide)return;const sides=m.joue==='gd'?['g','d']:[m.joue];
+    const y0=m.row==='haut'?p.y:0,y1=p.y+p.h,P=v3dDims(p.rm).P,h=y1-y0,w=P+e,rep=m.rep+'-J';
+    const row={key:'joue',qty:sides.length,Lf:h,Wf:w,Lc:h-d,Wc:w-d,ch:{l1:1,w1:1},mat:R.matF?'MDF 18 '+R.matF:'MDF 18',fil:true,n:1,rep,lab:rep,tq:sides.length*(m.q||1),fits:h<=2800};
+    out.rows.push(row);const res={list:[row],m:{rep,q:1}};sides.forEach(sd=>out.geo.push({mod:i,side:sd,y0,y1,P,res}));});
+  return out;}
+
 /* ---------- angle de la cuisine en L : réglette + caisson du coin ---------- */
 function lCorner(){const out={rows:[],warns:[],geo:[],w:reglW(),min:reglMin(),res:null};if(!lActive()||!KIT.res||!KIT.pos)return out;
   const e=R.ep,w=out.w,left=KIT.lside!=='d',pos=KIT.pos,real=p=>p&&!p.rm.panel&&!p.rm.vide;
-  if(R.regl>0&&R.regl<out.min)out.warns.push(`Angle en L : réglette de ${fmt(R.regl)} mm, il faut au moins ${out.min} mm pour que les portes des côtés A et B s'ouvrent (porte ${fmt(e)} + poignée ${fmt(R.poign??30)} + jeu 2).`);
+  if(R.regl>0&&R.regl<out.min)out.warns.push(`Angle en L : réglette de ${fmt(R.regl)} mm, il faut au moins ${out.min} mm pour que les portes des côtés A et B s'ouvrent (porte ${fmt(e)} + poignée ${fmt(handleP())} + jeu 2).`);
   const B=pos.filter(p=>real(p)&&p.wall==='B'),A=pos.filter(p=>real(p)&&p.wall!=='B');if(!B.length||!A.length)return out;
   const TA=Math.max(...pos.filter(p=>p&&p.wall!=='B').map(p=>p.xw+p.w)),TotB=Math.max(...pos.filter(p=>p&&p.wall==='B').map(p=>p.xw+p.w));
   const corner=arr=>arr.length?(left?arr.reduce((a,b)=>b.xw+b.w>a.xw+a.w?b:a):arr.reduce((a,b)=>b.xw<a.xw?b:a)):null;
@@ -2144,6 +2175,7 @@ function v3dInfo(){
 function v3dFields(p){
   const i=p.comp,L=[['inL','Largeur L du meuble (mm)'],['inH','Hauteur H (mm)'],['inP','Profondeur P (mm)']],c=S.comps[i]||{},out=[];
   const add=(id,lab)=>{if(document.getElementById(id))out.push([id,lab]);};
+  if(String(p.id).includes('jo-')){add('inJoue','Joue de finition (côtés)');add('rMatF','Matière des façades');return out;}
   switch(p.key){
     case 'cote':case 'dessus':case 'dessous':L.forEach(f=>add(...f));add('inBase','Sous le meuble');break;
     case 'plA':case 'plR':add('inSocle','Hauteur du dessous / socle (mm)');add('inBase','Sous le meuble');add('inL','Largeur L du meuble (mm)');break;
@@ -2276,7 +2308,7 @@ function kitExtras(){if(!KIT)return;KIT.msel=KIT.msel||new Set();
   const wi=$('#kWall');if(document.activeElement!==wi)wi.value=KIT.wall||'';
   const hasB=KIT.mode==='cuisine'&&KIT.mods.some(m=>m.wall==='B');$('#kWallBW').hidden=!hasB;$('#kLsideW').hidden=!hasB;$('#kLside').value=KIT.lside||'g';
   {const wb=$('#kWallB');if(document.activeElement!==wb)wb.value=KIT.wallB||'';}
-  if(!zone){const sum=a=>a.reduce((t,m)=>t+(+m.L||0)*(+m.q||1),0);
+  if(!zone){const sum=a=>a.reduce((t,m)=>t+((+m.L||0)+(m.joue==='gd'?2:m.joue?1:0)*R.ep)*(+m.q||1),0);
     const block=(L,wl,title)=>{const mods=KIT.mods.filter(m=>(!isPanel(m)||m.type==='vide')&&(wl==='B'?m.wall==='B':m.wall!=='B')),bas=mods.filter(m=>m.row!=='haut'),haut=mods.filter(m=>m.row==='haut'),suf=wl==='B'?':B':'';
       if(!(L>0))return title?`<div class="zbl"><b>${title}</b> <span class="hint">tapez la longueur du mur B</span></div>`:'';
       const rg=wl==='B'&&KIT.lc?KIT.lc.geo:[];
