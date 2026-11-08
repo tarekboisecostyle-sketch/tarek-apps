@@ -808,11 +808,28 @@ function kdpFit(img, box) {
 }
 
 /* ---------- Intérieur PDF ---------- */
-function kdpNeedPdf() { if (!window.jspdf) { toast('Bibliothèque PDF pas encore chargée, réessaie dans 2 secondes'); return false; } return true; }
+function kdpNeedPdf() { if (!window.jspdf) { toast('Bibliothèque PDF pas encore chargée, réessaie dans 2 secondes'); return false; } if (!kdpFonts.data) { toast('Polices en cours de chargement, réessaie dans 2 secondes'); kdpLoadFonts(); return false; } return true; }
+/* Polices intégrées au PDF (KDP refuse les polices non incorporées) : DejaVu Sans, licence libre */
+const kdpFonts = { data: null, loading: null };
+function kdpLoadFonts() {
+  if (kdpFonts.data || kdpFonts.loading) return kdpFonts.loading;
+  const b64 = buf => { let s = ''; const a = new Uint8Array(buf); for (let i = 0; i < a.length; i += 0x8000) s += String.fromCharCode.apply(null, a.subarray(i, i + 0x8000)); return btoa(s); };
+  kdpFonts.loading = Promise.all(['fonts/DejaVuSans.ttf', 'fonts/DejaVuSans-Bold.ttf'].map(u => fetch(u).then(r => { if (!r.ok) throw new Error(u); return r.arrayBuffer(); })))
+    .then(([n, b]) => { kdpFonts.data = { normal: b64(n), bold: b64(b) }; })
+    .catch(() => { kdpFonts.loading = null; });
+  return kdpFonts.loading;
+}
+function kdpUseFonts(doc) {
+  doc.addFileToVFS('DejaVuSans.ttf', kdpFonts.data.normal); doc.addFont('DejaVuSans.ttf', 'DejaVu', 'normal');
+  doc.addFileToVFS('DejaVuSans-Bold.ttf', kdpFonts.data.bold); doc.addFont('DejaVuSans-Bold.ttf', 'DejaVu', 'bold');
+  const sf = doc.setFont.bind(doc); doc.setFont = (f, st) => sf('DejaVu', st === 'bold' ? 'bold' : 'normal'); doc.setFont('DejaVu', 'normal');
+  return doc;
+}
+kdpLoadFonts();
 function kdpInterior(b) {
   const [w, h] = KDP_TRIMS[b.trim] || KDP_TRIMS['6x9'];
   const bl = b.bleed ? 0.125 : 0, pw = w + bl, ph = h + bl * 2;
-  const doc = new window.jspdf.jsPDF({ unit: 'in', format: [pw, ph], compress: true });
+  const doc = new window.jspdf.jsPDF({ unit: 'in', format: [pw, ph], compress: true, putOnlyUsedFonts: true }); kdpUseFonts(doc);
   const pages = []; // liste de fonctions de dessin
   const target = Math.max(24, Number(b.pages_target) || 120);
   const gutter = kdpGutter(Math.max(target, 24));
@@ -860,7 +877,7 @@ function kdpHex(h) { const m = /^#?([0-9a-f]{6})$/i.exec(h || ''); const n = par
 function kdpCover(b, guides) {
   const pages = b.page_count || Math.max(24, Number(b.pages_target) || 24);
   const D = kdpCoverDims(b, pages);
-  const doc = new window.jspdf.jsPDF({ unit: 'in', format: [D.cw, D.ch], orientation: D.cw > D.ch ? 'landscape' : 'portrait', compress: true });
+  const doc = new window.jspdf.jsPDF({ unit: 'in', format: [D.cw, D.ch], orientation: D.cw > D.ch ? 'landscape' : 'portrait', compress: true, putOnlyUsedFonts: true }); kdpUseFonts(doc);
   const bg = kdpHex(b.cover_bg), ink = kdpHex(b.cover_ink);
   doc.setFillColor(...bg); doc.rect(0, 0, D.cw, D.ch, 'F');
   const frontX = 0.125 + D.w + D.spine, backX = 0.125, safe = 0.375;
