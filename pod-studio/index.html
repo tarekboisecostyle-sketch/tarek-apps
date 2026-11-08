@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>POD Studio — TAREK STUDIO</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
 <style>
   :root {
     --bg: #f6f5f2; --surface: #ffffff; --ink: #1d1d1b; --muted: #6b6a66; --line: #e3e1dc;
@@ -65,6 +66,7 @@
     <a href="#/recherche">2. Rechercher</a>
     <a href="#/niches">3. Niches</a>
     <a href="#/fiches">4. Fiches design</a>
+    <a href="#/kdp">5. Livres KDP</a>
     <a href="#/">Accueil</a>
     <a href="#/donnees">Données</a>
   </nav>
@@ -83,7 +85,7 @@
    ========================================================================= */
 const KEY = 'podstudio:v1';
 const mem = { data: null };
-function blank() { return { products: [], niches: [], analyses: [], briefs: [], searches: [] }; }
+function blank() { return { products: [], niches: [], analyses: [], briefs: [], searches: [], books: [] }; }
 function load() {
   if (mem.data) return mem.data;
   let d = null;
@@ -328,7 +330,7 @@ const routes = {
 };
 function render() {
   const [, name = '', id = '', sub = ''] = location.hash.split('/');
-  document.querySelectorAll('nav a').forEach(a => a.classList.toggle('on', a.getAttribute('href') === '#/' + (name === 'niche' || name === 'analyse' ? 'niches' : name === 'fiche' ? 'fiches' : name)));
+  document.querySelectorAll('nav a').forEach(a => a.classList.toggle('on', a.getAttribute('href') === '#/' + (name === 'niche' || name === 'analyse' ? 'niches' : name === 'fiche' ? 'fiches' : name === 'livre' ? 'kdp' : name)));
   (routes[name] || dashboard)(decodeURIComponent(id), sub);
   app.focus({ preventScroll: true });
 }
@@ -340,7 +342,7 @@ function dashboard() {
   app.innerHTML = `
     <h2>Accueil</h2>
     <p class="lead">Savoir quoi créer avant de créer : trouve ce qui se vend, comprends pourquoi, prépare la fiche du design.</p>
-    <div class="card"><strong>Le chemin :</strong> 1. POD Radar (ce que les gens cherchent) → 2. Rechercher (les produits qui se vendent) → 3. Niche et analyse des designs gagnants → 4. Fiche design et prompt.
+    <div class="card"><strong>Le chemin :</strong> 1. POD Radar (ce que les gens cherchent) → 2. Rechercher (les produits qui se vendent) → 3. Niche et analyse des designs gagnants → 4. Fiche design et prompt → 5. Livres KDP (intérieur, couverture, listing).
       <div class="row" style="margin-top:var(--s3)"><a class="btn primary" href="#/radar">Commencer par POD Radar</a></div></div>
     <div class="grid">
       <div class="card"><div class="muted">Niches suivies</div><div class="score">${d.niches.length}</div></div>
@@ -677,7 +679,7 @@ function data() {
   app.innerHTML = `<h2>Données</h2>
     <p class="lead">Tes données sont enregistrées dans ton compte (Supabase), avec une copie dans ce navigateur et les 200 dernières versions gardées. Tu peux aussi exporter une sauvegarde JSON.</p>
     <div class="card">
-      <p>${d.niches.length} niches · ${d.products.length} produits · ${d.analyses.length} analyses · ${d.briefs.length} fiches${d.savedAt ? ' · dernière sauvegarde ' + new Date(d.savedAt).toLocaleString('fr-FR') : ''}</p>
+      <p>${d.niches.length} niches · ${d.products.length} produits · ${d.analyses.length} analyses · ${d.briefs.length} fiches · ${(d.books || []).length} livres KDP${d.savedAt ? ' · dernière sauvegarde ' + new Date(d.savedAt).toLocaleString('fr-FR') : ''}</p>
       <div class="row">
         <button class="primary" id="exp">Exporter une sauvegarde (JSON)</button>
         <label class="btn" for="imp" style="margin:0">Restaurer une sauvegarde</label><input type="file" id="imp" accept=".json" hidden>
@@ -687,6 +689,372 @@ function data() {
   $('#exp').onclick = () => download(`pod-studio-${new Date().toISOString().slice(0, 10)}.json`, db.exportAll(), 'application/json');
   $('#imp').onchange = e => { const f = e.target.files[0]; if (!f) return; f.text().then(t => { try { const o = JSON.parse(t); if (!o.niches) throw 0; if (confirmBox('Remplacer les données actuelles par cette sauvegarde ?')) { db.importAll(o); toast('Sauvegarde restaurée'); data(); } } catch (err) { toast('Ce fichier n\'est pas une sauvegarde POD Studio'); } }); };
   $('#wipe').onclick = () => { if (confirmBox('Tout effacer ? Exporte d\'abord une sauvegarde.')) { db.importAll(blank()); data(); } };
+}
+
+/* =========================================================================
+   KDP — livres Amazon KDP (coloriage, journaux, logbooks, sudoku, mots mêlés)
+   Fiche livre → contenu → intérieur PDF → couverture PDF → listing → redevances.
+   Toutes niches et tous marchés : la niche vient de POD Radar / recherche Amazon.
+   ========================================================================= */
+const KDP_TRIMS = { '8.5x11': [8.5, 11], '8x10': [8, 10], '8.5x8.5': [8.5, 8.5], '7x10': [7, 10], '6x9': [6, 9], '5.5x8.5': [5.5, 8.5], '5x8': [5, 8] };
+const KDP_TYPES = { coloring: 'Coloriage (images importées)', journal_lined: 'Journal ligné', journal_dot: 'Journal pointillé', journal_grid: 'Journal quadrillé', notebook_blank: 'Carnet blanc / sketchbook', logbook: 'Logbook / tracker (colonnes)', sudoku: 'Sudoku', wordsearch: 'Mots mêlés' };
+const KDP_STATUS = [['idea', 'idée', 'warn'], ['building', 'en création', 'warn'], ['ready', 'prêt à publier', ''], ['review', 'en revue Amazon', ''], ['live', 'en vente', 'good'], ['dropped', 'abandonné', 'bad']];
+const KDP_SPINE = { white: 0.002252, cream: 0.0025, color: 0.002347 };
+const KDP_DEFAULTS = { fixed_small: 2.30, fixed: 1.00, per_page: 0.012, rate_high: 0.60, rate_low: 0.50, threshold: 9.99, daily_max: 3 };
+const kdpMem = { images: {}, cover: {} }; // images en mémoire (session) : trop lourdes pour le cloud
+
+Object.assign(db, {
+  listBooks() { return (load().books || []).slice().sort((a, b) => b.created_at.localeCompare(a.created_at)); },
+  getBook(id) { return (load().books || []).find(b => b.id === id); },
+  saveBook(b) {
+    const d = load(); d.books = d.books || [];
+    let ex = b.id && d.books.find(x => x.id === b.id);
+    if (ex) {
+      if (b.status && b.status !== ex.status && (b.status === 'review' || b.status === 'live') && !ex.submitted_at) b.submitted_at = now();
+      Object.assign(ex, b, { updated_at: now() });
+    } else {
+      ex = Object.assign({ id: uid(), status: 'idea', type: 'journal_lined', trim: '6x9', paper: 'white', bleed: false, pages_target: 120,
+        author: '', keywords: ['', '', '', '', '', '', ''], categories: '', price: 7.99, ai: 'none', ai_tools: '', checks: {}, puzzles: null,
+        cover_bg: '#1f3b4d', cover_ink: '#ffffff', cover_back_text: '', belongs_to: true, created_at: now(), updated_at: now() }, b);
+      d.books.push(ex);
+    }
+    save(); return ex;
+  },
+  deleteBook(id) { const d = load(); d.books = (d.books || []).filter(b => b.id !== id); save(); },
+  kdpSettings() { return Object.assign({}, KDP_DEFAULTS, load().kdp_settings || {}); },
+  saveKdpSettings(s) { load().kdp_settings = s; save(); },
+});
+routes.kdp = kdpList; routes.livre = kdpBook;
+
+const kdpGutter = p => p <= 150 ? 0.375 : p <= 300 ? 0.5 : p <= 500 ? 0.625 : p <= 700 ? 0.75 : 0.875;
+const kdpSpine = (pages, paper) => pages * (KDP_SPINE[paper] || KDP_SPINE.white);
+function kdpCoverDims(b, pages) {
+  const [w, h] = KDP_TRIMS[b.trim] || KDP_TRIMS['6x9'];
+  const sp = kdpSpine(pages, b.paper);
+  return { w, h, spine: sp, cw: 0.125 + w + sp + w + 0.125, ch: 0.125 + h + 0.125, spineText: pages >= 79 };
+}
+function kdpPrintCost(pages, s) { return pages <= 108 ? s.fixed_small : s.fixed + s.per_page * pages; }
+function kdpRoyalty(price, pages, s) { const rate = price >= s.threshold ? s.rate_high : s.rate_low; return { rate, cost: kdpPrintCost(pages, s), royalty: price * rate - kdpPrintCost(pages, s) }; }
+const inch = v => `${v.toFixed(3)}" (${(v * 25.4).toFixed(1)} mm)`;
+const amazonBooksUrl = kw => `https://www.amazon.com/s?k=${encodeURIComponent(kw)}&i=stripbooks`;
+const kdpToday = () => db.listBooks().filter(b => b.submitted_at && b.submitted_at.slice(0, 10) === now().slice(0, 10)).length;
+function kdpShuffle(a) { for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; }
+
+/* ---------- Générateurs de puzzles ---------- */
+function sdkCand(g, i) {
+  const r = Math.floor(i / 9), c = i % 9, br = r - r % 3, bc = c - c % 3, used = new Array(10).fill(false);
+  for (let k = 0; k < 9; k++) { used[g[r * 9 + k]] = true; used[g[k * 9 + c]] = true; }
+  for (let a = 0; a < 3; a++) for (let b = 0; b < 3; b++) used[g[(br + a) * 9 + bc + b]] = true;
+  const out = []; for (let n = 1; n <= 9; n++) if (!used[n]) out.push(n); return out;
+}
+function sdkCount(g, limit) {
+  let best = -1, bc = null;
+  for (let i = 0; i < 81; i++) if (!g[i]) { const c = sdkCand(g, i); if (!c.length) return 0; if (!bc || c.length < bc.length) { best = i; bc = c; if (c.length === 1) break; } }
+  if (best < 0) return 1;
+  let n = 0; for (const v of bc) { g[best] = v; n += sdkCount(g, limit - n); if (n >= limit) break; }
+  g[best] = 0; return n;
+}
+function sdkFill(g) {
+  for (let i = 0; i < 81; i++) if (!g[i]) { for (const v of kdpShuffle(sdkCand(g, i))) { g[i] = v; if (sdkFill(g)) return true; } g[i] = 0; return false; }
+  return true;
+}
+function sdkMake(clues) {
+  const sol = new Array(81).fill(0); sdkFill(sol);
+  const p = sol.slice(); let filled = 81;
+  for (const i of kdpShuffle([...Array(81).keys()])) {
+    if (filled <= clues) break;
+    const v = p[i]; p[i] = 0;
+    if (sdkCount(p.slice(), 2) !== 1) p[i] = v; else filled--;
+  }
+  return { puzzle: p, solution: sol };
+}
+function wsMake(title, words, size) {
+  const dirs = [[0, 1], [1, 0], [1, 1], [-1, 1], [0, -1], [-1, 0], [-1, -1], [1, -1]];
+  const grid = Array(size * size).fill(''); const placed = []; const skipped = [];
+  const list = words.map(w => w.toUpperCase().replace(/[^A-Z]/g, '')).filter(w => w.length >= 2 && w.length <= size).sort((a, b) => b.length - a.length);
+  for (const w of list) {
+    let ok = false;
+    for (let t = 0; t < 400 && !ok; t++) {
+      const [dr, dc] = dirs[Math.floor(Math.random() * 8)], r0 = Math.floor(Math.random() * size), c0 = Math.floor(Math.random() * size);
+      const cells = [];
+      for (let k = 0; k < w.length; k++) { const r = r0 + dr * k, c = c0 + dc * k; if (r < 0 || c < 0 || r >= size || c >= size) break; const ch = grid[r * size + c]; if (ch && ch !== w[k]) break; cells.push(r * size + c); }
+      if (cells.length === w.length) { cells.forEach((ci, k) => { grid[ci] = w[k]; }); placed.push({ word: w, cells }); ok = true; }
+    }
+    if (!ok) skipped.push(w);
+  }
+  const A = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+  for (let i = 0; i < grid.length; i++) if (!grid[i]) grid[i] = A[Math.floor(Math.random() * 26)];
+  return { title, size, grid, placed, skipped };
+}
+
+/* ---------- Images (coloriage, couverture) ---------- */
+function kdpLoadImage(file, maxPx) {
+  return new Promise((res, rej) => {
+    const url = URL.createObjectURL(file); const im = new Image();
+    im.onload = () => {
+      const k = Math.min(1, maxPx / Math.max(im.naturalWidth || maxPx, im.naturalHeight || maxPx));
+      const w = Math.round((im.naturalWidth || maxPx) * k), h = Math.round((im.naturalHeight || maxPx) * k);
+      const cv = document.createElement('canvas'); cv.width = w; cv.height = h;
+      const cx = cv.getContext('2d'); cx.fillStyle = '#fff'; cx.fillRect(0, 0, w, h); cx.drawImage(im, 0, 0, w, h);
+      URL.revokeObjectURL(url); res({ name: file.name, data: cv.toDataURL('image/jpeg', 0.95), w, h });
+    };
+    im.onerror = () => { URL.revokeObjectURL(url); rej(new Error(file.name)); };
+    im.src = url;
+  });
+}
+function kdpFit(img, box) {
+  const k = Math.min(box.w / img.w, box.h / img.h), w = img.w * k, h = img.h * k;
+  return { x: box.x + (box.w - w) / 2, y: box.y + (box.h - h) / 2, w, h };
+}
+
+/* ---------- Intérieur PDF ---------- */
+function kdpNeedPdf() { if (!window.jspdf) { toast('Bibliothèque PDF pas encore chargée, réessaie dans 2 secondes'); return false; } return true; }
+function kdpInterior(b) {
+  const [w, h] = KDP_TRIMS[b.trim] || KDP_TRIMS['6x9'];
+  const bl = b.bleed ? 0.125 : 0, pw = w + bl, ph = h + bl * 2;
+  const doc = new window.jspdf.jsPDF({ unit: 'in', format: [pw, ph], compress: true });
+  const pages = []; // liste de fonctions de dessin
+  const target = Math.max(24, Number(b.pages_target) || 120);
+  const gutter = kdpGutter(Math.max(target, 24));
+  const box = n => { const recto = n % 2 === 1, inside = gutter, outside = 0.5 + bl, top = 0.55 + bl, bottom = 0.55 + bl; return { x: recto ? inside : outside, y: top, w: pw - inside - outside, h: ph - top - bottom }; };
+  const center = (t, y, size, style) => { doc.setFont('helvetica', style || 'normal'); doc.setFontSize(size); doc.text(t, pw / 2 + (0), y, { align: 'center' }); };
+  const gray = v => { doc.setDrawColor(v); doc.setTextColor(0); };
+  const author = b.author || 'Independently published';
+  const year = new Date().getFullYear();
+  // Pages d'ouverture
+  pages.push(n => { const bx = box(n); doc.setFont('helvetica', 'bold'); doc.setFontSize(22); doc.text(doc.splitTextToSize(b.title || 'Untitled', bx.w), bx.x + bx.w / 2, bx.y + bx.h * 0.35, { align: 'center' }); if (b.subtitle) { doc.setFont('helvetica', 'normal'); doc.setFontSize(12); doc.text(doc.splitTextToSize(b.subtitle, bx.w * 0.9), bx.x + bx.w / 2, bx.y + bx.h * 0.35 + 0.8, { align: 'center' }); } doc.setFontSize(11); doc.text(author, bx.x + bx.w / 2, bx.y + bx.h * 0.85, { align: 'center' }); });
+  pages.push(n => { const bx = box(n); doc.setFont('helvetica', 'normal'); doc.setFontSize(8); doc.text(doc.splitTextToSize(`Copyright © ${year} ${author}. All rights reserved.\n\nNo part of this book may be reproduced in any form without written permission from the publisher, except for personal use of the activity pages.`, bx.w), bx.x, bx.y + bx.h - 1); });
+  if (b.belongs_to) { pages.push(n => { const bx = box(n); doc.setFont('helvetica', 'bold'); doc.setFontSize(18); doc.text('This book belongs to', bx.x + bx.w / 2, bx.y + bx.h * 0.4, { align: 'center' }); doc.setDrawColor(0); doc.setLineWidth(0.01); doc.line(bx.x + bx.w * 0.15, bx.y + bx.h * 0.4 + 0.8, bx.x + bx.w * 0.85, bx.y + bx.h * 0.4 + 0.8); }); pages.push(() => {}); }
+  const P = b.puzzles || {};
+  const lined = (n, sp) => { const bx = box(n); doc.setDrawColor(170); doc.setLineWidth(0.006); doc.setFont('helvetica', 'normal'); doc.setFontSize(9); doc.setTextColor(120); doc.text('Date: ____________', bx.x, bx.y + 0.05); doc.setTextColor(0); for (let y = bx.y + 0.45; y <= bx.y + bx.h; y += sp) doc.line(bx.x, y, bx.x + bx.w, y); };
+  const dots = (n, sp) => { const bx = box(n); doc.setFillColor(150); for (let y = bx.y; y <= bx.y + bx.h + 1e-6; y += sp) for (let x = bx.x; x <= bx.x + bx.w + 1e-6; x += sp) doc.circle(x, y, 0.008, 'F'); };
+  const grid = (n, sp) => { const bx = box(n); doc.setDrawColor(200); doc.setLineWidth(0.004); const cols = Math.floor(bx.w / sp), rows = Math.floor(bx.h / sp), ox = bx.x + (bx.w - cols * sp) / 2, oy = bx.y + (bx.h - rows * sp) / 2; for (let i = 0; i <= cols; i++) doc.line(ox + i * sp, oy, ox + i * sp, oy + rows * sp); for (let j = 0; j <= rows; j++) doc.line(ox, oy + j * sp, ox + cols * sp, oy + j * sp); };
+  const logbook = n => { const bx = box(n); const cols = String(b.columns || 'Date, Description, Notes').split(',').map(s => s.trim()).filter(Boolean); const rh = 0.32; doc.setFont('helvetica', 'bold'); doc.setFontSize(12); doc.text(b.page_header || b.title || '', bx.x + bx.w / 2, bx.y + 0.1, { align: 'center' }); const top = bx.y + 0.35, cw = bx.w / cols.length; doc.setDrawColor(90); doc.setLineWidth(0.01); doc.setFontSize(8); cols.forEach((c, i) => { doc.rect(bx.x + i * cw, top, cw, rh); doc.text(doc.splitTextToSize(c, cw - 0.08)[0], bx.x + i * cw + cw / 2, top + rh * 0.65, { align: 'center' }); }); doc.setLineWidth(0.005); const rows = Math.floor((bx.y + bx.h - top - rh) / rh); for (let r = 1; r <= rows; r++) cols.forEach((c, i) => doc.rect(bx.x + i * cw, top + r * rh, cw, rh)); };
+  const sudokuDraw = (pz, x, y, s, solution) => { const c = s / 9; doc.setTextColor(0); for (let i = 0; i <= 9; i++) { doc.setLineWidth(i % 3 === 0 ? 0.03 * s / 5 : 0.008); doc.setDrawColor(0); doc.line(x + i * c, y, x + i * c, y + s); doc.line(x, y + i * c, x + s, y + i * c); } doc.setFontSize(Math.max(6, c * 72 * 0.55)); for (let i = 0; i < 81; i++) { const v = pz.puzzle[i] || (solution ? pz.solution[i] : 0); if (!v) continue; doc.setFont('helvetica', pz.puzzle[i] ? 'bold' : 'normal'); doc.setTextColor(pz.puzzle[i] ? 0 : 110); doc.text(String(v), x + (i % 9 + 0.5) * c, y + (Math.floor(i / 9) + 0.5) * c + c * 0.2, { align: 'center' }); } doc.setTextColor(0); };
+  const wsDraw = (ws, x, y, s, solution) => { const c = s / ws.size, sol = new Set(); if (solution) ws.placed.forEach(p => p.cells.forEach(ci => sol.add(ci))); doc.setFontSize(Math.max(5, c * 72 * 0.6)); for (let i = 0; i < ws.grid.length; i++) { const on = sol.has(i); if (solution && !on) doc.setTextColor(190); else doc.setTextColor(0); doc.setFont('helvetica', on ? 'bold' : 'normal'); doc.text(ws.grid[i], x + (i % ws.size + 0.5) * c, y + (Math.floor(i / ws.size) + 0.5) * c + c * 0.2, { align: 'center' }); } doc.setTextColor(0); doc.setDrawColor(0); doc.setLineWidth(0.012); doc.rect(x, y, s, s); };
+  const label = (t, bx, size) => { doc.setFont('helvetica', 'bold'); doc.setFontSize(size || 14); doc.text(t, bx.x + bx.w / 2, bx.y + 0.15, { align: 'center' }); };
+  const multi = (items, per, drawOne, titleFn) => { for (let i = 0; i < items.length; i += per) { const chunk = items.slice(i, i + per); pages.push(n => { const bx = box(n); const cols = per >= 4 ? 2 : 1, rows = Math.ceil(per / cols); const cellW = bx.w / cols, cellH = (bx.h - 0.1) / rows; chunk.forEach((it, k) => { const cx = bx.x + (k % cols) * cellW, cy = bx.y + 0.1 + Math.floor(k / cols) * cellH; const s = Math.min(cellW * 0.9, cellH - 0.55); doc.setFont('helvetica', 'bold'); doc.setFontSize(per === 1 ? 14 : 10); doc.text(titleFn(i + k, it), cx + cellW / 2, cy + 0.15, { align: 'center' }); drawOne(it, cx + (cellW - s) / 2, cy + 0.35, s); }); }); } };
+  const t = b.type;
+  if (t === 'coloring') {
+    const imgs = kdpMem.images[b.id] || [];
+    imgs.forEach(im => { pages.push(n => { const bx = box(n); const f = kdpFit(im, bx); doc.addImage(im.data, 'JPEG', f.x, f.y, f.w, f.h, undefined, 'FAST'); }); if (b.single_sided !== false) pages.push(n => { if (b.back_text) { const bx = box(n); doc.setFont('helvetica', 'italic'); doc.setFontSize(9); doc.setTextColor(150); doc.text(b.back_text, bx.x + bx.w / 2, bx.y + bx.h / 2, { align: 'center' }); doc.setTextColor(0); } }); });
+  } else if (t === 'sudoku') {
+    const list = P.sudoku || []; const per = Number(b.per_page) || 1;
+    multi(list, per, (pz, x, y, s) => sudokuDraw(pz, x, y, s, false), i => `Puzzle ${i + 1}`);
+    if (list.length) { pages.push(n => { label('Solutions', box(n), 18); }); multi(list, 6, (pz, x, y, s) => sudokuDraw(pz, x, y, s, true), i => `Puzzle ${i + 1}`); }
+  } else if (t === 'wordsearch') {
+    const list = P.wordsearch || [];
+    list.forEach((ws, i) => pages.push(n => { const bx = box(n); label(`${i + 1}. ${ws.title}`, bx, 15); const s = Math.min(bx.w, bx.h * 0.68); wsDraw(ws, bx.x + (bx.w - s) / 2, bx.y + 0.45, s, false); const words = ws.placed.map(p => p.word).sort(); const cols = 3, cw = bx.w / cols, y0 = bx.y + 0.45 + s + 0.35; doc.setFont('helvetica', 'normal'); doc.setFontSize(9.5); words.forEach((wd, k) => doc.text(wd, bx.x + (k % cols) * cw + 0.1, y0 + Math.floor(k / cols) * 0.22)); }));
+    if (list.length) { pages.push(n => { label('Solutions', box(n), 18); }); multi(list, 4, (ws, x, y, s) => wsDraw(ws, x, y, s, true), (i, ws) => `${i + 1}. ${ws.title}`); }
+  } else {
+    const fn = { journal_lined: n => lined(n, Number(b.line_spacing) || 0.3), journal_dot: n => dots(n, 0.25), journal_grid: n => grid(n, 0.25), notebook_blank: () => {}, logbook }[t] || (n => lined(n, 0.3));
+    while (pages.length < target) pages.push(fn);
+  }
+  while (pages.length < 24 || pages.length % 2) pages.push(() => {});
+  pages.forEach((draw, i) => { if (i) doc.addPage([pw, ph]); doc.setTextColor(0); doc.setDrawColor(0); draw(i + 1); if (b.page_numbers && i >= (b.belongs_to ? 4 : 2)) { doc.setFont('helvetica', 'normal'); doc.setFontSize(8); doc.setTextColor(120); doc.text(String(i + 1), pw / 2, ph - bl - 0.3, { align: 'center' }); doc.setTextColor(0); } });
+  return { doc, pages: pages.length };
+}
+
+/* ---------- Couverture PDF ---------- */
+function kdpHex(h) { const m = /^#?([0-9a-f]{6})$/i.exec(h || ''); const n = parseInt(m ? m[1] : '000000', 16); return [(n >> 16) & 255, (n >> 8) & 255, n & 255]; }
+function kdpCover(b, guides) {
+  const pages = b.page_count || Math.max(24, Number(b.pages_target) || 24);
+  const D = kdpCoverDims(b, pages);
+  const doc = new window.jspdf.jsPDF({ unit: 'in', format: [D.cw, D.ch], orientation: D.cw > D.ch ? 'landscape' : 'portrait', compress: true });
+  const bg = kdpHex(b.cover_bg), ink = kdpHex(b.cover_ink);
+  doc.setFillColor(...bg); doc.rect(0, 0, D.cw, D.ch, 'F');
+  const frontX = 0.125 + D.w + D.spine, backX = 0.125, safe = 0.375;
+  const img = kdpMem.cover[b.id];
+  if (img) {
+    if (b.cover_img_mode === 'full') { const box = { x: frontX, y: 0, w: D.w + 0.125, h: D.ch }; const k = Math.max(box.w / img.w, box.h / img.h), w = img.w * k, h = img.h * k; doc.saveGraphicsState && doc.saveGraphicsState(); doc.rect(box.x, box.y, box.w, box.h, null); doc.clip && doc.clip(); doc.discardPath && doc.discardPath(); doc.addImage(img.data, 'JPEG', box.x + (box.w - w) / 2, box.y + (box.h - h) / 2, w, h); doc.restoreGraphicsState && doc.restoreGraphicsState(); }
+    else { const f = kdpFit(img, { x: frontX + D.w * 0.12, y: 0.125 + D.h * 0.32, w: D.w * 0.76, h: D.h * 0.5 }); doc.addImage(img.data, 'JPEG', f.x, f.y, f.w, f.h); }
+  }
+  doc.setTextColor(...ink);
+  const fw = D.w - 2 * safe, fcx = frontX + D.w / 2;
+  doc.setFont('helvetica', 'bold'); let size = D.w >= 8 ? 40 : 30; doc.setFontSize(size);
+  let lines = doc.splitTextToSize(b.title || 'Untitled', fw);
+  while (lines.length > 3 && size > 16) { size -= 2; doc.setFontSize(size); lines = doc.splitTextToSize(b.title || 'Untitled', fw); }
+  const ty = 0.125 + safe + 0.4 + size / 72;
+  doc.text(lines, fcx, ty, { align: 'center' });
+  let y = ty + lines.length * size / 72 * 1.15;
+  if (b.subtitle) { doc.setFont('helvetica', 'normal'); doc.setFontSize(D.w >= 8 ? 16 : 13); const sl = doc.splitTextToSize(b.subtitle, fw); doc.text(sl, fcx, y + 0.1, { align: 'center' }); }
+  if (b.author) { doc.setFont('helvetica', 'normal'); doc.setFontSize(14); doc.text(b.author, fcx, 0.125 + D.h - safe - 0.2, { align: 'center' }); }
+  if (b.cover_back_text) { doc.setFont('helvetica', 'normal'); doc.setFontSize(11); doc.text(doc.splitTextToSize(b.cover_back_text, D.w - 2 * safe - 0.2), backX + safe + 0.1, 0.125 + safe + 0.6); }
+  // zone code-barres (KDP l'imprime ici) : laisser vide
+  doc.setFillColor(255, 255, 255); doc.rect(backX + D.w - 0.25 - 2, 0.125 + D.h - 0.25 - 1.2, 2, 1.2, 'F');
+  if (D.spineText && (b.title || b.author)) {
+    const fs = Math.min(14, (D.spine - 0.125) * 72 * 0.8); doc.setFont('helvetica', 'bold'); doc.setFontSize(fs);
+    const txt = (b.title || '') + (b.author ? '   ·   ' + b.author : ''); const sx = 0.125 + D.w + D.spine / 2 - fs / 72 * 0.35;
+    const tw = doc.getTextWidth(txt); doc.text(txt, sx, D.ch / 2 - tw / 2, { angle: -90 });
+  }
+  if (guides) {
+    doc.setLineWidth(0.01); doc.setDrawColor(255, 0, 0);
+    doc.rect(0.125, 0.125, D.cw - 0.25, D.ch - 0.25); doc.line(0.125 + D.w, 0, 0.125 + D.w, D.ch); doc.line(frontX, 0, frontX, D.ch);
+    doc.setDrawColor(0, 120, 255); doc.rect(backX + safe, 0.125 + safe, D.w - 2 * safe, D.h - 2 * safe); doc.rect(frontX + safe, 0.125 + safe, D.w - 2 * safe, D.h - 2 * safe);
+  }
+  return { doc, D };
+}
+
+/* ---------- Écrans ---------- */
+function kdpBadge(s) { const st = KDP_STATUS.find(x => x[0] === s) || ['?', '?', '']; return `<span class="badge ${st[2]}">${st[1]}</span>`; }
+function kdpList() {
+  const list = db.listBooks(), s = db.kdpSettings(), today = kdpToday();
+  app.innerHTML = `<h2>Livres KDP</h2>
+    <p class="lead">Livres Amazon KDP faciles à produire : coloriage, journaux, logbooks, sudoku, mots mêlés. Toutes niches, tous marchés : choisis la niche avec POD Radar et la recherche Amazon Livres.</p>
+    <div class="grid">
+      <div class="card"><div class="muted">Livres envoyés aujourd'hui</div><div class="score">${today}/${s.daily_max}</div><div class="muted">Amazon limite les nouveaux titres par jour</div></div>
+      <div class="card"><div class="muted">En vente</div><div class="score">${list.filter(b => b.status === 'live').length}</div></div>
+      <div class="card"><div class="muted">En création</div><div class="score">${list.filter(b => ['idea', 'building', 'ready'].includes(b.status)).length}</div></div>
+    </div>
+    <div class="card"><div class="row">
+      <div class="field"><label for="q">Chercher une idée de livre sur Amazon</label><input id="q" placeholder="ex. fishing logbook, mandala coloring book for adults"></div>
+      <button id="go">Ouvrir Amazon Livres</button><button class="primary" id="new">Nouveau livre</button></div></div>
+    ${list.length ? `<div class="grid">${list.map(b => `<a class="card btn" style="text-align:left" href="#/livre/${b.id}"><strong>${esc(b.title || 'Sans titre')}</strong><br>${kdpBadge(b.status)}<div class="muted">${esc(KDP_TYPES[b.type] || b.type)} · ${esc(b.trim)} · ${b.page_count || b.pages_target || '?'} p.</div></a>`).join('')}</div>`
+      : `<div class="card empty">Aucun livre. Clique « Nouveau livre » pour commencer.</div>`}
+    <details class="card"><summary>Réglages des redevances (coûts d'impression Amazon US)</summary>
+      <p class="note">Valeurs par défaut à vérifier avec le calculateur officiel KDP : Amazon change parfois ses tarifs.</p>
+      <form id="set" class="grid">${[['fixed_small', 'Coût fixe ≤ 108 pages ($)'], ['fixed', 'Coût fixe > 108 pages ($)'], ['per_page', 'Coût par page > 108 ($)'], ['rate_high', 'Taux si prix ≥ seuil'], ['rate_low', 'Taux si prix < seuil'], ['threshold', 'Seuil de prix ($)'], ['daily_max', 'Max titres / jour']].map(([k, l]) => `<div><label for="s_${k}">${l}</label><input id="s_${k}" name="${k}" type="number" step="0.001" value="${s[k]}"></div>`).join('')}</form>
+      <a class="btn" href="https://kdp.amazon.com/en_US/help/topic/G201834340" target="_blank" rel="noopener">Calculateur KDP officiel</a></details>`;
+  $('#go').onclick = () => { const q = $('#q').value.trim(); if (q) window.open(amazonBooksUrl(q), '_blank', 'noopener'); };
+  $('#new').onclick = () => { const b = db.saveBook({ title: $('#q').value.trim() }); location.hash = '#/livre/' + b.id; };
+  $('#set').oninput = () => { const o = {}; new FormData($('#set')).forEach((v, k) => { o[k] = Number(v); }); db.saveKdpSettings(o); };
+}
+
+function kdpBook(id) {
+  const b = db.getBook(id); if (!b) { app.innerHTML = `<div class="card empty">Livre introuvable. <a href="#/kdp">Retour</a></div>`; return; }
+  const ns = db.listNiches(), s = db.kdpSettings();
+  const v = k => esc(b[k] ?? '');
+  const sel = (name, opts, cur) => `<select id="${name}" name="${name}">${opts.map(([k, l]) => `<option value="${k}" ${String(k) === String(cur) ? 'selected' : ''}>${esc(l)}</option>`).join('')}</select>`;
+  const chk = (name, label) => `<label style="display:flex;gap:8px;align-items:center;color:var(--ink)"><input type="checkbox" name="${name}" style="width:auto" ${b[name] ? 'checked' : ''}> ${label}</label>`;
+  const pages = b.page_count || Math.max(24, Number(b.pages_target) || 24);
+  const D = kdpCoverDims(b, pages), R = kdpRoyalty(Number(b.price) || 0, pages, s);
+  const minPrice = Math.max(kdpPrintCost(pages, s) / s.rate_high, 0);
+  const t = b.type, P = b.puzzles || {};
+  const contentForm = {
+    coloring: `<div><label>Images de coloriage (PNG, JPG, SVG — une par page)</label><input type="file" id="imgs" accept="image/*" multiple></div>
+      <div class="muted" id="imgcount">${(kdpMem.images[id] || []).length} image(s) chargée(s) dans cette session</div>
+      ${chk('single_sided', 'Une image par feuille (verso blanc, conseillé pour les feutres)')}
+      <div><label for="back_text">Texte discret au verso (optionnel)</label><input id="back_text" name="back_text" value="${v('back_text')}" placeholder="ex. Test your colors here"></div>`,
+    journal_lined: `<div><label for="line_spacing">Interligne</label>${sel('line_spacing', [['0.34', 'Large (wide ruled)'], ['0.3', 'Normal'], ['0.28', 'Serré (college ruled)']], b.line_spacing || '0.3')}</div>`,
+    logbook: `<div><label for="columns">Colonnes (séparées par des virgules)</label><input id="columns" name="columns" value="${v('columns') || 'Date, Location, Weather, Catch, Notes'}"></div>
+      <div><label for="page_header">Titre en haut de chaque page</label><input id="page_header" name="page_header" value="${v('page_header')}"></div>`,
+    sudoku: `<div class="grid"><div><label for="n_puzzles">Nombre de grilles</label><input id="n_puzzles" name="n_puzzles" type="number" min="1" max="400" value="${b.n_puzzles || 100}"></div>
+      <div><label for="difficulty">Difficulté</label>${sel('difficulty', [['40', 'Facile'], ['32', 'Moyen'], ['27', 'Difficile']], b.difficulty || '32')}</div>
+      <div><label for="per_page">Grilles par page</label>${sel('per_page', [['1', '1 (gros caractères)'], ['2', '2'], ['4', '4']], b.per_page || '1')}</div></div>
+      <button type="button" id="genpz">Générer les grilles</button> <span class="muted">${(P.sudoku || []).length} grille(s) prêtes</span>`,
+    wordsearch: `<div><label for="ws_lists">Une grille par ligne : <code>Thème: mot1, mot2, mot3…</code> (anglais conseillé)</label><textarea id="ws_lists" name="ws_lists" style="min-height:160px" placeholder="Camping: tent, fire, lantern, compass, hiking, trail, backpack">${v('ws_lists')}</textarea></div>
+      <div><label for="ws_size">Taille de la grille</label>${sel('ws_size', [['12', '12 × 12'], ['15', '15 × 15'], ['18', '18 × 18']], b.ws_size || '15')}</div>
+      <button type="button" id="genpz">Générer les grilles</button> <span class="muted">${(P.wordsearch || []).length} grille(s) prêtes${(P.wordsearch || []).some(w => w.skipped.length) ? ' · certains mots n\'ont pas tenu : regénère ou agrandis la grille' : ''}</span>`,
+  }[t] || `<p class="muted">Pages générées automatiquement selon le type.</p>`;
+  const pdfTypes = ['journal_lined', 'journal_dot', 'journal_grid', 'notebook_blank', 'logbook'];
+  app.innerHTML = `
+    <p><a href="#/kdp">← Livres KDP</a></p>
+    <h2>${esc(b.title || 'Nouveau livre')}</h2>
+    <form class="card bf"><h3 style="margin-top:0">1. Fiche du livre</h3><div class="grid">
+      <div><label for="title">Titre</label><input id="title" name="title" value="${v('title')}"></div>
+      <div><label for="subtitle">Sous-titre (mots-clés naturels)</label><input id="subtitle" name="subtitle" value="${v('subtitle')}"></div>
+      <div><label for="author">Auteur / marque</label><input id="author" name="author" value="${v('author')}"></div>
+      <div><label for="niche_id">Niche (POD Studio)</label><select id="niche_id" name="niche_id"><option value="">—</option>${ns.map(n => `<option value="${n.id}" ${n.id === b.niche_id ? 'selected' : ''}>${esc(n.name)}</option>`).join('')}</select></div>
+      <div><label for="type">Type de livre</label>${sel('type', Object.entries(KDP_TYPES), t)}</div>
+      <div><label for="trim">Format</label>${sel('trim', Object.keys(KDP_TRIMS).map(k => [k, k.replace('x', ' × ') + ' in']), b.trim)}</div>
+      <div><label for="paper">Papier</label>${sel('paper', [['white', 'Blanc (N&B)'], ['cream', 'Crème (N&B)'], ['color', 'Couleur standard']], b.paper)}</div>
+      <div><label for="pages_target">Pages visées (journaux / logbooks)</label><input id="pages_target" name="pages_target" type="number" min="24" max="828" value="${v('pages_target')}"></div>
+      <div><label for="status">Statut</label>${sel('status', KDP_STATUS.map(x => [x[0], x[1]]), b.status)}</div>
+    </div>
+    <div class="row" style="margin-top:var(--s3)">${chk('bleed', 'Fond perdu (bleed) — pour des images jusqu\'au bord')}${chk('belongs_to', 'Page « This book belongs to »')}${chk('page_numbers', 'Numéros de page')}</div></form>
+
+    <form class="card bf"><h3 style="margin-top:0">2. Contenu</h3>${contentForm}</form>
+
+    <div class="card"><h3 style="margin-top:0">3. Intérieur PDF</h3>
+      <p>${b.page_count ? `Dernier intérieur : <strong>${b.page_count} pages</strong>.` : 'Pas encore généré.'} ${pdfTypes.includes(t) ? '' : 'Le nombre de pages dépend du contenu (images / grilles).'} Minimum KDP : 24 pages, toujours un nombre pair.</p>
+      <div class="row"><button class="primary" id="mkint">Générer l'intérieur PDF</button></div>
+      <p class="muted">Marges sûres calculées selon le nombre de pages (gouttière ${kdpGutter(pages)}"). Vérifie toujours le rendu dans l'aperçu KDP avant de publier.</p></div>
+
+    <form class="card bf"><h3 style="margin-top:0">4. Couverture</h3>
+      <table><tbody>
+        <tr><td>Taille totale (avec fond perdu)</td><td><strong>${inch(D.cw)} × ${inch(D.ch)}</strong></td></tr>
+        <tr><td>Dos (spine) pour ${pages} pages</td><td>${inch(D.spine)} ${D.spineText ? '' : '<span class="badge warn">moins de 79 pages : pas de texte sur le dos</span>'}</td></tr>
+        <tr><td>Face avant / arrière</td><td>${b.trim.replace('x', ' × ')} in chacune + 0,125" de fond perdu autour</td></tr></tbody></table>
+      <div class="grid" style="margin-top:var(--s3)">
+        <div><label for="cover_bg">Couleur de fond</label><input id="cover_bg" name="cover_bg" type="color" value="${v('cover_bg') || '#1f3b4d'}"></div>
+        <div><label for="cover_ink">Couleur du texte</label><input id="cover_ink" name="cover_ink" type="color" value="${v('cover_ink') || '#ffffff'}"></div>
+        <div><label>Image de la face avant (optionnelle)</label><input type="file" id="cimg" accept="image/*"><div class="muted">${kdpMem.cover[id] ? 'Image chargée' : 'Aucune image'}</div></div>
+        <div><label for="cover_img_mode">Placement de l'image</label>${sel('cover_img_mode', [['center', 'Au centre, sous le titre'], ['full', 'Toute la face avant']], b.cover_img_mode || 'center')}</div>
+      </div>
+      <div><label for="cover_back_text">Texte de la 4e de couverture</label><textarea id="cover_back_text" name="cover_back_text">${v('cover_back_text')}</textarea></div>
+      <div class="row" style="margin-top:var(--s3)"><button type="button" id="cvg">Aperçu avec repères</button><button type="button" class="primary" id="cvf">Couverture finale PDF</button></div>
+      <p class="muted">Rouge = coupe et pliures du dos, bleu = zone sûre pour le texte. Le rectangle blanc au dos est réservé au code-barres d'Amazon. Le fichier final n'a pas de repères.</p></form>
+
+    <form class="card bf"><h3 style="margin-top:0">5. Listing KDP</h3>
+      <div><label for="description">Description</label><textarea id="description" name="description" style="min-height:140px">${v('description')}</textarea></div>
+      <label style="margin-top:var(--s3)">7 mots-clés (50 caractères max chacun)</label>
+      <div class="grid">${[0, 1, 2, 3, 4, 5, 6].map(i => `<div><input name="kw${i}" maxlength="50" value="${esc((b.keywords || [])[i] || '')}" placeholder="mot-clé ${i + 1}"><div class="muted">${((b.keywords || [])[i] || '').length}/50 ${((b.keywords || [])[i]) ? `· <a href="${amazonBooksUrl(b.keywords[i])}" target="_blank" rel="noopener">voir sur Amazon</a>` : ''}</div></div>`).join('')}</div>
+      <div class="grid" style="margin-top:var(--s3)">
+        <div><label for="categories">Catégories (jusqu'à 3)</label><input id="categories" name="categories" value="${v('categories')}"></div>
+        <div><label for="ai">Contenu IA (à déclarer à KDP)</label>${sel('ai', [['none', 'Aucun contenu généré par IA'], ['images', 'Images générées par IA'], ['text', 'Texte généré par IA'], ['both', 'Texte et images générés par IA']], b.ai)}</div>
+        <div><label for="ai_tools">Outils IA utilisés</label><input id="ai_tools" name="ai_tools" value="${v('ai_tools')}" placeholder="ex. Ideogram, Gemini"></div>
+      </div>
+      <div class="row" style="margin-top:var(--s3)"><button type="button" id="cpl">Copier le listing</button></div></form>
+
+    <form class="card bf"><h3 style="margin-top:0">6. Prix et redevance (Amazon US)</h3>
+      <div class="row"><div class="field"><label for="price">Prix de vente ($)</label><input id="price" name="price" type="number" step="0.01" value="${v('price')}"></div>
+      <div class="field"><div class="muted">Coût d'impression</div><strong>$${R.cost.toFixed(2)}</strong></div>
+      <div class="field"><div class="muted">Taux</div><strong>${Math.round(R.rate * 100)} %</strong></div>
+      <div class="field"><div class="muted">Redevance par vente</div><div class="score" style="font-size:30px;color:${R.royalty > 0 ? 'var(--good)' : 'var(--bad)'}">$${R.royalty.toFixed(2)}</div></div></div>
+      <p class="muted">Prix minimum pour ne pas perdre d'argent : ~$${minPrice.toFixed(2)}. Calcul approximatif selon les réglages (page Livres KDP).</p></form>
+
+    <form class="card bf"><h3 style="margin-top:0">7. Avant de publier</h3>
+      ${[['tm', 'Titre, sous-titre et mots-clés vérifiés : aucune marque déposée'], ['ai_ok', 'Contenu IA déclaré correctement dans KDP'], ['int_ok', 'Intérieur vérifié dans l\'aperçu KDP'], ['cov_ok', 'Couverture vérifiée dans l\'aperçu KDP'], ['price_ok', 'Prix avec une redevance positive']].map(([k, l]) => `<label style="display:flex;gap:8px;align-items:center;color:var(--ink);margin:6px 0"><input type="checkbox" name="chk_${k}" style="width:auto" ${(b.checks || {})[k] ? 'checked' : ''}> ${l}</label>`).join('')}
+      <div class="row" style="margin-top:var(--s3)"><a class="btn" href="https://tmsearch.uspto.gov/" target="_blank" rel="noopener">Recherche de marques USPTO</a><a class="btn primary" href="https://kdp.amazon.com/en_US/bookshelf" target="_blank" rel="noopener">Ouvrir KDP</a></div>
+      <p class="muted">Aujourd'hui : ${kdpToday()}/${s.daily_max} titres envoyés. Passe le statut à « en revue Amazon » après l'envoi.</p></form>
+    <div class="row"><button class="danger" id="del">Supprimer le livre</button><span class="muted" id="saved">Enregistré automatiquement</span></div>`;
+
+  const rerenderKeys = ['type', 'trim', 'paper', 'pages_target', 'price', 'status'];
+  document.querySelectorAll('form.bf').forEach(f => {
+    f.onsubmit = e => e.preventDefault();
+    const handler = e => {
+      const el = e.target; if (!el.name) return;
+      const patch = { id }; const cur = db.getBook(id);
+      if (el.name.startsWith('kw')) { const kws = (cur.keywords || []).slice(); kws[Number(el.name.slice(2))] = el.value; patch.keywords = kws; }
+      else if (el.name.startsWith('chk_')) { patch.checks = Object.assign({}, cur.checks, { [el.name.slice(4)]: el.checked }); }
+      else if (el.type === 'checkbox') patch[el.name] = el.checked;
+      else if (el.type === 'number') patch[el.name] = el.value === '' ? null : Number(el.value);
+      else patch[el.name] = el.value;
+      if (el.name === 'niche_id' && !el.value) patch.niche_id = null;
+      if (el.name === 'trim' || el.name === 'type' || el.name === 'bleed') patch.page_count = null;
+      db.saveBook(patch);
+      $('#saved').textContent = 'Enregistré à ' + new Date().toLocaleTimeString('fr-FR');
+      if (e.type === 'change' && (rerenderKeys.includes(el.name) || el.type === 'checkbox')) kdpBook(id);
+    };
+    f.addEventListener('input', e => { if (e.target.type !== 'checkbox' && e.target.tagName !== 'SELECT') handler(e); });
+    f.addEventListener('change', handler);
+  });
+  const imgs = $('#imgs');
+  if (imgs) imgs.onchange = async e => { const files = [...e.target.files]; if (!files.length) return; toast('Chargement des images…'); const out = []; for (const f of files) { try { out.push(await kdpLoadImage(f, 3300)); } catch (err) { toast('Image illisible : ' + err.message); } } kdpMem.images[id] = (kdpMem.images[id] || []).concat(out); db.saveBook({ id, page_count: null }); kdpBook(id); toast(out.length + ' image(s) ajoutée(s)'); };
+  const genpz = $('#genpz');
+  if (genpz) genpz.onclick = () => {
+    const cur = db.getBook(id); genpz.disabled = true; genpz.textContent = 'Génération…';
+    setTimeout(() => {
+      const puzzles = Object.assign({}, cur.puzzles);
+      if (cur.type === 'sudoku') { const n = Math.min(400, Math.max(1, Number(cur.n_puzzles) || 100)); puzzles.sudoku = Array.from({ length: n }, () => sdkMake(Number(cur.difficulty) || 32)); }
+      else { const size = Number(cur.ws_size) || 15; puzzles.wordsearch = String(cur.ws_lists || '').split('\n').map(l => l.trim()).filter(Boolean).map(l => { const [title, rest] = l.includes(':') ? [l.slice(0, l.indexOf(':')).trim(), l.slice(l.indexOf(':') + 1)] : ['Word Search', l]; return wsMake(title, rest.split(',').map(x => x.trim()).filter(Boolean), size); }); }
+      db.saveBook({ id, puzzles, page_count: null }); kdpBook(id); toast('Grilles générées');
+    }, 30);
+  };
+  $('#mkint').onclick = () => {
+    if (!kdpNeedPdf()) return; const cur = db.getBook(id);
+    if (cur.type === 'coloring' && !(kdpMem.images[id] || []).length) { toast('Ajoute d\'abord les images de coloriage'); return; }
+    if ((cur.type === 'sudoku' && !((cur.puzzles || {}).sudoku || []).length) || (cur.type === 'wordsearch' && !((cur.puzzles || {}).wordsearch || []).length)) { toast('Génère d\'abord les grilles'); return; }
+    const { doc, pages: n } = kdpInterior(cur);
+    doc.save(`${(cur.title || 'livre').replace(/[^\w-]+/g, '_')}_interieur_${cur.trim}.pdf`);
+    db.saveBook({ id, page_count: n, status: cur.status === 'idea' ? 'building' : cur.status }); kdpBook(id); toast(`Intérieur : ${n} pages`);
+  };
+  $('#cimg').onchange = async e => { const f = e.target.files[0]; if (!f) return; try { kdpMem.cover[id] = await kdpLoadImage(f, 3600); kdpBook(id); toast('Image de couverture chargée'); } catch (err) { toast('Image illisible'); } };
+  const mkCover = guides => { if (!kdpNeedPdf()) return; const cur = db.getBook(id); if (!cur.page_count) toast('Astuce : génère l\'intérieur d\'abord pour un dos exact'); const { doc } = kdpCover(cur, guides); doc.save(`${(cur.title || 'livre').replace(/[^\w-]+/g, '_')}_couverture${guides ? '_reperes' : ''}.pdf`); };
+  $('#cvg').onclick = () => mkCover(true);
+  $('#cvf').onclick = () => mkCover(false);
+  $('#cpl').onclick = () => { const cur = db.getBook(id); copy([`Title: ${cur.title || ''}`, `Subtitle: ${cur.subtitle || ''}`, `Author: ${cur.author || ''}`, '', 'Description:', cur.description || '', '', 'Keywords:', ...(cur.keywords || []).filter(Boolean).map((k, i) => `${i + 1}. ${k}`), '', `Categories: ${cur.categories || ''}`, `Price: $${cur.price || ''}`, `AI content: ${cur.ai}${cur.ai_tools ? ' (' + cur.ai_tools + ')' : ''}`].join('\n')); };
+  $('#del').onclick = () => { if (confirmBox('Supprimer ce livre ?')) { db.deleteBook(id); location.hash = '#/kdp'; } };
 }
 
 start();
