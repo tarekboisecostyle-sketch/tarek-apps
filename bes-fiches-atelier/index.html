@@ -545,6 +545,10 @@ tr.drow.on td{background:#ffe2c6;color:#121212}
           <label class="f">Position X (depuis la gauche)<span class="unit"><input id="inX" type="number" step="10" placeholder="auto"></span></label>
           <label class="f">Position Y (dessous, depuis le sol)<span class="unit"><input id="inY" type="number" step="10" placeholder="auto"></span></label>
         </div>
+        <div class="grid2" id="underRow" hidden>
+          <label class="f">Sous ce caisson<select id="inUnder"><option value="">Rien (posé au sol)</option><option value="ml">Machine à laver</option><option value="frigo">Réfrigérateur (petit)</option><option value="lv">Lave-vaisselle</option><option value="libre">Espace vide</option></select></label>
+          <label class="f">Hauteur de l'espace (le caisson commence à)<span class="unit"><input id="inUnderH" type="number" step="10" value="900"></span></label>
+        </div>
         <div class="grid2" id="joueRow" hidden>
           <label class="f">Joue de finition (cache-côté couleur façade)<select id="inJoue"><option value="">Aucune</option><option value="g">Côté gauche</option><option value="d">Côté droit</option><option value="gd">Les deux côtés</option></select></label>
         </div>
@@ -1474,7 +1478,7 @@ function snapModule(){if(!KIT)return;const m=KIT.mods[KIT.cur];if(!m)return;
   if(pv.startsWith('up:')||pv.startsWith('right:')){const [side,to]=pv.split(':');m.anchor={side,to};}else m.anchor=null;
   const libre=pv==='libre';
   Object.assign(m,{L:S.L,H:S.H,P:S.P,base:S.base,socle:S.socle,plinthe:S.plinthe,q:S.q,fix:S.fix,rep:S.produit||m.rep,row:$('#inRow').value,comps:S.comps,doors:S.doors,nc:S.nc,x:libre&&xv!==''?+xv:null,y:libre&&yv!==''?+yv:null});
-  if(!$('#appWrap').hidden)m.app=$('#inApp').value;if(!$('#topWrap').hidden)m.top=$('#inTop').value;if(!$('#wallRow').hidden)m.wall=$('#inWall').value==='B'?'B':'';if(!$('#joueRow').hidden)m.joue=$('#inJoue').value;}
+  if(!$('#appWrap').hidden)m.app=$('#inApp').value;if(!$('#topWrap').hidden)m.top=$('#inTop').value;if(!$('#wallRow').hidden)m.wall=$('#inWall').value==='B'?'B':'';if(!$('#joueRow').hidden)m.joue=$('#inJoue').value;if(!$('#underRow').hidden){const u=$('#inUnder').value;m.under=u?{app:u,h:Math.max(300,parseFloat($('#inUnderH').value)||900)}:null;}}
 function loadModule(i){KIT.cur=i;const m=KIT.mods[i];
   $('#inL').value=m.L;$('#inH').value=m.H;$('#inP').value=m.P;$('#inBase').value=m.base;$('#inSocle').value=m.socle;$('#inPlinthe').checked=m.plinthe!==false;
   $('#inQ').value=m.q;$('#inFix').value=m.fix||'vis';$('#inProduit').value=m.rep;$('#inRow').value=m.row;S.comps=m.comps;
@@ -1483,7 +1487,7 @@ function loadModule(i){KIT.cur=i;const m=KIT.mods[i];
   const pn=isPanel(m)||isVide(m);['fsDos','fsEtag','fsComps','baseWrap','socWrap','plWrap','hHint'].forEach(id=>{const el=document.getElementById(id);if(el)el.hidden=pn;});
   $('#panelHint').hidden=!pn;$('#panelHint').textContent=m.type==='panneau'?'Panneau d\'habillage : seules L et H comptent (MDF 18, chant sur les 4 côtés).':m.type==='joue'?'Joue : seules P (largeur de la joue) et H comptent. Sur le dessin elle fait 18 mm de large.':m.type==='tablette'?'Tablette murale : seules L et P comptent. Sur le dessin elle fait 18 mm de haut.':m.type==='vide'?'Espace vide : seules la largeur L et la hauteur H comptent. Il sépare les caissons, aucune pièce à découper. Rangée Bas = au sol, Haut = à la hauteur des hauts.':'';
   {const vd=isVide(m),bas=!vd&&!isPanel(m)&&m.row==='bas'&&KIT.mode==='cuisine';$('#appWrap').hidden=!vd;$('#topWrap').hidden=!bas;$('#appRow').hidden=!vd&&!bas;
-   $('#inApp').value=m.app||'';$('#inTop').value=m.top||'';$('#wallRow').hidden=KIT.mode!=='cuisine';$('#inWall').value=m.wall==='B'?'B':'';$('#joueRow').hidden=vd||isPanel(m);$('#inJoue').value=m.joue||'';
+   $('#inApp').value=m.app||'';$('#inTop').value=m.top||'';$('#wallRow').hidden=KIT.mode!=='cuisine';$('#inWall').value=m.wall==='B'?'B':'';$('#joueRow').hidden=vd||isPanel(m);$('#inJoue').value=m.joue||'';$('#underRow').hidden=vd||isPanel(m)||m.row==='haut';$('#inUnder').value=m.under?m.under.app:'';$('#inUnderH').value=m.under?m.under.h:900;
    [...$('#inApp').options].forEach(o=>{o.hidden=!!o.value&&(m.row==='haut'?!['hotte','mo'].includes(o.value):['hotte','mo'].includes(o.value));});}
   renderComps();render();}
 function computePanel(m){const d=R.ded?R.chant:0,ch=m.type==='tablette'?{l1:1,w1:1,w2:1}:{l1:1,l2:1,w1:1,w2:1};
@@ -1525,7 +1529,7 @@ function kitLayout(res){if(!res.some(rm=>rm.m.wall==='B'))return kitLayout1(res)
 function kitLayout1(res){
   const kh=v('kHaut')||1500,pos=[],TOL=100,glue=!$('#kGlue')||$('#kGlue').checked;let xb=0;
   const sz=rm=>({w:rm.ew??rm.m.L,h:rm.eh??rm.m.H});
-  res.forEach((rm,i)=>{if(rm.m.anchor)return;if(rm.m.row!=='haut'){const x=rm.m.x??xb;pos[i]={rm,x,y:rm.m.y??0,...sz(rm)};if(rm.m.x==null||rm.m.y==null||rm.m.y===0)xb=Math.max(xb,x+sz(rm).w);}});
+  res.forEach((rm,i)=>{if(rm.m.anchor)return;if(rm.m.row!=='haut'){const x=rm.m.x??xb;pos[i]={rm,x,y:rm.m.y??(rm.m.under&&!rm.panel?rm.m.under.h:0),...sz(rm)};if(rm.m.x==null||rm.m.y==null||rm.m.y===0)xb=Math.max(xb,x+sz(rm).w);}});
   const fb=res.findIndex(rm=>rm.m.row==='bas'&&!rm.panel);let xh=fb>=0?pos[fb].x:0;
   res.forEach((rm,i)=>{if(rm.m.anchor)return;if(rm.m.row==='haut'){const x=rm.m.x??xh;pos[i]={rm,x,y:rm.m.y??kh,...sz(rm)};xh=x+sz(rm).w;}});
   const ov={};/* X corrigés par le collage automatique */
@@ -1541,7 +1545,7 @@ function kitLayout1(res){
     if(e!=null&&!libre){const gap=p.x-e;if(gap<0||(gap>0&&gap<=TOL)){p.x=e;ov[p.i]=e;pos[p.i].x=e;}}e=e==null?p.x+p.w:Math.max(e,p.x+p.w);});};
   anchors();
   if(glue){
-    snap(pos.map((p,i)=>p&&{...p,i}).filter(p=>p&&p.y===0&&p.rm.m.row!=='haut'));anchors();
+    snap(pos.map((p,i)=>p&&{...p,i}).filter(p=>p&&(p.y===0||p.rm.m.under)&&p.rm.m.row!=='haut'));anchors();
     const hs=pos.map((p,i)=>p&&{...p,i}).filter(p=>p&&p.rm.m.row==='haut'&&!p.rm.panel),ys=[...new Set(hs.map(p=>Math.round(p.y)))];
     ys.forEach(y=>snap(hs.filter(p=>Math.round(p.y)===y)));anchors();}
   res.forEach((rm,i)=>{if(!pos[i])pos[i]={rm,x:0,y:0,...sz(rm)};});
@@ -1580,6 +1584,7 @@ function kitchenSVG(res,W=1000,lang=LANG,sel=true){
     el.filter(p=>p.w>=40&&!p.rm.panel).forEach(p=>out+=dimH(X(p.x),X(p.x+p.w),Y(p.y)+44,Y(p.y),fmt(p.w)));}}
   if(basH&&!pos.some(p=>p.y>0&&(!cuis||p.rm.m.row!=='haut')))out+=dimV(Y(basH),Y(0),X(0)-52,X(0),fmt(basH));
   const tall=Math.max(0,...pos.map(p=>p.y+p.h));if(tall>basH)out+=dimV(Y(tall),Y(0),X(0)-80,X(0),fmt(tall),'tb');
+  pos.forEach(p=>{if(!p||!p.rm.m.under||p.rm.panel||p.y<=0)return;const u=p.rm.m.under,x=X(p.x),w=p.w*s,y=Y(p.y),hh=p.y*s;out+=`<rect x="${x+2}" y="${y+2}" width="${w-4}" height="${hh-2}" fill="none" stroke="#121212" stroke-width="1" stroke-dasharray="5 4"/><text class="ts" x="${x+w/2}" y="${y+hh/2+4}" text-anchor="middle">${u.app!=='libre'&&T['app_'+u.app]?lb('app_'+u.app,lang):lb('vide',lang)}</text>`;});
   if(KIT&&KIT.jo)KIT.jo.geo.forEach(gq=>{const p=pos[gq.mod];if(!p)return;const w=Math.max(R.ep*s,2),x=gq.side==='g'?X(p.x)-w:X(p.x+p.w);out+=`<rect class="pf" x="${x}" y="${Y(gq.y1)}" width="${w}" height="${(gq.y1-gq.y0)*s}" style="fill:#d9cfbf"/>`;});
   if(KIT&&KIT.lc&&pos.some(p=>p&&p.wall==='B'))KIT.lc.geo.forEach(gq=>{const x=X(gq.x2),w=KIT.lc.w*s,y=Y(gq.y1),hh=(gq.y1-gq.y0)*s;out+=`<rect class="pf" x="${x}" y="${y}" width="${Math.max(w,2)}" height="${hh}" style="fill:#ffe9c7"/><text class="ts" transform="translate(${x+w/2+3} ${y+hh/2}) rotate(-90)" text-anchor="middle">RG-${gq.n} · ${fmt(KIT.lc.w)}</text>`;});
   pos.forEach(p=>{if(!p||!p.rm.g||!p.rm.g.comps)return;p.rm.g.comps.forEach(c=>{if(!c.app)return;const A=c.app,x=X(p.x+c.x),y=Y(p.y+A.yt),w=c.w*s,hh=(A.yt-A.yb)*s;if(w<20)return;out+=`<rect x="${x}" y="${y}" width="${w}" height="${hh}" fill="none" stroke="#121212" stroke-width="1" stroke-dasharray="5 4"/><text class="ts" x="${x+w/2}" y="${y+hh/2+4}" text-anchor="middle">${lb('app_'+A.type,lang)}</text>`;});});
@@ -1990,7 +1995,7 @@ function wtParts(sets,wl){const P=[];if(!KIT||KIT.mode!=='cuisine')return P;
   const bas=sets.filter(st=>st.r.m&&st.r.m.row==='bas'&&!st.r.panel&&!st.r.vide&&!(st.oy>0));if(!bas.length)return P;
   const H=Math.max(...bas.map(st=>st.r.m.H)),z1=Math.max(...bas.map(st=>(st.oz||0)+st.r.m.P)),z0=Math.min(...bas.map(st=>st.oz||0))-R.ep-WT.deb;
   let x0=Math.min(...bas.map(st=>st.ox||0)),x1=Math.max(...bas.map(st=>(st.ox||0)+st.r.m.L));
-  const cut=sets.filter(st=>st.r.vide&&st.r.m.row!=='haut'&&(['frigo','cuis'].includes(st.r.m.app)||(KIT&&KIT.mods.some(o=>o.anchor&&o.anchor.side==='up'&&o.anchor.to===st.r.m.id)))).map(st=>[st.ox||0,(st.ox||0)+st.r.m.L]).sort((a,b)=>a[0]-b[0]);
+  const cut=sets.filter(st=>st.r.vide&&st.r.m.row!=='haut'&&(['frigo','cuis'].includes(st.r.m.app)||(KIT&&KIT.mods.some(o=>o.anchor&&o.anchor.side==='up'&&o.anchor.to===st.r.m.id))))||(st.r.m&&st.r.m.under&&!st.r.panel&&st.r.m.row!=='haut').map(st=>[st.ox||0,(st.ox||0)+st.r.m.L]).sort((a,b)=>a[0]-b[0]);
   const segs=[];let a=x0;cut.forEach(([c0,c1])=>{if(c1<=a||c0>=x1)return;if(c0>a)segs.push([a,c0]);a=Math.max(a,c1);});if(a<x1)segs.push([a,x1]);
   segs.forEach(([s0,s1],i)=>P.push({id:'wt-'+(wl||'A')+'-'+i,key:null,x0:s0,x1:s1,y0:H,y1:H+WT.ep,z0,z1,kind:'top',ox:0,oy:0,oz:0,wt:1,len:s1-s0,prof:z1-z0}));
   return P;}
@@ -2008,6 +2013,10 @@ function lXf(p,G,tot){tot=tot||G.TotB;const left=G.side!=='d',X=zl=>left?G.maxPB
 function v3dAllParts(sets){const G=lGeo(sets),out=[];
   sets.forEach(st=>v3dParts(st.r,st.mod).forEach(p=>{p.ox=st.ox||0;p.oy=st.oy||0;p.oz=st.oz||0;p.res=st.r;if(G&&st.wall==='B')lXf(p,G,(st.r.m&&st.r.m.row==='haut'?G.endH:G.endL)||G.TotB);out.push(p);}));
   ['A','B'].forEach(wl=>{const ss=sets.filter(st=>(st.wall||'A')===wl);if(!ss.length||(wl==='B'&&!G))return;wtParts(ss,wl).forEach(p=>{p.res=null;if(wl==='B')lXf(p,G,G.endL||G.TotB);out.push(p);});});
+  if(KIT&&KIT.pos)sets.forEach(st=>{const m=st.r.m;if(!m||!m.under||st.r.panel||st.mod==null)return;const pp=KIT.pos[st.mod];if(!pp||pp.y<=0)return;
+    const D=v3dDims(st.r),tmp=[],bx=(id,key,x0,x1,y0,y1,z0,z1,kind,ex)=>{if(x1-x0<0.2||y1-y0<0.2||z1-z0<0.2)return;tmp.push(Object.assign({id:st.mod+':u'+id,key,x0,x1,y0,y1,z0,z1,kind,mod:st.mod},ex||{}));};
+    if(m.under.app!=='libre')appParts({L:D.L,H:pp.y-15,app:m.under.app},D,bx,tmp,st.mod);
+    tmp.forEach(p=>{p.ox=st.ox||0;p.oy=(st.oy||0)-pp.y;p.oz=st.oz||0;p.res=st.r;if(G&&st.wall==='B')lXf(p,G,G.endL||G.TotB);out.push(p);});});
   if(KIT&&KIT.jo&&KIT.pos)KIT.jo.geo.forEach(gq=>{const st=sets.find(x=>x.mod===gq.mod);if(!st)return;const pp=KIT.pos[gq.mod],py=pp?pp.y:0,L=v3dDims(st.r).L,e=R.ep,x0=gq.side==='g'?-e:L;
     const p={id:'jo-'+gq.mod+'-'+gq.side,key:'joue',x0,x1:x0+e,y0:gq.y0-py,y1:gq.y1-py,z0:-e,z1:gq.P,ox:st.ox||0,oy:st.oy||0,oz:st.oz||0,kind:'f',res:gq.res,mod:st.mod};
     if(G&&st.wall==='B')lXf(p,G,(st.r.m&&st.r.m.row==='haut'?G.endH:G.endL)||G.TotB);out.push(p);});
@@ -2326,6 +2335,7 @@ function kitExtras(){if(!KIT)return;KIT.msel=KIT.msel||new Set();
   const el=KIT.mods.filter(kmEligible);
   $('#kmList').innerHTML=el.map(m=>`<label class="${KIT.msel.has(m.id)?'on':''}"><input type="checkbox" data-kid="${esc(m.id)}"${KIT.msel.has(m.id)?' checked':''}><b>${esc(m.rep)}</b> ${m.type==='placard'?'Placard':rowLb(m.row,'fr')} · ${fmt(m.L)}×${fmt(m.H)}×${fmt(m.P)}</label>`).join('')||'<span class="hint">Aucun caisson.</span>';
   const n=KIT.msel.size;$('#kmCount').textContent=n?`· ${n} choisi${n>1?'s':''}`:'';$('#kmApply').disabled=!n;}
+$('#inUnder').addEventListener('change',e=>{if(e.target.value&&$('#inBase').value!=='aucun'){$('#inBase').value='aucun';}});
 $('#kWallB').addEventListener('input',e=>{if(!KIT)return;KIT.wallB=parseFloat(e.target.value)>0?parseFloat(e.target.value):null;kitExtras();if(typeof saveDraft==='function')saveDraft();});
 $('#kLside').addEventListener('change',e=>{if(!KIT)return;KIT.lside=e.target.value;V3.framed=false;render();});
 $('#kWall').addEventListener('input',e=>{if(!KIT)return;KIT.wall=parseFloat(e.target.value)>0?parseFloat(e.target.value):null;kitExtras();if(typeof saveDraft==='function')saveDraft();});

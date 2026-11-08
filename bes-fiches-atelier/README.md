@@ -22,6 +22,7 @@ Application de production de BOIS ECO-STYLE : saisie des meubles (placards, cuis
 
 - **Prise des portes** (Règles de l'atelier) : caissons bas en **Gola** par défaut (façades 30 mm plus basses que le caisson = profil L, 30 mm entre façades de tiroirs = profil C) ; caissons hauts en **push / touch-latch** ; colonnes en **poignée intégrée** (ou push, ou poignées). Quincaillerie : longueurs de profil Gola L et C (mm), nombre de push. Sans poignée, la réglette d'angle minimum passe à 20 mm
 - **Caisson au-dessus d'un appareil** (machine à laver, petit frigo) : sélectionner l'espace vide de l'appareil puis « Ajouter → Caisson au-dessus d'un appareil » : il se pose dessus à 90 cm du sol (l'espace passe à 900), le plan de travail s'arrête à cet endroit
+- **Sous ce caisson** (réglage de chaque caisson bas ou colonne) : machine à laver, petit réfrigérateur, lave-vaisselle ou espace vide, avec la hauteur de l'espace (900 par défaut). Le caisson garde sa place dans la rangée, commence à cette hauteur (sans pieds ni socle), l'appareil est dessiné dessous en 3D et sur l'élévation, le plan de travail s'arrête à cet endroit
 - **Joue de finition** (cache-côté, couleur des façades) : réglage par caisson (gauche, droite, les deux). Elle descend jusqu'au sol pour un caisson bas ou posé sur un appareil, profondeur = caisson + porte ; dans le débit (repère C6-J), la 3D, l'élévation et la longueur du mur
 
 ## Ensemble sur un mur
