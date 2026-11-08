@@ -904,12 +904,13 @@ function kdpList() {
     <div class="grid">
       <div class="card"><div class="muted">Livres envoyés aujourd'hui</div><div class="score">${today}/${s.daily_max}</div><div class="muted">Amazon limite les nouveaux titres par jour</div></div>
       <div class="card"><div class="muted">En vente</div><div class="score">${list.filter(b => b.status === 'live').length}</div></div>
+      ${['craft', 'ai'].map(src => { const l = list.filter(b => b.design_source === src); return `<div class="card"><div class="muted">${src === 'craft' ? 'Designs Craft' : 'Designs IA'}</div><div class="score">${l.reduce((a, b) => a + (Number(b.sales) || 0), 0)}</div><div class="muted">ventes · ${l.length} livre(s) · ${l.filter(b => b.status === 'live').length} en vente</div></div>`; }).join('')}
       <div class="card"><div class="muted">En création</div><div class="score">${list.filter(b => ['idea', 'building', 'ready'].includes(b.status)).length}</div></div>
     </div>
     <div class="card"><div class="row">
       <div class="field"><label for="q">Chercher une idée de livre sur Amazon</label><input id="q" placeholder="ex. fishing logbook, mandala coloring book for adults"></div>
       <button id="go">Ouvrir Amazon Livres</button><button class="primary" id="new">Nouveau livre</button></div></div>
-    ${list.length ? `<div class="grid">${list.map(b => `<a class="card btn" style="text-align:left" href="#/livre/${b.id}"><strong>${esc(b.title || 'Sans titre')}</strong><br>${kdpBadge(b.status)}<div class="muted">${esc(KDP_TYPES[b.type] || b.type)} · ${esc(b.trim)} · ${b.page_count || b.pages_target || '?'} p.</div></a>`).join('')}</div>`
+    ${list.length ? `<div class="grid">${list.map(b => `<a class="card btn" style="text-align:left" href="#/livre/${b.id}"><strong>${esc(b.title || 'Sans titre')}</strong><br>${kdpBadge(b.status)}<div class="muted">${esc(KDP_TYPES[b.type] || b.type)} · ${esc(b.trim)} · ${b.page_count || b.pages_target || '?'} p.${b.design_source ? ' · ' + (b.design_source === 'ai' ? 'IA' : 'Craft') : ''}${b.sales ? ' · ' + b.sales + ' ventes' : ''}</div></a>`).join('')}</div>`
       : `<div class="card empty">Aucun livre. Clique « Nouveau livre » pour commencer.</div>`}
     <details class="card"><summary>Réglages des redevances (coûts d'impression Amazon US)</summary>
       <p class="note">Valeurs par défaut à vérifier avec le calculateur officiel KDP : Amazon change parfois ses tarifs.</p>
@@ -960,7 +961,10 @@ function kdpBook(id) {
       <div><label for="paper">Papier</label>${sel('paper', [['white', 'Blanc (N&B)'], ['cream', 'Crème (N&B)'], ['color', 'Couleur standard']], b.paper)}</div>
       <div><label for="pages_target">Pages visées (journaux / logbooks)</label><input id="pages_target" name="pages_target" type="number" min="24" max="828" value="${v('pages_target')}"></div>
       <div><label for="status">Statut</label>${sel('status', KDP_STATUS.map(x => [x[0], x[1]]), b.status)}</div>
+      <div><label for="design_source">Source du design (pour comparer les ventes)</label>${sel('design_source', [['', '—'], ['craft', 'Craft (VectorCraft)'], ['ai', 'IA (Ideogram / Gemini)']], b.design_source || '')}</div>
+      <div><label for="sales">Ventes (à mettre à jour depuis KDP)</label><input id="sales" name="sales" type="number" min="0" value="${v('sales')}"></div>
     </div>
+    ${b.design_source === 'ai' && b.ai === 'none' ? '<p class="note">Design fait par IA : pense à le déclarer dans la section Listing (Contenu IA).</p>' : ''}
     <div class="row" style="margin-top:var(--s3)">${chk('bleed', 'Fond perdu (bleed) — pour des images jusqu\'au bord')}${chk('belongs_to', 'Page « This book belongs to »')}${chk('page_numbers', 'Numéros de page')}</div></form>
 
     <form class="card bf"><h3 style="margin-top:0">2. Contenu</h3>${contentForm}</form>
@@ -1009,7 +1013,7 @@ function kdpBook(id) {
       <p class="muted">Aujourd'hui : ${kdpToday()}/${s.daily_max} titres envoyés. Passe le statut à « en revue Amazon » après l'envoi.</p></form>
     <div class="row"><button class="danger" id="del">Supprimer le livre</button><span class="muted" id="saved">Enregistré automatiquement</span></div>`;
 
-  const rerenderKeys = ['type', 'trim', 'paper', 'pages_target', 'price', 'status'];
+  const rerenderKeys = ['type', 'trim', 'paper', 'pages_target', 'price', 'status', 'design_source', 'sales'];
   document.querySelectorAll('form.bf').forEach(f => {
     f.onsubmit = e => e.preventDefault();
     const handler = e => {
