@@ -920,7 +920,9 @@ function compute(){
       if(dw>650)warns.push(`Compartiment ${i+1} : portes de ${fmt(dw)} mm de large, au-delà de 650 mm elles risquent de tomber. Mettez 2 portes.`);
       fz.push(z);return;}
     if(c.app&&APPH[c.app]&&nt===0&&c.type==='etag'){const hN=APPH[c.app],fl0=sc+e,ce=S.H-e;
-      let yb=c.fy>0?c.fy:c.app==='hotte'?fl0:(S.H>1500?(c.app==='four'?900:1500):ce-hN);yb=Math.max(fl0,Math.min(yb,ce-hN));const yt=yb+hN;z.app={type:c.app,yb,yt};
+      /* position automatique comptée depuis le sol : four au niveau du plan de travail, micro-ondes à hauteur des yeux (1450) */
+      const lift=S.lift||0,absTop=lift+S.H,ptH=R.ptH||900,tgt=c.app==='four'?ptH:1450;
+      let yb=c.fy>0?c.fy:c.app==='hotte'?fl0:(absTop>=tgt+hN+e?tgt-lift:ce-hN);yb=Math.max(fl0,Math.min(yb,ce-hN));const yt=yb+hN;z.app={type:c.app,yb,yt};
       const segs=[];if(yb>fl0+e+100)segs.push([y0f,yb-e/2-R.jj/2]);if(yt<ce-e-100)segs.push([yt+e/2+R.jj/2,y1f]);
       if(dp>0){const dw=(fw-(dp-1)*R.jj)/dp;segs.forEach(([a,b])=>{for(let k=0;k<dp;k++)fronts.push({type:'porte',x:fl+k*(dw+R.jj),y:a,w:dw,h:b-a,comp:i,hinge:dp===2?(k===0?'L':'R'):(i<nc/2?'L':'R')});});
         if(dw>650)warns.push(`Compartiment ${i+1} : portes de ${fmt(dw)} mm de large, au-delà de 650 mm elles risquent de tomber. Mettez 2 portes.`);}
@@ -1300,7 +1302,7 @@ function renderComps(){
          return Array.from({length:c.nt||0},(_,k)=>`<label class="f">Tiroir ${k+1}${k===0?' (en haut)':k===(c.nt-1)?' (en bas)':''}<span class="unit"><input data-i="${i}" data-f="thk" data-k="${k}" id="cthk${i}_${k}" type="number" step="5" placeholder="${c.kind==='tir'&&!(c.dp>0)?'auto':'180'}" value="${parseFloat(a[k])>0?parseFloat(a[k]):''}"></span></label>`).join('');})()}`:''}
        </div>`;})()}
      ${S.product==='caisson'&&c.type==='etag'&&!c.kind?`<div class="grid2" style="margin-top:6px"><label class="f">Appareil encastré<select data-i="${i}" data-f="app" id="capp${i}"><option value=""${c.app?'':' selected'}>Aucun</option><option value="four"${c.app==='four'?' selected':''}>Four (niche 600 × 600)</option><option value="mo"${c.app==='mo'?' selected':''}>Micro-ondes (niche 390)</option><option value="hotte"${c.app==='hotte'?' selected':''}>Hotte encastrée (180)</option></select></label>
-       ${c.app?`<label class="f">Bas de l'appareil (depuis le bas du meuble)<span class="unit"><input data-i="${i}" data-f="fy" id="cfy${i}" type="number" step="10" placeholder="auto" value="${c.fy>0?c.fy:''}"></span></label>`:''}</div>`:''}
+       ${c.app?`<label class="f">Bas de l'appareil (depuis le bas du meuble)<span class="unit"><input data-i="${i}" data-f="fy" id="cfy${i}" type="number" step="10" placeholder="${c.app==='hotte'?'auto : en bas du caisson':c.app==='four'?'auto : au niveau du plan':'auto : vers 1450 du sol'}" value="${c.fy>0?c.fy:''}"></span></label>`:''}</div>`:''}
      <span class="hint" id="cinfo${i}"></span></td></tr>`).join('');
 }
 function render(){queueMicrotask(()=>{try{updRelBanner();}catch(e){}});
@@ -1311,7 +1313,7 @@ function render(){queueMicrotask(()=>{try{updRelBanner();}catch(e){}});
   $('#planBox').innerHTML=KIT?r.svg:overview(r,1000);
   if(!r.panel)r.g.comps.forEach((c,i)=>{const el=document.getElementById('cinfo'+i);if(!el)return;const z=c.zones.map(fmt);
     const tf=r.g.fronts.filter(f=>f.comp===i&&f.type==='tiroir').sort((a,b)=>b.y-a.y).map(f=>{const p=r.by('ftir',`${fmt(f.w)}x${fmt(f.h)}`);return p?fmt(p.Lc):''});
-    const tt=tf.length?` Façades tiroirs de haut en bas (coupe) : ${tf.join(' · ')}.`:'';
+    const cm=KIT&&KIT.mods[KIT.cur],lf=cm&&cm.under&&cm.row!=='haut'?(cm.under.h||0):0,tt=(tf.length?` Façades tiroirs de haut en bas (coupe) : ${tf.join(' · ')}.`:'')+(c.app?` ${lb('app_'+c.app.type,'fr')} : de ${fmt(lf+c.app.yb)} à ${fmt(lf+c.app.yt)} mm du sol.`:'');
     const wt=`Largeur ${fmt(c.w)} mm${c.adj?' (ajustée pour tomber juste)':c.auto?' (auto, partage du reste)':' (fixée)'}.`;
     el.textContent=wt+' '+(c.type==='pend'?`Penderie : ${z[0]} mm du dessous au chapeau.`
       :c.type==='mix3'?`De bas en haut : tiroirs ${z[0]} · ${z.slice(1,-2).map(v=>'étagère '+v).join(' · ')}${z.length>3?' · ':''}penderie ${z[z.length-2]}${c.hpAuto?' (auto)':''} · chapeau ${z[z.length-1]}.`
@@ -1507,8 +1509,8 @@ function computeVide(m){const W=620,Hh=380,s=Math.min((W-120)/Math.max(m.L,1),(H
   const svg=`<svg class="dw" viewBox="0 0 ${W} ${Hh}" xmlns="http://www.w3.org/2000/svg"><rect x="${x}" y="${y}" width="${w}" height="${hh}" fill="none" stroke="#121212" stroke-width="1.15" stroke-dasharray="6 5"/>
     <text class="ts" x="${W/2}" y="${y+hh/2+4}" text-anchor="middle">${lb('vide')}</text>${dimH(x,x+w,y+hh+40,y+hh,fmt(m.L))}${dimV(y+hh,y,x-40,x,fmt(m.H))}</svg>`;
   return {m,list:[],warns:[],acc:[],g:{fronts:[],comps:[]},panel:false,vide:true,svg,by:()=>null};}
-function computeModule(m){if(isPanel(m))return computePanel(m);if(isVide(m))return computeVide(m);const keys=['row','L','H','P','base','socle','plinthe','q','fix','produit','comps','product','doors','nc'],bak={};keys.forEach(k=>bak[k]=S[k]);
-  Object.assign(S,{row:m.row,L:m.L,H:m.H,P:m.P,base:m.base,socle:m.socle,plinthe:m.plinthe,q:m.q,fix:m.fix,produit:m.rep,comps:m.comps,product:m.type==='placard'?'placard':'caisson',doors:m.type==='placard'?(m.doors||'battant'):(m.doors==='relev'?'relev':'battant'),nc:m.nc??0});
+function computeModule(m){if(isPanel(m))return computePanel(m);if(isVide(m))return computeVide(m);const keys=['row','lift','L','H','P','base','socle','plinthe','q','fix','produit','comps','product','doors','nc'],bak={};keys.forEach(k=>bak[k]=S[k]);
+  Object.assign(S,{row:m.row,lift:m.under&&m.row!=='haut'?(m.under.h||0):0,L:m.L,H:m.H,P:m.P,base:m.base,socle:m.socle,plinthe:m.plinthe,q:m.q,fix:m.fix,produit:m.rep,comps:m.comps,product:m.type==='placard'?'placard':'caisson',doors:m.type==='placard'?(m.doors||'battant'):(m.doors==='relev'?'relev':'battant'),nc:m.nc??0});
   const r=compute();r.m=m;r.svg=overview(r,1000);keys.forEach(k=>S[k]=bak[k]);return r;}
 const rowLb=(row,l=LANG)=>lb(row==='haut'?'rowhaut':row==='col'?'rowcol':'rowbas',l);
 function modSummary(rm){if(rm.panel||rm.vide)return TYPE_LB[rm.m.type];const f=rm.g.fronts,np=f.filter(x=>x.type==='porte').length,nt=f.filter(x=>x.type==='tiroir').length;
