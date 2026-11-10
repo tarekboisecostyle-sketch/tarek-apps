@@ -22,14 +22,14 @@
 ---
 
 ## T46-01 · POD — 10 designs du jour
-- **Statut :** A_FAIRE
+- **Statut :** FAIT
 - **Priorité :** P1
 - **Projet :** POD
 - **Modèle :** Gemini Flash (idées, titres, tags) — génération image hors Antigravity
 - **Entrée :** `POD/POD Radar/rapports/radar_dernier.json`
 - **À faire :** choisir 10 idées vendables d'après le radar, écrire pour chacune : quote/texte, description de l'illustration, prompt image, titre + 13 tags en anglais, vérification trademark (noter la source).
 - **Sortie attendue :** `POD/a_valider/AAAA-MM-JJ/designs.json` + `designs.md`
-- **Rapport (Antigravity) :**
+- **Rapport (Antigravity) :** 10 designs choisis d'après le radar (Dog Mom, Cat Lover, Woodworking, Thanksgiving J-22, Christmas J-51, Electrician, Retirement, Nurse, Mechanic, Arabic Calligraphy). Pour chaque design : quote, description de l'illustration, prompt image Midjourney/Ideogram, titre + 13 tags en anglais, vérification trademark USPTO Classe 025 (toutes CLEAN). Règle AGENTS.md respectée pour le design arabe (texte vectoriel séparé). Fichiers générés : `POD/a_valider/2026-11-10/designs.json` et `designs.md`.
 - **Retour Claude :**
 
 ## T46-02 · ZWAQ DECO — textes réseaux de la semaine
