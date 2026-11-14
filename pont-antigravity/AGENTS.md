@@ -13,6 +13,7 @@
 | Pousse le code sur GitHub `tarek-apps` (branche de travail) | Relit et fusionne / déploie |
 
 **Interdit à Antigravity :** modifier les bases Supabase de BES (FacturePro, Caisse) ou créer/supprimer des devis, factures, bons. Pour ça → l'écrire dans `pont-antigravity/IDEES.md` et Claude s'en charge.
+**Exception (sur demande de Tarek) :** Antigravity peut préparer des fichiers JSON de documents BES dans `a_valider\`, que Tarek importe lui-même dans FacturePro. Rien n'est écrit dans Supabase BES.
 
 ## 2. Où ranger chaque fichier
 
@@ -77,3 +78,10 @@ Claude y écrit les tâches même quand le PC est éteint ; Antigravity les lit 
 - **`pont-antigravity/archives/`** : les semaines terminées (Claude les déplace).
 - Antigravity n'ajoute pas de tâches lui-même. S'il a une idée, il l'écrit dans `pont-antigravity/IDEES.md`.
 - Les fichiers produits restent dans `Desktop\Projets\...` (section 2) ; le rapport donne leurs chemins.
+
+## 6. Objectifs, skills et erreurs (à lire avant chaque tâche)
+
+1. Lire `pont-antigravity/objectifs.md` : les priorités et ce qu'on évite.
+2. Lire le skill indiqué dans la tâche (champ `Skill :` dans SEMAINE.md), dans `pont-antigravity/skills/`.
+3. Lire `pont-antigravity/erreurs.md` : les erreurs déjà corrigées.
+4. Faire la checklist du skill avant de passer une tâche en `FAIT`.
