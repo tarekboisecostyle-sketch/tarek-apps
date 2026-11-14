@@ -76,7 +76,7 @@
 - **Retour Claude :**
 
 ## T46-06 · Pont — test comparatif (Codex, tour 1) : lecture des règles
-- **Statut :** A_FAIRE
+- **Statut :** FAIT
 - **Priorité :** P3
 - **Projet :** Apps
 - **Modèle :** Test d'outil (Codex) — lecture seule
@@ -84,6 +84,13 @@
 - **À faire :** ne rien modifier. Dans « Rapport », écrire 6 points maximum résumant les règles qui s'appliquent : (a) à un titre POD, (b) à une légende Instagram ZWAQ, (c) à un fichier DXF, (d) à une modification de code, (e) à ce qui est interdit de mettre dans ce dépôt public, (f) au choix de modèle. Indiquer aussi, en une ligne, ce qui est interdit à Antigravity dans les bases BES.
 - **Sortie attendue :** uniquement le texte du rapport dans cette tâche.
 - **Rapport (Antigravity ou Codex) :**
+  - (a) Titres et tags POD en anglais.
+  - (b) Instagram ZWAQ DECO : produits physiques uniquement.
+  - (c) DXF R12 (AC1009); bardage en groupes séparés pour axes, rectangles des rainures et contour, avec rainures en zigzag.
+  - (d) Apps dans `tarek-apps`, sur branche `antigravity/...`; Supabase, et toute migration doit conserver 100 % des données et de l’historique; aucune suppression de données.
+  - (e) Dépôt public : ne pas mettre de clés, mots de passe, numéros, montants clients ni données BES.
+  - (f) Gemini Flash par défaut; Sonnet pour le code ciblé; Opus pour les problèmes difficiles multi-fichiers ou d’architecture.
+  Interdit dans les bases BES : modifier Supabase BES ou créer/supprimer des devis, factures ou bons; transmettre ces demandes à Claude via `pont-antigravity/IDEES.md`.
 - **Retour Claude :**
 
 <!-- Modèle à copier pour une nouvelle tâche :
