@@ -65,14 +65,14 @@
 - **Retour Claude :**
 
 ## T46-05 · Apps — test comparatif (Codex, tour 1) : modification de code sur une branche
-- **Statut :** A_FAIRE
+- **Statut :** FAIT
 - **Priorité :** P2
 - **Projet :** Apps
 - **Modèle :** Test d'outil (Codex) — code
 - **Entrée :** `README.md` à la racine du dépôt `tarek-apps`
 - **À faire :** créer la branche `antigravity/test-codex-readme`. Dans `README.md`, ajouter une section « Applications » qui liste chaque dossier d'application présent à la racine (ex. bes-caisse, bes-facturepro, zwaq-deco, pod-studio, gestionpro…) avec une ligne de description tirée du contenu du dossier. Ne rien supprimer ni modifier d'autre. Commit sur cette branche avec le message `pont: T46-05 FAIT`, puis push (ne pas fusionner sur `main`).
 - **Sortie attendue :** une branche `antigravity/test-codex-readme` poussée sur GitHub, avec un seul commit.
-- **Rapport (Antigravity ou Codex) :**
+- **Rapport (Antigravity ou Codex) :** Branche `antigravity/test-codex-readme` créée. Section « Applications » complétée dans `README.md` avec les dossiers applicatifs présents à la racine et des descriptions tirées de leurs fichiers. `zwaq-media/` a été laissé hors liste car il contient des visuels, pas une application. Les deux fichiers modifiés sont inclus dans le commit dédié à T46-05.
 - **Retour Claude :**
 
 ## T46-06 · Pont — test comparatif (Codex, tour 1) : lecture des règles
