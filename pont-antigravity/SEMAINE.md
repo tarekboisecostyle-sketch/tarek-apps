@@ -50,7 +50,7 @@
 - **Entrée :** aucune (texte à écrire from scratch)
 - **À faire :** pour la niche « plumber » (plombier), écrire 5 couples titre + 13 tags Redbubble, tout en anglais. Chaque titre : 4 à 8 mots, mot-clé en début. Vérifier qu'aucun titre ne contient une marque connue ou une expression courante déposée (ex. « dog mom »). Noter pour chaque couple le motif de vérification.
 - **Sortie attendue :** `POD/a_valider/test-codex/titres_tags.md`
-- **Rapport (Antigravity ou Codex) :** 5 couples de titres (4–8 mots, mot-clé « Plumber » au début) et 13 tags anglais par couple créés dans `POD/a_valider/test-codex/titres_tags.md`. Pour chaque titre : vérification préliminaire de l’expression exacte par recherche Web et requête ciblée de l’index USPTO ; aucune correspondance exacte mise au jour. Portée et limites notées dans le fichier.
+- **Rapport (Antigravity ou Codex) :** 5 couples de titres (4–8 mots, mot-clé « Plumber » au début) et 13 tags anglais par couple créés dans `POD/a_valider/test-codex/titres_tags.md`. Pour chaque titre : recherche Web préliminaire de l’expression exacte avec « trademark » ; aucune correspondance exacte mise au jour. Le fichier précise que la base USPTO n’a pas été interrogée directement et décrit la portée du contrôle.
 - **Retour Claude :**
 
 ## T46-04 · ZWAQ DECO — test comparatif (Codex, tour 1) : légendes Instagram
