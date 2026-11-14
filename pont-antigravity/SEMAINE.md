@@ -42,6 +42,50 @@
 - **Rapport (Antigravity) :**
 - **Retour Claude :**
 
+## T46-03 · POD — test comparatif (Codex, tour 1) : titres et tags
+- **Statut :** A_FAIRE
+- **Priorité :** P1
+- **Projet :** POD
+- **Modèle :** Test d'outil (Codex) — tâche légère, sans génération d'image
+- **Entrée :** aucune (texte à écrire from scratch)
+- **À faire :** pour la niche « plumber » (plombier), écrire 5 couples titre + 13 tags Redbubble, tout en anglais. Chaque titre : 4 à 8 mots, mot-clé en début. Vérifier qu'aucun titre ne contient une marque connue ou une expression courante déposée (ex. « dog mom »). Noter pour chaque couple le motif de vérification.
+- **Sortie attendue :** `POD/a_valider/test-codex/titres_tags.md`
+- **Rapport (Antigravity ou Codex) :**
+- **Retour Claude :**
+
+## T46-04 · ZWAQ DECO — test comparatif (Codex, tour 1) : légendes Instagram
+- **Statut :** A_FAIRE
+- **Priorité :** P1
+- **Projet :** Zwaq Deco
+- **Modèle :** Test d'outil (Codex) — texte seul
+- **Entrée :** aucune (produit : étagère murale en bois découpée CNC, en MDF brut ou noyer)
+- **À faire :** écrire 3 légendes Instagram en français (une ligne en darija possible), pour un produit physique ZWAQ DECO à vendre au Maroc, avec un appel à commander en DM et 5 hashtags déco Maroc. Respecter AGENTS.md : Instagram = produits physiques seulement, aucune mention de DXF, de Gumroad ni de t-shirts.
+- **Sortie attendue :** `Zwaq Deco/a_valider/test-codex/legendes.md`
+- **Rapport (Antigravity ou Codex) :**
+- **Retour Claude :**
+
+## T46-05 · Apps — test comparatif (Codex, tour 1) : modification de code sur une branche
+- **Statut :** A_FAIRE
+- **Priorité :** P2
+- **Projet :** Apps
+- **Modèle :** Test d'outil (Codex) — code
+- **Entrée :** `README.md` à la racine du dépôt `tarek-apps`
+- **À faire :** créer la branche `antigravity/test-codex-readme`. Dans `README.md`, ajouter une section « Applications » qui liste chaque dossier d'application présent à la racine (ex. bes-caisse, bes-facturepro, zwaq-deco, pod-studio, gestionpro…) avec une ligne de description tirée du contenu du dossier. Ne rien supprimer ni modifier d'autre. Commit sur cette branche avec le message `pont: T46-05 FAIT`, puis push (ne pas fusionner sur `main`).
+- **Sortie attendue :** une branche `antigravity/test-codex-readme` poussée sur GitHub, avec un seul commit.
+- **Rapport (Antigravity ou Codex) :**
+- **Retour Claude :**
+
+## T46-06 · Pont — test comparatif (Codex, tour 1) : lecture des règles
+- **Statut :** A_FAIRE
+- **Priorité :** P3
+- **Projet :** Apps
+- **Modèle :** Test d'outil (Codex) — lecture seule
+- **Entrée :** `pont-antigravity/AGENTS.md`
+- **À faire :** ne rien modifier. Dans « Rapport », écrire 6 points maximum résumant les règles qui s'appliquent : (a) à un titre POD, (b) à une légende Instagram ZWAQ, (c) à un fichier DXF, (d) à une modification de code, (e) à ce qui est interdit de mettre dans ce dépôt public, (f) au choix de modèle. Indiquer aussi, en une ligne, ce qui est interdit à Antigravity dans les bases BES.
+- **Sortie attendue :** uniquement le texte du rapport dans cette tâche.
+- **Rapport (Antigravity ou Codex) :**
+- **Retour Claude :**
+
 <!-- Modèle à copier pour une nouvelle tâche :
 ## T46-xx · PROJET — titre
 - **Statut :** A_FAIRE
