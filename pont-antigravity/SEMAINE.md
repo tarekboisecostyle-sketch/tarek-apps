@@ -54,14 +54,14 @@
 - **Retour Claude :**
 
 ## T46-04 · ZWAQ DECO — test comparatif (Codex, tour 1) : légendes Instagram
-- **Statut :** A_FAIRE
+- **Statut :** FAIT
 - **Priorité :** P1
 - **Projet :** Zwaq Deco
 - **Modèle :** Test d'outil (Codex) — texte seul
 - **Entrée :** aucune (produit : étagère murale en bois découpée CNC, en MDF brut ou noyer)
 - **À faire :** écrire 3 légendes Instagram en français (une ligne en darija possible), pour un produit physique ZWAQ DECO à vendre au Maroc, avec un appel à commander en DM et 5 hashtags déco Maroc. Respecter AGENTS.md : Instagram = produits physiques seulement, aucune mention de DXF, de Gumroad ni de t-shirts.
 - **Sortie attendue :** `Zwaq Deco/a_valider/test-codex/legendes.md`
-- **Rapport (Antigravity ou Codex) :**
+- **Rapport (Antigravity ou Codex) :** 3 légendes pour l’étagère murale physique ZWAQ DECO (MDF brut ou noyer), chacune avec appel à commander en DM et 5 hashtags déco Maroc. La troisième inclut une ligne en darija. Fichier : `Zwaq Deco/a_valider/test-codex/legendes.md`.
 - **Retour Claude :**
 
 ## T46-05 · Apps — test comparatif (Codex, tour 1) : modification de code sur une branche
