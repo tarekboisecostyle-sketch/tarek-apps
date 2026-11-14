@@ -43,7 +43,7 @@
 - **Retour Claude :**
 
 ## T46-03 · POD — test comparatif (Codex, tour 1) : titres et tags
-- **Statut :** FAIT
+- **Statut :** A_CORRIGER
 - **Priorité :** P1
 - **Projet :** POD
 - **Modèle :** Test d'outil (Codex) — tâche légère, sans génération d'image
@@ -51,10 +51,10 @@
 - **À faire :** pour la niche « plumber » (plombier), écrire 5 couples titre + 13 tags Redbubble, tout en anglais. Chaque titre : 4 à 8 mots, mot-clé en début. Vérifier qu'aucun titre ne contient une marque connue ou une expression courante déposée (ex. « dog mom »). Noter pour chaque couple le motif de vérification.
 - **Sortie attendue :** `POD/a_valider/test-codex/titres_tags.md`
 - **Rapport (Antigravity ou Codex) :** 5 couples de titres (4–8 mots, mot-clé « Plumber » au début) et 13 tags anglais par couple créés dans `POD/a_valider/test-codex/titres_tags.md`. Pour chaque titre : recherche Web préliminaire de l’expression exacte avec « trademark » ; aucune correspondance exacte mise au jour. Le fichier précise que la base USPTO n’a pas été interrogée directement et décrit la portée du contrôle.
-- **Retour Claude :** Rapport lu. Fichier non accessible depuis la session (PC non connecté au dossier). Vérification de marque seulement préliminaire (recherche Web, USPTO non interrogé) : à compléter avant toute publication.
+- **Retour Claude :** Fichier vérifié (`POD/a_valider/test-codex/titres_tags.md`). Corriger : le titre 1 « Plumber Dad Pipe Wrench Humor » reprend la formule « X Dad » des phrases « dog dad » que nos règles POD interdisent ; le remplacer par un titre sans « Dad » et refaire les tags de ce couple (retirer « plumber dad »). Les 4 autres couples sont conformes. La vérification de marque reste préliminaire : USPTO non interrogé, à faire avant toute publication.
 
 ## T46-04 · ZWAQ DECO — test comparatif (Codex, tour 1) : légendes Instagram
-- **Statut :** FAIT
+- **Statut :** A_CORRIGER
 - **Priorité :** P1
 - **Projet :** Zwaq Deco
 - **Modèle :** Test d'outil (Codex) — texte seul
@@ -62,7 +62,7 @@
 - **À faire :** écrire 3 légendes Instagram en français (une ligne en darija possible), pour un produit physique ZWAQ DECO à vendre au Maroc, avec un appel à commander en DM et 5 hashtags déco Maroc. Respecter AGENTS.md : Instagram = produits physiques seulement, aucune mention de DXF, de Gumroad ni de t-shirts.
 - **Sortie attendue :** `Zwaq Deco/a_valider/test-codex/legendes.md`
 - **Rapport (Antigravity ou Codex) :** 3 légendes pour l’étagère murale physique ZWAQ DECO (MDF brut ou noyer), chacune avec appel à commander en DM et 5 hashtags déco Maroc. La troisième inclut une ligne en darija. Fichier : `Zwaq Deco/a_valider/test-codex/legendes.md`.
-- **Retour Claude :** Rapport lu. Fichier non accessible depuis la session : contrôle du contenu (produits physiques seulement, aucune mention DXF/Gumroad/t-shirts) à faire sur le fichier.
+- **Retour Claude :** Fichier vérifié (`Zwaq Deco/a_valider/test-codex/legendes.md`). Corriger la légende 3 : « بالنّوّار » veut dire « avec des fleurs », pas « noyer ». Remplacer par « بالـMDF brut ولا بالجوز » (en darija, noyer = الجوز). Les légendes 1 et 2 sont conformes (français, appel en DM, 5 hashtags, produit physique seulement).
 
 ## T46-05 · Apps — test comparatif (Codex, tour 1) : modification de code sur une branche
 - **Statut :** A_FAIRE
