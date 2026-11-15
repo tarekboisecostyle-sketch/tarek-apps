@@ -85,3 +85,27 @@ Claude y écrit les tâches même quand le PC est éteint ; Antigravity les lit 
 2. Lire le skill indiqué dans la tâche (champ `Skill :` dans SEMAINE.md), dans `pont-antigravity/skills/`.
 3. Lire `pont-antigravity/erreurs.md` : les erreurs déjà corrigées.
 4. Faire la checklist du skill avant de passer une tâche en `FAIT`.
+
+## 7. Claude Code orchestre Codex directement (sans pont)
+
+Sur le PC, Claude Code appelle Codex CLI lui-même via le terminal. Tarek ne fait pas l'intermédiaire.
+Le pont (section 5) reste seulement pour les tâches écrites quand le PC est éteint.
+
+**Rôles**
+- Claude = le cerveau : découpe la demande, écrit une spec courte par tâche, lance Codex, relit le diff, teste, décide (fusionner ou renvoyer avec correction).
+- Codex = l'exécutant : écrit le code / les fichiers lourds, ne décide rien, ne touche jamais aux bases Supabase BES (mêmes interdits que la section 1).
+
+**Commande type** (lancée par Claude depuis le dossier du projet) :
+```
+codex exec --sandbox workspace-write "<spec courte>. Travaille sur la branche codex/<tache>. Termine par un rapport de 5 lignes max : fichiers modifiés, ce qui reste, doutes."
+```
+- Lecture seule (analyse, avis) : `--sandbox read-only`.
+- Hors dépôt git : ajouter `--skip-git-repo-check`.
+- Tâches indépendantes : une `git worktree` par tâche, plusieurs `codex exec` en parallèle (en arrière-plan).
+- Codex lit aussi la section 6 (objectifs, skills, erreurs) avant chaque tâche.
+
+**Économie de tokens**
+- Spec courte : fichiers concernés, objectif, comment vérifier que c'est bon. Pas tout le contexte.
+- Claude ne lit que le rapport final de Codex + `git diff --stat`, puis seulement les parties du diff à vérifier.
+- Codex écrit ses résultats dans des fichiers, pas dans le chat.
+- Claude garde pour lui : décisions, bugs difficiles, tout ce qui touche BES/Supabase, la relecture finale.
