@@ -196,6 +196,10 @@ dialog h2{font-size:20px}
 
     <div class="grp" id="cleanGrp">
       <h3>3 · Nettoyage</h3>
+      <p class="hint">Étape noir et blanc : règle ces curseurs jusqu'à ce que le dessin ressorte net en noir sur blanc (vue « Noir/blanc » en haut), puis le tracé se fait sur ce noir et blanc.</p>
+      <div class="row"><label for="shade">Corriger l'ombre / l'éclairage</label><output id="shadeO">0 %</output><input type="range" id="shade" min="0" max="100" step="5" value="0"></div>
+      <div class="row"><label for="ctr">Contraste</label><output id="ctrO">0</output><input type="range" id="ctr" min="-50" max="100" step="5" value="0"></div>
+      <div class="row"><label for="pre">Lissage avant noir/blanc</label><output id="preO">0 px</output><input type="range" id="pre" min="0" max="6" step="1" value="0"></div>
       <label class="chk"><input type="checkbox" id="autoThr" checked> Seuil automatique</label>
       <div class="row"><label for="thr">Seuil noir / blanc</label><output id="thrO">128</output><input type="range" id="thr" min="1" max="254" value="128" disabled></div>
       <label class="chk"><input type="checkbox" id="inv"> Inverser (motif clair sur fond sombre)</label>
@@ -416,7 +420,11 @@ function bindRange(id, outFmt, cb) {
   const upd = () => { o.textContent = outFmt(+el.value); };
   el.addEventListener('input', () => { upd(); cb(); }); upd();
 }
-bindRange('thr', v => v, () => schedule());
+const showBW = () => { if (S.view !== 'mask' && !S.fromLib) setView('mask'); schedule(); };
+bindRange('shade', v => v + ' %', showBW);
+bindRange('ctr', v => v, showBW);
+bindRange('pre', v => v + ' px', showBW);
+bindRange('thr', v => v, showBW);
 bindRange('dust', v => v + ' px', () => schedule());
 bindRange('res', v => v + ' px', () => schedule());
 bindRange('tol', v => v.toFixed(1), () => schedule(true));
@@ -530,11 +538,19 @@ function run() {
     try {
       prepareWork();
       const { w, h, gray } = S.work;
-      const key = [w, h, $('autoThr').checked, $('thr').value, $('inv').checked, $('dust').value].join('|');
+      const key = [w, h, $('autoThr').checked, $('thr').value, $('inv').checked, $('dust').value,
+        $('shade').value, $('ctr').value, $('pre').value].join('|');
       if (key !== S.maskKey) {
+        // étape noir et blanc : lissage -> correction d'ombre -> contraste -> seuil
+        const k = Math.max(w, h) / 1600;
+        let g2 = gray;
+        const preR = Math.round(+$('pre').value * k);
+        if (preR > 0) g2 = V.boxBlurGray(g2, w, h, preR);
+        g2 = V.evenLight(g2, w, h, +$('shade').value / 100);
+        g2 = V.adjustContrast(g2, +$('ctr').value);
         let thr = +$('thr').value;
-        if ($('autoThr').checked) { thr = Math.round(V.otsu(gray)); $('thr').value = thr; $('thrO').textContent = thr; }
-        const m = V.threshold(gray, thr, $('inv').checked);
+        if ($('autoThr').checked) { thr = Math.round(V.otsu(g2)); $('thr').value = thr; $('thrO').textContent = thr; }
+        const m = V.threshold(g2, thr, $('inv').checked);
         // la taille des taches suit la résolution (réglage pensé pour 1600 px)
         const dust = Math.round(+$('dust').value * (Math.max(w, h) / 1600) ** 2);
         V.removeSmall(m, w, h, 1, dust);
@@ -662,7 +678,7 @@ function draw() {
   cx.fillRect(0, 0, s.w, s.h);
   if (!S.fromLib) {
     if (S.view === 'both') { cx.globalAlpha = .35; cx.drawImage(S.work.canvas, 0, 0); cx.globalAlpha = 1; }
-    if (S.view === 'mask') { const m = maskCanvas(); if (m) { cx.globalAlpha = .55; cx.drawImage(m, 0, 0); cx.globalAlpha = 1; } }
+    if (S.view === 'mask') { const m = maskCanvas(); if (m) { cx.drawImage(m, 0, 0); } }
   }
   cx.lineWidth = 1.6 / S.zoom; cx.lineJoin = 'round'; cx.lineCap = 'round';
   const vec = css.getPropertyValue('--vec').trim(), arc = css.getPropertyValue('--arc').trim();

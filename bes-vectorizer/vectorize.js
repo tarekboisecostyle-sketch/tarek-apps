@@ -16,6 +16,55 @@
     return g;
   }
 
+  // Flou de boîte séparable (somme glissante), bords répliqués. Retourne un nouveau Float32Array.
+  function boxBlurGray(src, w, h, r) {
+    r = Math.max(0, Math.round(r));
+    if (r === 0) return Float32Array.from(src);
+    const tmp = new Float32Array(src.length), out = new Float32Array(src.length);
+    const n = 2 * r + 1;
+    for (let y = 0; y < h; y++) {
+      const o = y * w; let s = 0;
+      for (let k = -r; k <= r; k++) s += src[o + Math.min(w - 1, Math.max(0, k))];
+      for (let x = 0; x < w; x++) {
+        tmp[o + x] = s / n;
+        s += src[o + Math.min(w - 1, x + r + 1)] - src[o + Math.max(0, x - r)];
+      }
+    }
+    for (let x = 0; x < w; x++) {
+      let s = 0;
+      for (let k = -r; k <= r; k++) s += tmp[Math.min(h - 1, Math.max(0, k)) * w + x];
+      for (let y = 0; y < h; y++) {
+        out[y * w + x] = s / n;
+        s += tmp[Math.min(h - 1, y + r + 1) * w + x] - tmp[Math.max(0, y - r) * w + x];
+      }
+    }
+    return out;
+  }
+
+  // Correction d'éclairage : divise l'image par son fond (flou très large) pour effacer ombres
+  // et dégradés de lumière des photos prises sans soin. strength 0..1 (0 = rien).
+  function evenLight(gray, w, h, strength) {
+    if (!(strength > 0)) return gray;
+    const r = Math.max(8, Math.round(Math.max(w, h) * 0.06));
+    let bg = boxBlurGray(gray, w, h, r);
+    bg = boxBlurGray(bg, w, h, r); bg = boxBlurGray(bg, w, h, r); // ~ flou gaussien
+    const out = new Float32Array(gray.length);
+    for (let i = 0; i < gray.length; i++) {
+      const flat = Math.min(255, gray[i] * 235 / Math.max(bg[i], 20));
+      out[i] = gray[i] + (flat - gray[i]) * strength;
+    }
+    return out;
+  }
+
+  // Contraste autour du gris moyen. c entre -100 et 100 (0 = rien).
+  function adjustContrast(gray, c) {
+    if (!c) return gray;
+    const k = (259 * (c + 255)) / (255 * (259 - c));
+    const out = new Float32Array(gray.length);
+    for (let i = 0; i < gray.length; i++) out[i] = Math.min(255, Math.max(0, k * (gray[i] - 128) + 128));
+    return out;
+  }
+
   function otsu(gray) {
     const hist = new Float64Array(256);
     for (let i = 0; i < gray.length; i++) hist[gray[i] | 0]++;
@@ -1103,7 +1152,7 @@
   }
 
   const api = {
-    toGray, otsu, threshold, removeSmall, traceOutlines, traceCenterlines,
+    toGray, boxBlurGray, evenLight, adjustContrast, otsu, threshold, removeSmall, traceOutlines, traceCenterlines,
     rdp, smooth, bbox, toMachine, toDXF, toSVG, toEPS, packGeometry, unpackGeometry, polyLength,
     detectSymmetry, applySymmetry, symParts, symMapper, arcParams, flatten, refinePath
   };
