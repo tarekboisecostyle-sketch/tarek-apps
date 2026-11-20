@@ -1,0 +1,6 @@
+{
+  "format": "bes-import-v1",
+  "stock": [
+    { "ref": "MDF-18", "des": "MDF 18mm", "cat": "Bois", "unit": "plaque", "qty": 0, "seuil": 5, "pu": 250, "fournisseur": "NOM FOURNISSEUR" }
+  ]
+}

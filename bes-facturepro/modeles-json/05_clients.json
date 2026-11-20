@@ -1,0 +1,6 @@
+{
+  "format": "bes-import-v1",
+  "clients": [
+    { "nom": "NOM CLIENT", "email": "", "tel": "", "ville": "Marrakech", "adresse": "", "ice": "", "type": "particulier" }
+  ]
+}

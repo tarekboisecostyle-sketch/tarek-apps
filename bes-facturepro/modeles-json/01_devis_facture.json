@@ -1,0 +1,22 @@
+{
+  "format": "bes-import-v1",
+  "documents": [
+    {
+      "docType": "DEVIS",
+      "num": "",
+      "date": "2026-01-15",
+      "cN": "NOM DU CLIENT",
+      "cA": "Adresse du client",
+      "cI": "",
+      "ch": "Nom du chantier (optionnel)",
+      "tvaV": 20,
+      "aPct": 0,
+      "items": [
+        { "des": "Porte intérieure", "dim": "210x90", "unite": "u", "q": 2, "pu": 2500 },
+        { "des": "Placard", "dim": "", "unite": "m²", "q": 4.5, "pu": 2200 }
+      ],
+      "ht": 0,
+      "ttc": 0
+    }
+  ]
+}

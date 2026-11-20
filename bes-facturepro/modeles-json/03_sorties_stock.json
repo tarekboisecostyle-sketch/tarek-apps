@@ -1,0 +1,18 @@
+{
+  "format": "bes-import-v1",
+  "sorties": [
+    {
+      "date": "2026-01-16",
+      "destination": "Chantier",
+      "detail": "Nom du chantier",
+      "personne": "Nom de celui qui prend",
+      "chef": "Nom du chef d'équipe (optionnel)",
+      "bs": "12",
+      "note": "",
+      "lignes": [
+        { "ref": "REF-PRODUIT", "qty": 3 },
+        { "des": "MDF 18mm", "qty": 2 }
+      ]
+    }
+  ]
+}

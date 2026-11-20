@@ -1,0 +1,11 @@
+{
+  "format": "bes-import-v1",
+  "clients": [ { "nom": "NOM CLIENT", "tel": "", "ville": "", "ice": "", "type": "particulier" } ],
+  "stock": [ { "ref": "MDF-18", "des": "MDF 18mm", "cat": "Bois", "unit": "plaque", "qty": 0, "seuil": 5, "pu": 250, "fournisseur": "" } ],
+  "entrees": [ { "date": "2026-01-15", "fournisseur": "NOM FOURNISSEUR", "blRef": "BL-123", "lignes": [ { "ref": "MDF-18", "qty": 10, "pu": 250 } ] } ],
+  "sorties": [ { "date": "2026-01-16", "destination": "Chantier", "detail": "Nom chantier", "personne": "", "bs": "12", "lignes": [ { "ref": "MDF-18", "qty": 3 } ] } ],
+  "bc": [ { "fournisseur": "NOM FOURNISSEUR", "date": "2026-01-15", "lignes": [ { "des": "MDF 18mm", "unite": "plaque", "q": 10, "pu": 250 } ] } ],
+  "encaissements": [ { "date": "2026-01-20", "docNum": "01-2026", "clientNom": "NOM CLIENT", "montant": 5000, "mode": "Virement" } ],
+  "decaissements": [ { "date": "2026-01-20", "categorie": "Achat fournisseur", "benef": "NOM FOURNISSEUR", "montant": 3000, "mode": "Chèque" } ],
+  "documents": [ { "docType": "FACTURE", "num": "", "date": "2026-01-15", "cN": "NOM CLIENT", "tvaV": 20, "items": [ { "des": "Porte", "unite": "u", "q": 1, "pu": 2500 } ] } ]
+}

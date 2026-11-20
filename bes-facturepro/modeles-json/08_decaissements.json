@@ -1,0 +1,6 @@
+{
+  "format": "bes-import-v1",
+  "decaissements": [
+    { "date": "2026-01-20", "categorie": "Achat fournisseur", "benef": "NOM FOURNISSEUR", "montant": 3000, "mode": "Chèque", "refChq": "", "nfac": "", "dateFacture": "2026-01-10", "note": "" }
+  ]
+}

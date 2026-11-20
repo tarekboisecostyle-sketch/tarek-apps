@@ -1,0 +1,14 @@
+{
+  "format": "bes-import-v1",
+  "inventaire": {
+    "date": "2026-01-31",
+    "responsable": "Nom",
+    "typeInv": "inopine",
+    "periodeDebut": "",
+    "periodeFin": "",
+    "note": "",
+    "lignes": [
+      { "ref": "MDF-18", "des": "MDF 18mm", "unit": "plaque", "qteReelle": 8 }
+    ]
+  }
+}

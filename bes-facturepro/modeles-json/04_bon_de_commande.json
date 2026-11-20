@@ -1,0 +1,16 @@
+{
+  "format": "bes-import-v1",
+  "bc": [
+    {
+      "num": "",
+      "fournisseur": "NOM FOURNISSEUR",
+      "date": "2026-01-15",
+      "delai": "48h",
+      "etat": "brouillon",
+      "note": "",
+      "lignes": [
+        { "des": "MDF 18mm", "dim": "2800x2100", "unite": "plaque", "q": 10, "pu": 250 }
+      ]
+    }
+  ]
+}

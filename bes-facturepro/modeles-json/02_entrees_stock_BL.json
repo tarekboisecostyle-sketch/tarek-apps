@@ -1,0 +1,16 @@
+{
+  "format": "bes-import-v1",
+  "entrees": [
+    {
+      "date": "2026-01-15",
+      "fournisseur": "NOM FOURNISSEUR",
+      "blRef": "BL-123",
+      "note": "",
+      "categorie": "Bois",
+      "lignes": [
+        { "ref": "", "des": "MDF 18mm", "cat": "Bois", "unit": "plaque", "qty": 10, "pu": 250 },
+        { "ref": "", "des": "Charnière", "cat": "Quincaillerie", "unit": "u", "qty": 50, "pu": 12 }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,6 @@
+{
+  "format": "bes-import-v1",
+  "encaissements": [
+    { "date": "2026-01-20", "docType": "FACTURE", "docNum": "01-2026", "clientNom": "NOM CLIENT", "montant": 5000, "mode": "Virement", "refChq": "", "note": "" }
+  ]
+}
