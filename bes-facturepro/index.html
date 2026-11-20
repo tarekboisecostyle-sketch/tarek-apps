@@ -414,7 +414,7 @@ body{flex-direction:column;}
         <div class="card-hdr">
           <div class="card-title">Clients</div>
           <div style="display:flex;gap:6px;align-items:center;">
-            <input class="search-inp" placeholder="Rechercher…" oninput="renderClients(this.value)">
+            <input class="search-inp" id="list-clients-sortanchor" placeholder="Rechercher…" oninput="renderClients(this.value)">
           </div>
         </div>
         <table><thead><tr><th>Nom / Entreprise</th><th>Email</th><th>Téléphone</th><th>Ville</th><th>ICE</th><th>Type</th><th>Docs</th><th>Actions</th></tr></thead>
@@ -490,7 +490,7 @@ body{flex-direction:column;}
         <div class="card">
           <div class="card-hdr">
             <div class="card-title">Stock produits</div>
-            <input class="search-inp" placeholder="Rechercher…" oninput="renderStock(this.value)">
+            <input class="search-inp" id="list-stock-sortanchor" placeholder="Rechercher…" oninput="renderStock(this.value)">
           </div>
           <table><thead><tr><th>Réf</th><th>Désignation</th><th>Catégorie</th><th>Unité</th><th>Quantité</th><th>Seuil</th><th>PU HT (MAD)</th><th>TVA</th><th>Valeur HT</th><th>Valeur TTC</th><th>Fournisseur</th><th>Actions</th></tr></thead>
           <tbody id="list-stock"></tbody></table>
@@ -1893,6 +1893,7 @@ function renderCommandes(){
     if(fEtat&&c.etat!==fEtat) return false;
     return true;
   });
+  { const _m=sortSel('cmd','flt-mois-cmd','renderCommandes'); const _l=sortList(list,_m,c=>c.date,c=>trailNum(c.num)); list.length=0; _l.forEach(x=>list.push(x)); }
   const etatBadge={brouillon:'bgr',envoye:'bb',recu:'ba',cloture:'bg'};
   const etatL={brouillon:'Brouillon',envoye:'Envoyé',recu:'Reçu partiel',cloture:'Clôturé'};
   const tb=document.getElementById('list-cmd');
@@ -2372,6 +2373,32 @@ function saveDoc(withJson) {
   renderDocs(); renderDashboard(); renderPaiements();
 }
 
+// ── Tri commun : plus récent en haut par défaut (date, puis N° / id décroissant) ──
+function trailNum(x){ const m=String(x||'').match(/(d+)-(d{4})/); if(m) return parseInt(m[2])*100000+parseInt(m[1]); const n=String(x||'').match(/(d+)D*$/); return n?parseInt(n[1]):0; }
+// Crée (une fois) un petit sélecteur de tri après l'élément 'anchorId' et renvoie sa valeur ('recent'|'ancien'|'az')
+function sortSel(key, anchorId, rerender, withAZ){
+  let el=document.getElementById('srt-'+key);
+  if(!el){
+    const a=document.getElementById(anchorId); if(!a) return 'recent';
+    el=document.createElement('select'); el.id='srt-'+key; el.title='Trier';
+    el.innerHTML='<option value="recent">↓ Plus récent en premier</option><option value="ancien">↑ Plus ancien en premier</option>'+(withAZ?'<option value="az">A → Z</option>':'');
+    el.onchange=()=>{ try{ window[rerender](a.tagName==='INPUT'?a.value:undefined); }catch(e){ console.error(e); } };
+    a.parentNode.insertBefore(el,a.nextSibling);
+  }
+  return el.value||'recent';
+}
+function sortList(list, mode, dateOf, numOf, labelOf){
+  const cmp=(a,b)=>{
+    const da=dateOf?(dateOf(a)||''):'', db=dateOf?(dateOf(b)||''):'';
+    if(da!==db) return da<db?-1:1;
+    return (numOf?(+numOf(a)||0):0)-(numOf?(+numOf(b)||0):0);
+  };
+  const arr=list.map((x,i)=>({x,i}));
+  if(mode==='az'&&labelOf) arr.sort((p,q)=>String(labelOf(p.x)||'').localeCompare(String(labelOf(q.x)||''),'fr'));
+  else if(mode==='ancien') arr.sort((p,q)=>cmp(p.x,q.x)||p.i-q.i);
+  else arr.sort((p,q)=>cmp(q.x,p.x)||q.i-p.i);
+  return arr.map(o=>o.x);
+}
 // Tri chronologique des documents : date la plus récente en haut, puis numéro décroissant.
 // Un vieux devis importé se range donc à sa date, pas en tête de liste.
 function docSeqKey(num){
@@ -2407,7 +2434,8 @@ function renderDocs() {
     if(fCh && fCh!=='__none__' && d.chantierNom!==fCh) return false;
     if(q && !d.num.toLowerCase().includes(q.toLowerCase()) && !(d.clientNom||'').toLowerCase().includes(q.toLowerCase()) && !(d.chantierNom||'').toLowerCase().includes(q.toLowerCase())) return false;
     return true;
-  }).sort(cmpDocs);
+  });
+  { const _m=sortSel('docs','flt-q-docs','renderDocs'); list.sort(cmpDocs); if(_m==='ancien') list.reverse(); }
   const tb = document.getElementById('list-docs');
   if(!list.length) { tb.innerHTML='<tr><td colspan="8" style="text-align:center;padding:22px;color:var(--muted);">Aucun document</td></tr>'; return; }
   tb.innerHTML = list.map(d => {
@@ -2641,6 +2669,7 @@ function saveClient() {
 
 function renderClients(q='') {
   const list = D.clients.filter(c=>!q||c.nom.toLowerCase().includes(q.toLowerCase()));
+  { const _m=sortSel('cli','list-clients-sortanchor','renderClients',true); const _l=sortList(list,_m,null,null,c=>c.nom); list.length=0; _l.forEach(x=>list.push(x)); }
   const tb = document.getElementById('list-clients');
   if(!list.length) { tb.innerHTML='<tr><td colspan="8" style="text-align:center;padding:22px;color:var(--muted);">Aucun client</td></tr>'; return; }
   tb.innerHTML = list.map((c,i) => {
@@ -3410,6 +3439,7 @@ function saveStock() {
 function renderStock(q='') {
   renderStockStats();
   const list=D.stock.filter(p=>!q||p.des.toLowerCase().includes(q.toLowerCase())||p.ref.toLowerCase().includes(q.toLowerCase()));
+  { const _m=sortSel('stk','list-stock-sortanchor','renderStock',true); const _l=sortList(list,_m,null,null,p=>p.des); list.length=0; _l.forEach(x=>list.push(x)); }
   const tb=document.getElementById('list-stock');
   if(!list.length){tb.innerHTML='<tr><td colspan="12" style="text-align:center;padding:22px;color:var(--muted);">Aucun produit</td></tr>';return;}
   // Mettre à jour l'en-tête (12 colonnes : Réf, Désignation, Cat, Unit, Qté, Seuil, PU HT, TVA, Val HT, Val TTC, Fourn, Actions)
@@ -3893,6 +3923,7 @@ function renderEntrees(){
     }
     return true;
   });
+  { const _m=sortSel('ent','flt-q-ent','renderEntrees'); const _l=sortList(list,_m,e=>e.date,e=>e.id); list.length=0; _l.forEach(x=>list.push(x)); }
   const tb=document.getElementById('list-entrees');
   if(!list.length){
     tb.innerHTML='<tr><td colspan="11" style="text-align:center;padding:22px;color:var(--muted);">Aucune entree</td></tr>';
@@ -4328,7 +4359,8 @@ function renderSorties(){
       if(!t.includes(q))return false;
     }
     return true;
-  }).sort((a,b)=>(b.date||'').localeCompare(a.date||'')||(Number(b.id)||0)-(Number(a.id)||0)); // plus récentes en haut
+  });
+  { const _m=sortSel('sor','flt-q-sor','renderSorties'); const _l=sortList(list,_m,s=>s.date,s=>s.id); list.length=0; _l.forEach(x=>list.push(x)); }
   const tb=document.getElementById('list-sorties');
   if(!list.length){
     tb.innerHTML='<tr><td colspan="13" style="text-align:center;padding:22px;color:var(--muted);">Aucune sortie</td></tr>';
@@ -6363,7 +6395,8 @@ window.renderEncaissements = function(){
   const tb=document.getElementById('list-enc');
   if(!tb) return;
   if(!list.length){ tb.innerHTML='<tr><td colspan="9" style="text-align:center;padding:22px;color:var(--muted);">Aucun encaissement</td></tr>'; return; }
-  tb.innerHTML=[...list].sort((a,b)=>(b.date||'').localeCompare(a.date||'')).map(e=>{
+  const _m=sortSel('enc','flt-mois-enc','renderEncaissements');
+  tb.innerHTML=sortList(list,_m,e=>e.date,e=>e.id).map(e=>{
     const ri=D.encaissements.indexOf(e);
     return `<tr>
       <td><input type="checkbox" class="chk-enc" value="${e.id}"></td>
@@ -6488,7 +6521,8 @@ window.renderDecaissements = function(){
   const tb=document.getElementById('list-dec');
   if(!tb) return;
   if(!list.length){ tb.innerHTML='<tr><td colspan="13" style="text-align:center;padding:22px;color:var(--muted);">Aucun décaissement</td></tr>'; return; }
-  tb.innerHTML=[...list].sort((a,b)=>(b.date||'').localeCompare(a.date||'')).map(d=>{
+  const _m=sortSel('dec','flt-mois-dec','renderDecaissements');
+  tb.innerHTML=sortList(list,_m,d=>d.date,d=>d.id).map(d=>{
     const ri=D.decaissements.indexOf(d);
     const jrLive = calcJoursRetard(d.date, d.nfac, d.dateFacture);
     const statutLive = jrLive!=='' ? calcStatutRelance(jrLive) : (d.statutRelance||'');
