@@ -5108,7 +5108,7 @@ function doImport() {
   let imported=0, skipped=0;
   const numsAttribues=[];
   // Détail par nature de ce qui est réellement importé (pour l'historique)
-  const nat={factures:0,devis:0,autresDocs:0,clients:0,produits:0,entrees:0,inventaires:0,bc:0,encaissements:0,decaissements:0};
+  const nat={factures:0,devis:0,autresDocs:0,clients:0,produits:0,entrees:0,sorties:0,inventaires:0,bc:0,encaissements:0,decaissements:0};
   const impItems=[]; // détail ligne par ligne de ce qui est importé (pour l'historique)
 
   // Import clients
@@ -5176,6 +5176,31 @@ function doImport() {
     });
   }
 
+  // Import sorties de stock (bons de sortie)
+  // Format : data.sorties = [{date, destination, detail, personne, chef, bs, note, lignes:[{ref?, des?, qty}]}]
+  if(data.sorties&&Array.isArray(data.sorties)){
+    if(!D.sorties) D.sorties=[];
+    data.sorties.forEach(so=>{
+      const date=so.date||today();
+      const agg={k:'sortie',label:so.bs?('BS '+so.bs):'(sans BS)',who:so.chef||so.personne||'',date,montant:0,nb:0,cats:{},info:(so.destination||'')+(so.detail?' / '+so.detail:'')};
+      (so.lignes||[]).forEach((l,i)=>{
+        let pi=-1;
+        if(l.ref) pi=D.stock.findIndex(x=>x.ref===l.ref);
+        if(pi<0&&l.des) pi=D.stock.findIndex(x=>(x.des||'').toLowerCase()===String(l.des).toLowerCase());
+        const qty=parseFloat(l.qty)||0;
+        if(pi<0||qty<=0){skipped++;numsAttribues.push('Sortie ignorée (produit introuvable) : '+(l.ref||l.des||'?'));return;}
+        const prod=D.stock[pi];
+        if(so.bs&&D.sorties.find(x=>x.bs===so.bs&&x.date===date&&x.produitRef===prod.ref&&x.qty===qty)){skipped++;return;}
+        const pmpSortie=prod.pmp||prod.pu||0;
+        D.sorties.unshift({id:Date.now()+imported+i+700000,date,produitRef:prod.ref,produitDes:prod.des,produitIdx:pi,qty,pmpSortie,
+          destination:so.destination||'',detail:so.detail||'',note:so.note||'',personne:so.personne||'',...(so.chef?{chef:so.chef}:{}),bs:so.bs||'',bsAuto:!so.bs});
+        prod.qty=(prod.qty||0)-qty;
+        imported++;nat.sorties++;
+        const c0=prod.cat||'Divers',t0=qty*pmpSortie; agg.montant+=t0; agg.nb++; agg.cats[c0]=(agg.cats[c0]||0)+t0;
+      });
+      if(agg.nb) impItems.push(agg);
+    });
+  }
   // Import inventaire (depuis photo feuille manuscrite)
   if(data.inventaire){
     const inv = data.inventaire;
@@ -5361,6 +5386,7 @@ const IMPORT_NAT=[
   ['clients',      '👥','client',         'clients',         '#ede9fe','#6d28d9'],
   ['produits',     '📦','produit',        'produits',        '#cffafe','#0e7490'],
   ['entrees',      '⬇️','entrée de stock','entrées de stock','#dcfce7','#166534'],
+  ['sorties',      '⬆️','sortie de stock','sorties de stock','#fee2e2','#9a3412'],
   ['inventaires',  '📋','inventaire',     'inventaires',     '#ffedd5','#c2410c'],
   ['encaissements','💰','encaissement',   'encaissements',   '#d1fae5','#047857'],
   ['decaissements','💸','décaissement',   'décaissements',   '#fee2e2','#b91c1c'],
