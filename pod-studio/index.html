@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>POD Studio — TAREK STUDIO</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="../mdp-recovery.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
 <style>
   :root {
@@ -108,7 +109,7 @@ const SB_KEY = 'sb_publishable_kzPAjqPpWTnEuSKAwhXqzA_3McQdw-q';
 const cloud = {
   sb: null, user: null, timer: null, ok: false,
   status(t) { const el = document.getElementById('sync'); if (el) el.textContent = t; },
-  init() { try { this.sb = window.supabase.createClient(SB_URL, SB_KEY); } catch (e) { this.sb = null; } return this.sb; },
+  init() { try { this.sb = window.supabase.createClient(SB_URL, SB_KEY); if (window.MdpRecovery) MdpRecovery.watch(this.sb); } catch (e) { this.sb = null; } return this.sb; },
   async session() { if (!this.sb) return null; const { data } = await this.sb.auth.getSession(); this.user = data.session ? data.session.user : null; return this.user; },
   async pull() {
     const { data, error } = await this.sb.from('pod_state').select('data, updated_at').eq('user_id', this.user.id).maybeSingle();
@@ -134,7 +135,8 @@ function loginScreen(msg) {
     ${msg ? `<p class="note">${esc(msg)}</p>` : ''}
     <form id="lg"><label for="em">Email</label><input id="em" type="email" autocomplete="email" required>
     <label for="pw" style="margin-top:var(--s3)">Mot de passe</label><input id="pw" type="password" autocomplete="current-password" minlength="8" required>
-    <div class="row" style="margin-top:var(--s4)"><button class="primary" name="in">Se connecter</button><button type="button" id="su">Créer mon compte</button></div></form></div>`;
+    <div class="row" style="margin-top:var(--s4)"><button class="primary" name="in">Se connecter</button><button type="button" id="su">Créer mon compte</button></div>
+    <div class="row" style="margin-top:var(--s3)"><button type="button" id="fg" style="background:none;border:0;text-decoration:underline;padding:0;cursor:pointer">Mot de passe oublié</button></div></form></div>`;
   const go = async signup => {
     const email = $('#em').value.trim(), password = $('#pw').value;
     if (!email || password.length < 8) { toast('Email et mot de passe de 8 caractères minimum'); return; }
@@ -146,6 +148,7 @@ function loginScreen(msg) {
   };
   $('#lg').onsubmit = e => { e.preventDefault(); go(false); };
   $('#su').onclick = () => go(true);
+  $('#fg').onclick = async () => { toast(await MdpRecovery.send(cloud.sb, $('#em').value)); };
 }
 async function start() {
   if (!cloud.init()) { cloud.status('Hors ligne : données dans le navigateur'); render(); return; }

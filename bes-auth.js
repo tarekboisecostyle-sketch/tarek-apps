@@ -26,6 +26,15 @@
     return lib().then(function () { if (!client) client = window.supabase.createClient(URL, KEY); return client; });
   }
 
+  // lien « Mot de passe oublié » reçu par email : on affiche l'écran du nouveau mot de passe
+  var SRC = (document.currentScript && document.currentScript.src) || '';
+  function loadRecovery() {
+    if (!/type=recovery/.test(location.hash + location.search)) return;
+    var sr = document.createElement('script'); sr.src = SRC.replace(/[^\/]*$/, '') + 'mdp-recovery.js';
+    sr.onload = function () { getClient().then(function (c) { window.MdpRecovery.watch(c); }); };
+    document.head.appendChild(sr);
+  }
+
   window.BESAuth = {
     // jeton à mettre dans "Authorization: Bearer ..." pour les appels directs à Supabase
     token: function () {
@@ -51,6 +60,7 @@
       }).catch(function () {});
       addChip();
     });
+    loadRecovery();
     return;
   }
 
@@ -99,9 +109,11 @@
   $('o').addEventListener('click', function () {
     var email = $('e').value.trim();
     if (!email) { $('m').textContent = 'Écris ton email puis clique sur « Mot de passe oublié ».'; return; }
-    getClient().then(function (c) { return c.auth.resetPasswordForEmail(email, { redirectTo: location.href.split('#')[0] }); })
+    getClient().then(function (c) { return c.auth.resetPasswordForEmail(email, { redirectTo: location.href.split('#')[0].split('?')[0] }); })
       .then(function (r) { $('m').textContent = r.error ? r.error.message : 'Email envoyé : suis le lien pour choisir un nouveau mot de passe.'; });
   });
+
+  loadRecovery();
 
   function addChip() {
     if (document.getElementById('besAuthChip')) return;

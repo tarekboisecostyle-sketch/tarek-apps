@@ -9,6 +9,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,800&family=Atkinson+Hyperlegible:wght@400;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="../mdp-recovery.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <script src="engine.js"></script>
 <style>
@@ -413,7 +414,7 @@ const GUMROAD_URL = 'https://zwaqdeco.gumroad.com/l/vectorizer-pro';
 const PRIX_PRO = '5 $ <small>/ mois</small>';
 const QUOTA_GRATUIT = 3, MOTIFS_GRATUIT = 5;
 let sb = null;
-try { sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY); } catch (e) { console.warn(e); }
+try { sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY); if (window.MdpRecovery) MdpRecovery.watch(sb); } catch (e) { console.warn(e); }
 const TABLE = 'zv_motifs';
 const CATS = ['Calligraphie','Géométrie islamique','Moucharabieh','Floral / arabesque','Animaux','Logo / texte','Cadre / bordure','Mandala','Divers'];
 

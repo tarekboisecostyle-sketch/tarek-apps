@@ -311,6 +311,7 @@ i.wk.ok { background:var(--accent); } i.wk.part { background:var(--warn); } i.wk
 </head>
 <body>
 
+<script src="../mdp-recovery.js"></script>
 <!-- ÉCRAN DE CONNEXION FIREBASE -->
 <div id="auth-overlay" style="display:none;position:fixed;inset:0;z-index:99999;background:linear-gradient(135deg,#1A3A5C,#2E5A8E);align-items:center;justify-content:center;">
  <div style="background:#fff;border-radius:14px;padding:32px 28px;width:340px;max-width:90vw;box-shadow:0 12px 45px rgba(0,0,0,.35);">
@@ -329,6 +330,7 @@ i.wk.ok { background:var(--accent); } i.wk.part { background:var(--warn); } i.wk
  <button id="auth-btn"
  style="width:100%;padding:12px;background:#27AE60;color:#fff;border:none;border-radius:8px;font-size:15px;font-weight:600;cursor:pointer;">Se connecter</button>
  <button id="auth-signup" style="display:none;width:100%;margin-top:8px;padding:11px;background:#fff;color:#1A3A5C;border:1.5px solid #1A3A5C;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;">Créer mon compte</button>
+ <button id="auth-forgot" type="button" style="display:block;margin:10px auto 0;background:none;border:0;color:#1A3A5C;font-size:13px;text-decoration:underline;cursor:pointer;">Mot de passe oublié</button>
  <div style="text-align:center;color:#95A5A6;font-size:11px;margin-top:14px;">Tes données sont privées et enregistrées dans Supabase.</div>
  </div>
 </div>
@@ -2141,6 +2143,8 @@ window.__logout = async function () {
 
 $('auth-btn').addEventListener('click', doLogin);
 $('auth-signup').addEventListener('click', doSignup);
+$('auth-forgot').addEventListener('click', async () => { authMsg(await MdpRecovery.send(sb, $('auth-email').value), true); });
+if (window.MdpRecovery) MdpRecovery.watch(sb);
 $('auth-pass').addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
 
 (function prefill() {
