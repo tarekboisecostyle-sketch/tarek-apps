@@ -456,7 +456,7 @@ function fmt(n){
   n = Number(n)||0;
   return n.toLocaleString('fr-FR',{minimumFractionDigits:2,maximumFractionDigits:2}) + ' MAD';
 }
-function todayISO(){ return new Date().toISOString().slice(0,10); }
+function todayISO(){ const d=new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); } // date LOCALE (pas UTC : décalage d'1 h au Maroc)
 function frDate(iso){
   if(!iso) return '';
   const [y,m,d] = iso.split('-');
@@ -478,7 +478,7 @@ function computeSolde(uptoDateISO){
     if(uptoDateISO && m.date > uptoDateISO) return;
     s += (m.type==='entree' ? Number(m.montant) : -Number(m.montant));
   });
-  return s;
+  return Math.round(s*100)/100;
 }
 
 /* ================= LOAD DATA ================= */
@@ -563,7 +563,7 @@ function renderSoldeBadge(){
 function renderDashboard(){
   renderSoldeBadge();
   document.getElementById('cardSolde').textContent = fmt(computeSolde());
-  const ym = new Date().toISOString().slice(0,7);
+  const ym = todayISO().slice(0,7);
   let inM=0, outM=0, cnt=0;
   D.mouvements.forEach(m=>{
     if(m.date.slice(0,7)===ym){
@@ -803,7 +803,7 @@ function openClotureModal(){
   document.getElementById('cYear').onchange = updateTheo;
   document.getElementById('clotureOverlay').classList.add('open');
 }
-function lastDayOfMonth(y,m){ return new Date(Number(y), Number(m), 0).toISOString().slice(0,10); }
+function lastDayOfMonth(y,m){ return `${y}-${String(m).padStart(2,'0')}-${String(new Date(Number(y), Number(m), 0).getDate()).padStart(2,'0')}`; } // pas de toISOString : il décalait au jour d'avant (UTC)
 function updateTheo(){
   const m = document.getElementById('cMonth').value;
   const y = document.getElementById('cYear').value;
