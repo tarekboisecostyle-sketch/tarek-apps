@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ZWAQ DECO — Catalogue</title>
+<meta name="description" content="Étagères murales en bois découpé à la CNC. Choisissez une référence et commandez sur WhatsApp.">
+<style>
+  :root{--bg:#f6f1e7;--card:#fffdf8;--ink:#1b1b1b;--mute:#6b6558;--line:#e2dacb;--accent:#1b1b1b;--wa:#1faa59}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;line-height:1.45}
+  header{padding:28px 16px 8px;text-align:center}
+  header img{height:64px;width:auto}
+  header p{margin:8px 0 0;color:var(--mute);font-size:15px}
+  .bar{max-width:1100px;margin:16px auto 0;padding:0 16px;display:flex;gap:10px;flex-wrap:wrap}
+  .bar input{flex:1 1 220px;padding:11px 14px;border:1px solid var(--line);border-radius:10px;font-size:16px;background:var(--card)}
+  .bar button{padding:10px 14px;border:1px solid var(--line);border-radius:999px;background:var(--card);font-size:14px;cursor:pointer}
+  .bar button.on{background:var(--accent);color:#fff;border-color:var(--accent)}
+  main{max-width:1100px;margin:16px auto 40px;padding:0 16px;display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:18px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:16px;overflow:hidden;display:flex;flex-direction:column}
+  .card img{width:100%;aspect-ratio:4/5;object-fit:cover;display:block;background:#eee}
+  .body{padding:14px 16px 16px;display:flex;flex-direction:column;gap:10px;flex:1}
+  .top{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+  .top h2{margin:0;font-size:19px}
+  .ref{font:600 12px ui-monospace,Consolas,monospace;background:var(--bg);padding:3px 8px;border-radius:6px;white-space:nowrap}
+  .desc{margin:0;color:var(--mute);font-size:14px}
+  .dim{font-size:13px;color:var(--mute)}
+  label{font-size:12px;color:var(--mute);display:block;margin-bottom:4px}
+  select{width:100%;padding:9px 10px;border:1px solid var(--line);border-radius:8px;font-size:15px;background:#fff}
+  .row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .row.one{grid-template-columns:1fr}
+  .prix{font-size:24px;font-weight:700}
+  .prix small{font-size:13px;font-weight:500;color:var(--mute)}
+  .wa{margin-top:auto;display:flex;align-items:center;justify-content:center;gap:8px;background:var(--wa);color:#fff;text-decoration:none;padding:12px;border-radius:10px;font-weight:600}
+  .wa:hover{filter:brightness(.95)}
+  .vide{grid-column:1/-1;text-align:center;color:var(--mute);padding:40px 0}
+  footer{text-align:center;color:var(--mute);font-size:13px;padding:0 16px 32px}
+</style>
+</head>
+<body>
+<header>
+  <img src="logo.png" alt="ZWAQ DECO" onerror="this.style.display='none'">
+  <p>Décoration murale en bois découpé à la CNC · Choisissez une référence, commandez sur WhatsApp</p>
+</header>
+<div class="bar">
+  <input id="q" type="search" placeholder="Chercher un nom ou une référence (ex. FRAME, EPU18)">
+  <span id="cats" style="display:contents"></span>
+</div>
+<main id="grid"></main>
+<footer id="foot"></footer>
+<script src="produits.js"></script>
+<script>
+(function(){
+  var D = window.ZWAQ, grid = document.getElementById('grid'), q = document.getElementById('q'), cats = document.getElementById('cats');
+  var cat = 'Tous';
+  document.getElementById('foot').textContent = D.livraison + ' Paiement à la livraison ou selon accord sur WhatsApp.';
+
+  function wa(p, v, f){
+    var prix = v.prix[f];
+    var txt = 'Salam ZWAQ DECO, bghit ntleb ' + v.ref + ' (' + p.nom + ' · ' + v.label + ' · ' + f + ') à ' + prix + ' DH TTC. Wach mtwafer ?';
+    var base = D.whatsapp ? 'https://wa.me/' + D.whatsapp : 'https://wa.me/';
+    return base + '?text=' + encodeURIComponent(txt);
+  }
+
+  function card(p){
+    var el = document.createElement('article'); el.className = 'card';
+    var multi = p.variantes.length > 1;
+    el.innerHTML =
+      '<img loading="lazy" alt="' + p.nom + '" src="' + p.img + '">' +
+      '<div class="body">' +
+        '<div class="top"><h2>' + p.nom + '</h2><span class="ref"></span></div>' +
+        '<p class="desc">' + p.desc + '</p>' +
+        '<div class="dim">' + p.dimensions + '</div>' +
+        '<div class="row' + (multi ? '' : ' one') + '">' +
+          (multi ? '<div><label>Modèle</label><select class="v"></select></div>' : '') +
+          '<div><label>Finition</label><select class="f"></select></div>' +
+        '</div>' +
+        '<div class="prix"></div>' +
+        '<a class="wa" target="_blank" rel="noopener">Commander sur WhatsApp</a>' +
+      '</div>';
+    var vs = el.querySelector('.v'), fs = el.querySelector('.f');
+    if (vs) p.variantes.forEach(function(v,i){ vs.add(new Option(v.label, i)); });
+    p.finitions.forEach(function(f){ fs.add(new Option(f, f)); });
+    function maj(){
+      var v = p.variantes[vs ? vs.value : 0], f = fs.value;
+      el.querySelector('.ref').textContent = v.ref;
+      el.querySelector('.prix').innerHTML = v.prix[f] + ' DH <small>TTC</small>';
+      el.querySelector('.wa').href = wa(p, v, f);
+    }
+    if (vs) vs.onchange = maj; fs.onchange = maj; maj();
+    return el;
+  }
+
+  function render(){
+    var t = q.value.trim().toLowerCase();
+    grid.innerHTML = '';
+    var n = 0;
+    D.produits.forEach(function(p){
+      if (cat !== 'Tous' && p.categorie !== cat) return;
+      var hay = (p.nom + ' ' + p.categorie + ' ' + p.variantes.map(function(v){return v.ref + ' ' + v.label;}).join(' ')).toLowerCase();
+      if (t && hay.indexOf(t) < 0) return;
+      grid.appendChild(card(p)); n++;
+    });
+    if (!n) grid.innerHTML = '<div class="vide">Aucun produit trouvé.</div>';
+  }
+
+  var names = ['Tous'];
+  D.produits.forEach(function(p){ if (names.indexOf(p.categorie) < 0) names.push(p.categorie); });
+  if (names.length > 2) names.forEach(function(c){
+    var b = document.createElement('button'); b.textContent = c; if (c === cat) b.className = 'on';
+    b.onclick = function(){ cat = c; [].forEach.call(cats.children, function(x){ x.className = x === b ? 'on' : ''; }); render(); };
+    cats.appendChild(b);
+  });
+  q.oninput = render; render();
+})();
+</script>
+</body>
+</html>
