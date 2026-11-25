@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f4f0e7">
+  <meta name="description" content="Cozy, clever designs for everyday things and people you love.">
+  <title>Wit &amp; Wear Co. — Good things, with a little wit.</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
+  <style>
+    :root{--paper:#f4f0e7;--card:#fffdf8;--ink:#272923;--muted:#74766b;--olive:#52614d;--rust:#ad604c;--line:#ded9cd;--soft:#e9e4d8;--serif:"Playfair Display",Georgia,serif;--sans:"DM Sans",Arial,sans-serif}
+    *{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--sans);line-height:1.5}a{color:inherit}
+    .shell{width:min(1160px,calc(100% - 48px));margin:auto}.topbar{height:78px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--line)}
+    .brand{font-weight:700;letter-spacing:.09em;text-transform:uppercase;font-size:14px;text-decoration:none}.brand span{color:var(--rust)}nav{display:flex;gap:30px;font-size:13px;color:var(--muted)}nav a{text-decoration:none}nav a:hover{color:var(--ink)}
+    .hero{display:grid;grid-template-columns:1.2fr .8fr;align-items:center;gap:50px;padding:78px 0 70px}.eyebrow{color:var(--rust);font-weight:700;letter-spacing:.15em;text-transform:uppercase;font-size:11px}.hero h1{font:700 clamp(46px,6vw,76px)/1.03 var(--serif);letter-spacing:-.04em;margin:17px 0 20px;max-width:680px}.hero p{font-size:17px;color:var(--muted);max-width:500px;margin:0}.hero-note{border-left:2px solid var(--rust);padding:5px 0 5px 22px;color:var(--muted);font-size:14px;max-width:240px;justify-self:end}.hero-note strong{display:block;color:var(--ink);font:600 21px var(--serif);margin-bottom:7px}
+    .toolbar{display:flex;align-items:end;justify-content:space-between;gap:24px;padding:24px 0 20px;border-top:1px solid var(--line)}.section-title{margin:0;font:700 34px var(--serif);letter-spacing:-.025em}.section-intro{margin:5px 0 0;color:var(--muted);font-size:14px}.filters{display:flex;gap:10px;align-items:center}.search,.niche-select{height:42px;border:1px solid var(--line);border-radius:4px;background:var(--card);padding:0 13px;font:14px var(--sans);color:var(--ink)}.search{width:228px}.niche-select{display:none;min-width:145px}.search:focus,.niche-select:focus{outline:2px solid #9ca28f;outline-offset:1px}
+    .results{font-size:12px;color:var(--muted);margin:0 0 16px}.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:25px}.product{background:var(--card);border:1px solid var(--line);min-width:0;transition:transform .2s,box-shadow .2s}.product:hover{transform:translateY(-3px);box-shadow:0 10px 25px #292c2410}.product img{display:block;width:100%;aspect-ratio:1/1.04;object-fit:cover;background:var(--soft)}.product-body{padding:17px 18px 19px}.product-id{color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:.12em}.product h3{font:600 19px/1.3 var(--serif);margin:7px 0 17px}.links{display:flex;flex-wrap:wrap;gap:7px}.platform{padding:8px 11px;background:var(--olive);color:white;border-radius:3px;text-decoration:none;font-size:11px;font-weight:700;transition:background .15s}.platform:hover{background:#394638}.platform.tp{background:#ad604c}.platform.tp:hover{background:#874938}.platform.sp{background:#6c7162}.platform.sp:hover{background:#505448}.empty{padding:45px 10px;text-align:center;color:var(--muted);grid-column:1/-1}
+    .digital{margin:92px 0 78px;background:#e7e4d7;padding:38px;display:flex;justify-content:space-between;align-items:center;gap:28px;border:1px solid #d9d4c6}.digital .eyebrow{color:var(--olive)}.digital h2{font:700 32px var(--serif);margin:7px 0}.digital p{margin:0;color:var(--muted);max-width:570px;font-size:14px}.digital-link{flex:none;background:var(--ink);color:white;border-radius:3px;text-decoration:none;padding:12px 17px;font-size:12px;font-weight:700}.digital-link.disabled{opacity:.48;cursor:default}.footer{border-top:1px solid var(--line);padding:24px 0 32px;color:var(--muted);font-size:12px;display:flex;justify-content:space-between}.footer strong{color:var(--ink)}
+    @media(max-width:800px){.hero{grid-template-columns:1fr;gap:25px;padding:58px 0}.hero-note{justify-self:start}.grid{grid-template-columns:repeat(2,1fr)}.toolbar{align-items:start;flex-direction:column}.filters{width:100%}.search{flex:1}.niche-select{flex:1}}
+    @media(max-width:520px){.shell{width:calc(100% - 30px)}.topbar{height:66px}nav{gap:15px;font-size:12px}.hero{padding:47px 0}.hero h1{font-size:48px}.grid{grid-template-columns:1fr 1fr;gap:12px}.product-body{padding:12px}.product h3{font-size:16px;min-height:62px}.platform{padding:7px 8px;font-size:10px}.digital{padding:24px;align-items:flex-start;flex-direction:column;margin:65px 0 55px}.digital h2{font-size:27px}.section-title{font-size:30px}.footer{gap:10px;flex-direction:column}}
+  </style>
+</head>
+<body>
+  <header class="shell topbar">
+    <a class="brand" href="#top">Wit <span>&amp;</span> Wear Co.</a>
+    <nav aria-label="Main navigation"><a href="#shop">Shop designs</a><a href="#digital">Digital goods</a></nav>
+  </header>
+  <main id="top" class="shell">
+    <section class="hero">
+      <div><div class="eyebrow">A small shop for everyday joy</div><h1>Good things,<br>with a little wit.</h1><p>Cozy comforts, thoughtful gifts, and designs that know when to make you smile.</p></div>
+      <aside class="hero-note"><strong>Made for your kind of people.</strong>Each design lives on the marketplace that makes it. Pick a shop below and checkout securely over there.</aside>
+    </section>
+    <section id="shop" aria-labelledby="shop-heading">
+      <div class="toolbar"><div><div class="eyebrow">The collection</div><h2 class="section-title" id="shop-heading">Browse the good stuff</h2><p class="section-intro">Find a design, then choose where to shop.</p></div>
+        <div class="filters"><input class="search" id="search" type="search" placeholder="Search designs…" aria-label="Search designs"><select class="niche-select" id="niche" aria-label="Filter by niche"><option value="">All niches</option></select></div>
+      </div>
+      <p class="results" id="results" aria-live="polite"></p>
+      <div class="grid" id="products" aria-live="polite"></div>
+    </section>
+    <section class="digital" id="digital" aria-labelledby="digital-title">
+      <div><div class="eyebrow">Digital products</div><h2 id="digital-title">Printable Cat Health Record</h2><p>A simple, printable place for vet visits, vaccines, medication, and the little details that help you care for your cat.</p></div>
+      <a class="digital-link disabled" id="digital-link" href="#digital" aria-disabled="true">Gumroad link coming soon</a>
+    </section>
+  </main>
+  <footer class="shell footer"><span><strong>Wit &amp; Wear Co.</strong> · A little humor for the everyday.</span><span>Checkout is completed on each marketplace.</span></footer>
+  <script src="produits.js"></script>
+  <script>
+    (async function(){
+      const products=window.CATALOGUE_PRODUCTS||[],grid=document.getElementById('products'),search=document.getElementById('search'),niche=document.getElementById('niche');
+      const platformNames={redbubble:['Redbubble','rb'],teepublic:['TeePublic','tp'],spreadshirt:['Spreadshirt','sp']};
+      const niches=[...new Set(products.map(p=>p.niche).filter(Boolean))].sort();
+      if(niches.length){niche.style.display='block';niches.forEach(v=>{const o=document.createElement('option');o.value=v;o.textContent=v;niche.append(o)})}
+      function render(){const q=search.value.trim().toLowerCase(),selected=niche.value;const list=products.filter(p=>(!selected||p.niche===selected)&&(!q||`${p.quote} ${p.id} ${p.niche||''}`.toLowerCase().includes(q)));document.getElementById('results').textContent=`${list.length} ${list.length===1?'design':'designs'}`;grid.replaceChildren();if(!list.length){grid.innerHTML='<p class="empty">No designs found. Try another search.</p>';return}for(const p of list){const card=document.createElement('article');card.className='product';const img=document.createElement('img');img.src=p.image;img.alt=p.quote||`Design ${p.id}`;img.loading='lazy';const body=document.createElement('div');body.className='product-body';const id=document.createElement('div');id.className='product-id';id.textContent=p.niche?`${p.id} · ${p.niche}`:p.id;const title=document.createElement('h3');title.textContent=p.quote||'A little everyday wit';const links=document.createElement('div');links.className='links';for(const [key,url] of Object.entries(p.links||{})){if(!url)continue;const meta=platformNames[key];if(!meta)continue;const a=document.createElement('a');a.className=`platform ${meta[1]}`;a.textContent=`Shop on ${meta[0]}`;a.href=url;a.target='_blank';a.rel='noopener noreferrer';links.append(a)}body.append(id,title,links);card.append(img,body);grid.append(card)}}
+      search.addEventListener('input',render);niche.addEventListener('change',render);render();
+      try{const data=(await fetch('digital.json').then(r=>r.json()))[0];if(data.url){const a=document.getElementById('digital-link');a.href=data.url;a.textContent='Get it on Gumroad';a.classList.remove('disabled');a.removeAttribute('aria-disabled');a.target='_blank';a.rel='noopener noreferrer'}}catch(e){}
+    })();
+  </script>
+</body>
+</html>
