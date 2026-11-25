@@ -7,4 +7,4 @@ window.CATALOGUE_STORES = {
 };
 
 // Compteur de visites gratuit GoatCounter (sans cookies). Créer un compte sur goatcounter.com, puis mettre ici le code choisi (ex. "witandwear" pour witandwear.goatcounter.com). Vide = pas de compteur.
-window.CATALOGUE_STATS = { goatcounter: "" };
+window.CATALOGUE_STATS = { goatcounter: "witandwearstudio" };
