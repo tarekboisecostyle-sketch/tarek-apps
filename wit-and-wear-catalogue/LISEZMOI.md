@@ -1,4 +1,4 @@
-# Wit & Wear Co. catalogue
+# Wit & Wear Studio catalogue
 
 Static English product catalogue for print-on-demand designs and one digital product. Customers choose a marketplace and complete checkout there; this site has no cart or listed prices.
 
