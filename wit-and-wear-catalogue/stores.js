@@ -2,6 +2,6 @@
 window.CATALOGUE_STORES = {
   redbubble: "https://www.redbubble.com/people/tarekmeziani/shop",
   teepublic: "https://www.teepublic.com/user/meziani-dei",
-  spreadshirt: "",
+  spreadshirt: "https://www.spreadshirt.com/shop/user/308135837",
   gumroad: "https://zwaqdeco.gumroad.com/"
 };
