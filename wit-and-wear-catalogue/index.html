@@ -60,5 +60,8 @@
       try{const data=(await fetch('digital.json').then(r=>r.json()))[0];if(data.url){const a=document.getElementById('digital-link');a.href=data.url;a.textContent='Get it on Gumroad';a.classList.remove('disabled');a.removeAttribute('aria-disabled');a.target='_blank';a.rel='noopener noreferrer'}}catch(e){}
     })();
   </script>
+  <script>
+    (function(){var c=(window.CATALOGUE_STATS||{}).goatcounter;if(!c)return;var s=document.createElement('script');s.async=true;s.src='https://gc.zgo.at/count.js';s.setAttribute('data-goatcounter','https://'+c+'.goatcounter.com/count');document.head.appendChild(s);document.addEventListener('click',function(e){var a=e.target.closest&&e.target.closest('a.platform,#store-links a');if(!a||!window.goatcounter||!window.goatcounter.count)return;window.goatcounter.count({path:'go/'+a.textContent.trim().replace(/\s+/g,'-'),title:a.href,event:true})})})();
+  </script>
 </body>
 </html>

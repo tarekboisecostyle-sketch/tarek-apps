@@ -5,3 +5,6 @@ window.CATALOGUE_STORES = {
   spreadshirt: "https://www.spreadshirt.com/shop/user/308135837",
   gumroad: "https://zwaqdeco.gumroad.com/"
 };
+
+// Compteur de visites gratuit GoatCounter (sans cookies). Créer un compte sur goatcounter.com, puis mettre ici le code choisi (ex. "witandwear" pour witandwear.goatcounter.com). Vide = pas de compteur.
+window.CATALOGUE_STATS = { goatcounter: "" };
