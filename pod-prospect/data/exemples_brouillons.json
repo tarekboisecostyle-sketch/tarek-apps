@@ -1,0 +1,8 @@
+[
+  {"id":"EX-A-01","designId":"POD-20261121-02","niche":"Chiens","plateforme":"pinterest","bras":"A","texte":"Dog hair is basically home decor at this point. Anyone else?","lien":"https://witandwearstudio.netlify.app/?ref=POD-20261121-02"},
+  {"id":"EX-A-02","designId":"POD-20261110-03","niche":"Bricolage et métiers manuels","plateforme":"x","bras":"A","texte":"Measure twice, cut once, then invent three new swear words.","lien":"https://witandwearstudio.netlify.app/?ref=POD-20261110-03"},
+  {"id":"EX-A-03","designId":"POD-20261121-11","niche":"Retraités","plateforme":"threads","bras":"A","texte":"Retirement: where Tuesday and Saturday have the same job title.","lien":"https://witandwearstudio.netlify.app/?ref=POD-20261121-11"},
+  {"id":"EX-B-01","designId":"POD-20261121-06","niche":"Café","plateforme":"instagram","bras":"B","marketplace":"redbubble","texte":"Coffee first. Quiet morning second. Cat supervising both.","lien":"https://www.redbubble.com/shop/ap/185897301"},
+  {"id":"EX-B-02","designId":"POD-20261110-05","niche":"Pâtisserie et cuisine","plateforme":"pinterest","bras":"B","marketplace":"teepublic","texte":"Baking season: powered by butter and questionable playlists.","lien":"https://www.teepublic.com/t-shirt/102298289"},
+  {"id":"EX-B-03","designId":"POD-20261110-06","niche":"Électriciens","plateforme":"x","bras":"B","marketplace":"redbubble","texte":"Electrician's motto: trust me, I brought the right screwdriver.","lien":"https://www.redbubble.com/shop/ap/185887248"}
+]
