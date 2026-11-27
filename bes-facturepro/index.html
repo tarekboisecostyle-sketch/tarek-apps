@@ -6938,12 +6938,9 @@ async function checkInbox(){
   try{
     const { data, error } = await sbc.from('bes_inbox').select('id,label,payload').eq('status','pending').order('id');
     if(error || !data || !data.length) return;
-    const liste = data.map(r=>'• '+(r.label||'import')).join('
-');
-    if(!confirm('Claude a préparé '+data.length+' import(s) :
-'+liste+'
-
-Importer maintenant ?')) return;
+    const NL = String.fromCharCode(10);
+    const liste = data.map(r=>'- '+(r.label||'import')).join(NL);
+    if(!confirm('Claude a prepare '+data.length+' import(s) :'+NL+liste+NL+NL+'Importer maintenant ?')) return;
     for(const r of data){
       document.getElementById('json-paste').value = JSON.stringify(r.payload);
       doImport();
