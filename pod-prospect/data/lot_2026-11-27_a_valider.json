@@ -1,0 +1,59 @@
+[
+ {
+  "id": "L1-A1",
+  "designId": "POD-20261121-06",
+  "niche": "Chats",
+  "plateforme": "pinterest",
+  "bras": "A",
+  "texte": "Cats, coffee & quiet mornings. Tee for the cat person who does both.",
+  "lien": "https://witandwearstudio.netlify.app/?ref=POD-20261121-06"
+ },
+ {
+  "id": "L1-B1",
+  "designId": "POD-20261121-07",
+  "niche": "Chats",
+  "plateforme": "pinterest",
+  "bras": "B",
+  "texte": "Cat hair is my glitter. Tee for the cat person who stopped fighting it.",
+  "lien": "https://www.redbubble.com/shop/ap/185897327",
+  "marketplace": "redbubble"
+ },
+ {
+  "id": "L1-A2",
+  "designId": "POD-20261121-02",
+  "niche": "Chiens",
+  "plateforme": "x",
+  "bras": "A",
+  "texte": "Dog Mom Life: hair everywhere, regrets none. Tee for every dog mom out there.",
+  "lien": "https://witandwearstudio.netlify.app/?ref=POD-20261121-02"
+ },
+ {
+  "id": "L1-B2",
+  "designId": "POD-20261121-03",
+  "niche": "Chiens",
+  "plateforme": "x",
+  "bras": "B",
+  "texte": "Happy tail, happy heart. Tee for people whose dog is their favorite person.",
+  "lien": "https://www.redbubble.com/shop/ap/185887550",
+  "marketplace": "redbubble"
+ },
+ {
+  "id": "L1-A3",
+  "designId": "POD-20261110-07",
+  "niche": "Retraités",
+  "plateforme": "threads",
+  "bras": "A",
+  "texte": "Officially retired: every day is Saturday. A tee for the newly retired.",
+  "lien": "https://witandwearstudio.netlify.app/?ref=POD-20261110-07"
+ },
+ {
+  "id": "L1-B3",
+  "designId": "POD-20261121-11",
+  "niche": "Retraités",
+  "plateforme": "threads",
+  "bras": "B",
+  "texte": "Retired life: no alarm, no rush. A tee for the newly retired.",
+  "lien": "https://www.redbubble.com/shop/ap/185897400",
+  "marketplace": "redbubble"
+ }
+]
