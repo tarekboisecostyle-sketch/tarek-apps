@@ -6928,9 +6928,30 @@ window.initCloudSync = function(){
           const r = row.json ? { data: row } : await sbc.from('bes_state').select('json, updated_at').eq('id','main').single();
           if(r.data && r.data.json) applyRemoteJson(r.data.json, +r.data.updated_at);
         }).subscribe();
+      checkInbox();
     }catch(e){ cloudStatus('Erreur : '+e.message, false); }
   });
 };
+
+// Boîte d'import : Claude dépose des JSON bes-import-v1 dans bes_inbox ; on les propose à l'ouverture
+async function checkInbox(){
+  try{
+    const { data, error } = await sbc.from('bes_inbox').select('id,label,payload').eq('status','pending').order('id');
+    if(error || !data || !data.length) return;
+    const liste = data.map(r=>'• '+(r.label||'import')).join('
+');
+    if(!confirm('Claude a préparé '+data.length+' import(s) :
+'+liste+'
+
+Importer maintenant ?')) return;
+    for(const r of data){
+      document.getElementById('json-paste').value = JSON.stringify(r.payload);
+      doImport();
+      await sbc.from('bes_inbox').update({ status:'done', done_at:new Date().toISOString() }).eq('id', r.id);
+    }
+    document.getElementById('json-paste').value = '';
+  }catch(e){ console.warn('bes_inbox', e); }
+}
 
 window.scheduleCloudPush = function(){
   if(!cloudReady || cloudApplyingRemote) return;
