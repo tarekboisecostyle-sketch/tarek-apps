@@ -9,4 +9,4 @@ create table if not exists public.bes_inbox (
 );
 alter table public.bes_inbox enable row level security;
 drop policy if exists bes_inbox_rw on public.bes_inbox;
-create policy bes_inbox_rw on public.bes_inbox for all to anon, authenticated using (true) with check (true);
+create policy bes_inbox_rw on public.bes_inbox for all to authenticated using (true) with check (true);
