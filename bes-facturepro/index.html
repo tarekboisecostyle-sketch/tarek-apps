@@ -9014,7 +9014,8 @@ function livreTTC(ch){
       const l2 = Math.min(q, qteLivree(ch, d.id, idx));
       v += q*pu; vl += l2*pu; nbT++; if(l2 >= q - 1e-9) nbL++;
     });
-    tot += acc; liv += v > 0 ? acc * vl / v : 0;
+    // valeur livrée prise sur le montant du devis (pas sur un montant négocié/réduit), plafonnée au montant accordé
+    tot += acc; liv += v > 0 ? Math.min(acc, autoMontant(l) * vl / v) : 0;
   });
   if(ch.statut === 'termine') liv = tot;       // chantier terminé = tout livré
   return {acc: r2(tot), liv: r2(Math.min(liv, tot)), enc: r2(tot - Math.min(liv, tot)), nbL, nbT};
