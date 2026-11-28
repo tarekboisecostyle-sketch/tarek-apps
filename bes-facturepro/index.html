@@ -397,6 +397,7 @@ body{flex-direction:column;}
           <select id="flt-client-docs" onchange="var c=document.getElementById('flt-chantier-docs');if(c)c.value='';renderDocs()"><option value="">Tous les clients</option></select>
           <select id="flt-chantier-docs" onchange="renderDocs()"><option value="">Tous les chantiers</option></select>
           <input class="search-inp" placeholder="Rechercher N°, client, chantier…" id="flt-q-docs" oninput="renderDocs()" style="width:180px;">
+          <button class="btn btn-outline btn-sm" id="btn-docs-arch" onclick="toggleDocsArch()">📦 Archive</button>
         </div>
       </div>
       <div class="card">
@@ -1580,8 +1581,8 @@ function nav(page, el) {
 // ═══════════════════════════ DASHBOARD ═══════════════════════════
 function renderDashboard() {
   if(!D.commandes) D.commandes=[];
-  const factures = D.docs.filter(d=>d.type==='FACTURE');
-  const devis = D.docs.filter(d=>d.type==='DEVIS');
+  const factures = D.docs.filter(d=>!d.archive&&d.type==='FACTURE');
+  const devis = D.docs.filter(d=>!d.archive&&d.type==='DEVIS');
   const enc = factures.filter(d=>d.statut==='payee').reduce((s,d)=>s+d.ttc,0);
   const att = factures.filter(d=>d.statut==='envoyee').reduce((s,d)=>s+d.ttc,0);
   const al = D.stock.filter(p=>p.qty<=p.seuil).length;
@@ -1637,7 +1638,7 @@ function renderDashboard() {
   const chartData = Array.from({length:6},(_,i)=>{
     const d = new Date(now.getFullYear(), now.getMonth()-5+i, 1);
     const m=d.getMonth(), y=d.getFullYear();
-    const val = D.docs.filter(doc=>doc.type==='FACTURE'&&doc.statut==='payee'&&doc.date&&new Date(doc.date).getMonth()===m&&new Date(doc.date).getFullYear()===y).reduce((s,doc)=>s+doc.ttc,0);
+    const val = D.docs.filter(doc=>!doc.archive&&doc.type==='FACTURE'&&doc.statut==='payee'&&doc.date&&new Date(doc.date).getMonth()===m&&new Date(doc.date).getFullYear()===y).reduce((s,doc)=>s+doc.ttc,0);
     return {lbl:MONTHS[m], val};
   });
   const maxV = Math.max(...chartData.map(c=>c.val),1);
@@ -2445,7 +2446,23 @@ function cmpDocs(a,b){
   if(da!==db) return da<db?1:-1;
   return docSeqKey(b.num)-docSeqKey(a.num);
 }
+window.docsArchView = false;
+function toggleDocsArch(){ window.docsArchView = !window.docsArchView; renderDocs(); }
+function archiverDoc(i){
+  const d = D.docs[i]; if(!d) return;
+  if(!confirm('Archiver ' + d.num + ' ?\n\nIl disparaît de la liste, des situations et des totaux. Rien n\'est supprimé : restaurable depuis 📦 Archive.')) return;
+  d.archive = true; d.archivedAt = new Date().toISOString(); save();
+  notify('📦 ' + d.num + ' archivé'); renderDocs(); renderDashboard();
+}
+function restaurerDoc(i){
+  const d = D.docs[i]; if(!d) return;
+  delete d.archive; delete d.archivedAt; save();
+  notify('♻️ ' + d.num + ' restauré ✅','ok');
+  if(!D.docs.some(x=>x.archive)) window.docsArchView = false;
+  renderDocs(); renderDashboard();
+}
 function renderDocs() {
+  { const nb=D.docs.filter(x=>x.archive).length, b=document.getElementById('btn-docs-arch'); if(b) b.innerHTML = window.docsArchView ? '← Retour aux documents' : '📦 Archive ('+nb+')'; }
   fillMoisSelect('flt-mois-docs', D.docs.map(d=>d.date));
   fillAnneeSelect('flt-annee-docs', D.docs.map(d=>d.date));
   const q = (document.getElementById('flt-q-docs')||{}).value||'';
@@ -2462,6 +2479,7 @@ function renderDocs() {
     selCh.innerHTML = '<option value="">Tous les chantiers</option>' + chs.map(c=>`<option value="${String(c).replace(/"/g,'&quot;')}" ${c===fCh?'selected':''}>${c}</option>`).join('') + '<option value="__none__" '+(fCh==='__none__'?'selected':'')+'>— Sans chantier —</option>';
   }
   const list = D.docs.filter(d => {
+    if(!!d.archive !== !!window.docsArchView) return false;
     if(!matchMoisFilter(d.date,'flt-mois-docs','flt-annee-docs')) return false;
     if(type && d.type!==type) return false;
     if(fCl && d.clientNom!==fCl) return false;
@@ -2472,7 +2490,7 @@ function renderDocs() {
   });
   { const _m=sortSel('docs','flt-q-docs','renderDocs'); list.sort(cmpDocs); if(_m==='ancien') list.reverse(); }
   const tb = document.getElementById('list-docs');
-  if(!list.length) { tb.innerHTML='<tr><td colspan="8" style="text-align:center;padding:22px;color:var(--muted);">Aucun document</td></tr>'; return; }
+  if(!list.length) { tb.innerHTML='<tr><td colspan="8" style="text-align:center;padding:22px;color:var(--muted);">'+(window.docsArchView?'Archive vide':'Aucun document')+'</td></tr>'; return; }
   tb.innerHTML = list.map(d => {
     const ri = D.docs.indexOf(d);
     return `<tr>
@@ -2489,6 +2507,7 @@ function renderDocs() {
         <button class="btn-ghost" onclick="dlDocJson(${ri})">JSON</button>
         <button class="btn-ghost" style="color:#C0392B;" onclick="exportPDF(${ri})">PDF</button>
         <button class="btn-ghost" style="color:#25D366;" onclick="envoyerWhatsApp('doc',${ri})" title="Envoyer par WhatsApp">💬</button>
+        ${d.archive?`<button class="btn-ghost" style="color:var(--green);font-weight:700;" onclick="restaurerDoc(${ri})" title="Remettre dans les documents">♻️ Restaurer</button>`:`<button class="btn-icon" onclick="archiverDoc(${ri})" title="Archiver (sort de la liste et des totaux, restaurable)">📦</button>`}
         <button class="btn-icon" style="color:var(--red);" onclick="delDoc(${ri})">🗑</button>
       </td></tr>`;
   }).join('');
@@ -6467,7 +6486,7 @@ window.renderTresorerie = function(){
   const totEnc = D.encaissements.reduce((s,e)=>s+(e.montant||0),0);
   const totDec = D.decaissements.reduce((s,e)=>s+(e.montant||0),0);
   const solde = totEnc - totDec;
-  const impayes = D.docs.filter(d=>d.type==='FACTURE').reduce((s,d)=>s+restePayer(d),0);
+  const impayes = D.docs.filter(d=>!d.archive&&d.type==='FACTURE').reduce((s,d)=>s+restePayer(d),0);
   document.getElementById('tr-stats').innerHTML=[
     ['Total encaissé',fmt(totEnc),'bg','green'],
     ['Total décaissé',fmt(totDec),'br','red'],
@@ -6531,7 +6550,7 @@ window.openEncModal = function(idx){
   document.getElementById('enc-edit-idx').value = idx;
   document.getElementById('enc-modal-title').textContent = idx===-1?'Nouvel encaissement':'Modifier encaissement';
   const sel = document.getElementById('enc-doc');
-  const factures = D.docs.filter(d=>d.type==='FACTURE');
+  const factures = D.docs.filter(d=>!d.archive&&d.type==='FACTURE');
   sel.innerHTML = '<option value="">Sélectionner une facture…</option>' + factures.map(d=>{
     const di=D.docs.indexOf(d);
     return `<option value="${di}">${d.num} — ${d.clientNom} (reste : ${fmt(restePayer(d))} MAD)</option>`;
@@ -7263,6 +7282,9 @@ const typeClient = nom => { const c = clientOf(nom); return c ? (c.type||'entrep
 const typeLbl = t => t === 'particulier' ? '👤 Personne' : '🏢 Société';
 const dFr = s => s ? new Date(s).toLocaleDateString('fr-FR') : '-';
 const r2 = n => Math.round((Number(n)||0)*100)/100;
+const chsActifs = () => chs().filter(c => !c.archive);
+// Devis compté dans la situation : validé + coché « Dans la situation » (sit non défini = oui, anciens devis) + pas archivé
+const inSit = l => !!l.valide && l.sit !== false && !(docById(l.docId)||{}).archive;
 
 const CH_STATUTS = {
   en_cours:  {l:'En cours',  c:'s-e'},
@@ -7357,9 +7379,9 @@ function etatLigne(ch, L){
 
 function situation(ch){
   normCh(ch);
-  const valides = ch.devis.filter(l => l.valide);
+  const valides = ch.devis.filter(inSit);
   const accTot = valides.reduce((s, l) => s + accorde(l), 0);
-  const enAttente = ch.devis.filter(l => !l.valide).reduce((s, l) => s + accorde(l), 0);
+  const enAttente = ch.devis.filter(l => !inSit(l)).reduce((s, l) => s + accorde(l), 0);
   const paye = paiements(ch).reduce((s, e) => s + (Number(e.montant)||0), 0);
   const lignes = lignesAValider(ch);
   const nbLiv = lignes.filter(L => L.q > 0 && L.liv >= L.q - 1e-9).length;
@@ -7460,6 +7482,7 @@ const PAGE = `
             <option value="livrer">Avec produits à livrer</option>
             <option value="solde">Soldés</option>
           </select>
+          <button class="btn btn-outline btn-sm" id="ch-btn-arch" onclick="chToggleArch()">📦 Archive</button>
         </div>
       </div>
       <div id="ch-selbar" class="ch-selbar" style="display:none;"></div>
@@ -7634,9 +7657,14 @@ window.chOpenDetail = function(id, tab){
 window.chBack = function(){ curChId = null; showList(); };
 
 // ─────────────────────────── LISTE ───────────────────────────
+window.chArchView = false;
+window.chToggleArch = function(){ window.chArchView = !window.chArchView; chSel.clear(); renderChantiers(); };
 window.renderChantiers = function(){
   if(chSyncFromDocs()) save();
-  const all = chs().map(normCh);
+  const nbArch = chs().filter(c => c.archive).length;
+  const all = chs().filter(c => !!c.archive === !!window.chArchView).map(normCh);
+  const bArch = document.getElementById('ch-btn-arch');
+  if(bArch){ bArch.innerHTML = window.chArchView ? '← Retour aux chantiers' : '📦 Archive (' + nbArch + ')'; }
   // Liste des clients ayant des chantiers
   const selCl = document.getElementById('ch-f-client');
   const fCl = selCl.value;
@@ -7690,6 +7718,7 @@ window.renderChantiers = function(){
   window._chVisIds = list.map(c => c.id);
   chRenderSelBar();
   if(!list.length){
+    if(window.chArchView && !all.length){ box.innerHTML = '<div class="ch-empty">Archive vide. Les chantiers archivés (📦) apparaissent ici et peuvent être restaurés.</div>'; return; }
     box.innerHTML = `<div class="ch-empty">${all.length ? 'Aucun chantier ne correspond aux filtres.' : 'Aucun chantier pour l\'instant.<br><br><button class="btn btn-primary btn-sm" onclick="chOpenModal(null)">+ Créer le premier chantier</button><br><br><span style="font-size:11px;">Astuce : vous pouvez aussi créer les chantiers automatiquement depuis vos devis existants.</span><br><button class="btn btn-outline btn-sm" style="margin-top:8px;" onclick="chAutoFromDevis()">⚡ Créer un chantier par devis existant</button>'}</div>`;
     return;
   }
@@ -7714,7 +7743,7 @@ window.renderChantiers = function(){
         <td class="ch-ck" onclick="event.stopPropagation();"><input type="checkbox" data-chid="${ch.id}" ${chSel.has(ch.id)?'checked':''} onchange="chToggleSel(${ch.id}, this.checked)" title="Sélectionner pour imprimer la situation"></td>
         <td><strong>${esc(ch.nom)}</strong>${ch.adresse?`<div style="font-size:10.5px;color:var(--muted);">📍 ${esc(ch.adresse)}</div>`:''}</td>
         <td>${devisNums}</td>
-        <td class="ch-num">${fmt(s.accTot)}${s.enAttente>0?`<div style="font-size:10px;color:var(--muted);">+ ${fmt(s.enAttente)} non validé</div>`:''}</td>
+        <td class="ch-num">${fmt(s.accTot)}${s.enAttente>0?`<div style="font-size:10px;color:var(--muted);">+ ${fmt(s.enAttente)} hors situation</div>`:''}</td>
         <td class="ch-num ch-green">${fmt(s.paye)}</td>
         <td class="ch-num ${s.reste>0.01?'ch-red':'ch-green'}" style="font-weight:700;">${fmt(s.reste)}</td>
         <td style="min-width:110px;">${s.nbTot?`<div style="font-size:10.5px;margin-bottom:3px;">${s.nbLiv}/${s.nbTot} livrés</div><div class="ch-prog"><div style="width:${s.pctLiv}%;"></div></div>`:'<span style="font-size:10.5px;color:var(--muted);">Aucun devis validé</span>'}</td>
@@ -7722,6 +7751,7 @@ window.renderChantiers = function(){
         <td style="white-space:nowrap;" onclick="event.stopPropagation();">
           <button class="btn-ghost" onclick="chOpenDetail(${ch.id})">Ouvrir</button>
           <button class="btn-icon" onclick="chOpenModal(${ch.id})" title="Modifier">✏️</button>
+          ${ch.archive?`<button class="btn-ghost" style="color:var(--green);font-weight:700;" onclick="chRestore(${ch.id})" title="Remettre dans les chantiers et la situation">♻️ Restaurer</button>`:`<button class="btn-icon" onclick="chArchive(${ch.id})" title="Archiver : sort de la liste et de la situation, rien n'est supprimé">📦</button>`}
           <button class="btn-icon" style="color:var(--red);" onclick="chDelete(${ch.id})" title="Supprimer">🗑</button>
         </td></tr>`;
     }).join('');
@@ -7736,6 +7766,20 @@ window.renderChantiers = function(){
   chRefreshSelUI();
 };
 
+window.chArchive = function(id){
+  const ch = chById(id); if(!ch) return;
+  if(!confirm('Archiver le chantier « ' + ch.nom + ' » ?\n\nIl disparaît de la liste et des situations. Rien n\'est supprimé : tu pourras le restaurer depuis 📦 Archive.')) return;
+  ch.archive = true; ch.archivedAt = new Date().toISOString(); chSel.delete(id);
+  save(); notify('📦 Chantier archivé', 'ok');
+  if(curChId === id){ curChId = null; showList(); } else renderChantiers();
+};
+window.chRestore = function(id){
+  const ch = chById(id); if(!ch) return;
+  delete ch.archive; delete ch.archivedAt;
+  save(); notify('♻️ Chantier restauré ✅', 'ok');
+  if(!chs().some(c => c.archive)) window.chArchView = false;
+  renderChantiers();
+};
 window.chFilterClient = function(nom){
   const sel = document.getElementById('ch-f-client');
   sel.value = sel.value === nom ? '' : nom;
@@ -7948,6 +7992,9 @@ function htmlDevis(ch){
         <div><label>Validation client</label>
           <label style="display:flex;align-items:center;gap:6px;text-transform:none;font-size:12px;color:${l.valide?'var(--green)':'var(--txt)'};letter-spacing:0;min-height:32px;">
             <input type="checkbox" ${l.valide?'checked':''} onchange="chSetValide(${ch.id},${li},this.checked)" style="width:18px;min-height:18px;"> ${l.valide?'✅ Devis validé':'Non validé'}</label></div>
+        <div><label>Dans la situation</label>
+          <label style="display:flex;align-items:center;gap:6px;text-transform:none;font-size:12px;color:${inSit(l)?'#1e7a3a':'var(--muted)'};letter-spacing:0;min-height:32px;" title="Coche quand la production démarre : le devis entre dans la situation client et on peut demander une avance dessus.">
+            <input type="checkbox" ${inSit(l)?'checked':''} ${l.valide?'':'disabled'} onchange="chSetSit(${ch.id},${li},this.checked)" style="width:18px;min-height:18px;"> ${!l.valide?'—':(inSit(l)?'📋 Dans la situation':'Hors situation')}</label></div>
         <div><label>Date validation</label><input type="date" value="${l.dateValidation||''}" ${l.valide?'':'disabled'} onchange="chSetLink(${ch.id},${li},'dateValidation',this.value)"></div>
         <div><label>Montant accordé en</label><select onchange="chSetLink(${ch.id},${li},'base',this.value)"><option value="TTC" ${l.base!=='HT'?'selected':''}>TTC</option><option value="HT" ${l.base==='HT'?'selected':''}>HT</option></select></div>
         <div><label>Montant accordé (MAD)</label><input type="number" step="0.01" placeholder="${fmt(autoMontant(l))} (auto)" value="${l.montant!=null&&l.montant!==''?l.montant:''}" onchange="chSetLink(${ch.id},${li},'montant',this.value)" title="Laisser vide = montant ${l.base==='HT'?'HT':'TTC'} du devis. Saisir un montant si remise / prix négocié."></div>
@@ -7973,7 +8020,7 @@ function htmlDevis(ch){
       </div></div>
     ${cards || '<div class="ch-empty">Aucun devis lié. Liez un devis existant ou créez-en un nouveau.</div>'}
     ${orphans.length?`<div class="ch-fac-list" style="padding:10px 16px;"><strong style="color:var(--muted);">Factures du chantier (sans devis) :</strong> ${orphans.map(f => `<span class="ch-fac-chip">🧾 ${esc(f.num)} · ${fmt(f.ttc)} TTC <button onclick="exportPDF(${D.docs.indexOf(f)})">📄</button><button onclick="chUnlinkFacture(${ch.id},${f.id})">✕</button></span>`).join('')}</div>`:''}
-    <div style="padding:8px 16px 12px;font-size:11px;color:var(--muted);">💡 Cochez « Devis validé » pour activer le suivi de livraison de ses produits et le compter dans le montant accordé. Le montant accordé suit automatiquement le HT ou le TTC du devis ; saisissez un montant pour une remise ou un prix négocié.</div>
+    <div style="padding:8px 16px 12px;font-size:11px;color:var(--muted);">💡 Cochez « Devis validé » pour activer le suivi de livraison de ses produits. Cochez ensuite « Dans la situation » quand la production démarre : le devis est alors compté dans le montant accordé et la situation client. Le montant accordé suit automatiquement le HT ou le TTC du devis ; saisissez un montant pour une remise ou un prix négocié.</div>
   </div>`;
 }
 
@@ -7981,8 +8028,15 @@ window.chSetValide = function(chId, li, v){
   const l = chById(chId).devis[li];
   l.valide = v;
   if(v && !l.dateValidation) l.dateValidation = today();
+  if(v && l.sit === undefined) l.sit = false;   // validé ≠ en production : à cocher « Dans la situation » au lancement
   save(); renderDetail();
-  if(v) notify('Devis validé ✅ — suivi de livraison activé', 'ok');
+  if(v) notify('Devis validé ✅ — coche « Dans la situation » quand la production démarre', 'ok');
+};
+window.chSetSit = function(chId, li, v){
+  const l = chById(chId).devis[li];
+  l.sit = !!v;
+  save(); renderDetail();
+  notify(v ? '📋 Devis ajouté à la situation' : 'Devis retiré de la situation (reste validé)', 'ok');
 };
 window.chSetLink = function(chId, li, field, v){
   const l = chById(chId).devis[li];
@@ -8028,7 +8082,7 @@ window.chFillLinkSelect = function(){
   const used = new Set();
   if(kind === 'DEVIS') chs().forEach(c => (c.devis||[]).forEach(l => used.add(l.docId)));
   else allFactures(ch).forEach(f => used.add(f.id));
-  const list = (D.docs||[]).filter(d => d.type === kind && !used.has(d.id) && (all || d.clientNom === ch.clientNom));
+  const list = (D.docs||[]).filter(d => !d.archive && d.type === kind && !used.has(d.id) && (all || d.clientNom === ch.clientNom));
   document.getElementById('chl-doc').innerHTML = list.length
     ? list.map(d => `<option value="${d.id}">${esc(d.num)} — ${esc(d.clientNom)} — ${dFr(d.date)} — ${fmt(d.ttc)} TTC</option>`).join('')
     : `<option value="">Aucun ${kind==='DEVIS'?'devis':'facture'} disponible pour ce client (cochez « autres clients »)</option>`;
@@ -8840,7 +8894,7 @@ function bodySituation(ch, withSign){
   return bodySituationAdmin(ch, true) + (withSign?`<div class="keep" style="text-align:right;margin-top:18px;font-style:italic;">Fait à Marrakech, le ${dFr(today())}<br><br><b>Signature &amp; Cachet :</b></div>`:'');
 }
 window.chPrintSituationClient = function(clientNom){
-  const ids = chs().filter(c => c.clientNom === clientNom).map(c => c.id);
+  const ids = chsActifs().filter(c => c.clientNom === clientNom).map(c => c.id);
   if(!ids.length) return;
   chPrintSituationMulti(ids, 'client', false);
 };
@@ -8881,7 +8935,7 @@ function htmlBilan(k, ch){
 
 // Libellé de la base du montant accordé : HT, TTC, ou mixte si les devis validés n'ont pas la même base
 function baseLbl(ch){
-  const b = Array.from(new Set(ch.devis.filter(l => l.valide).map(l => l.base === 'HT' ? 'HT' : 'TTC')));
+  const b = Array.from(new Set(ch.devis.filter(inSit).map(l => l.base === 'HT' ? 'HT' : 'TTC')));
   return b.length === 1 ? b[0] : (b.length ? '(HT / TTC selon devis)' : '');
 }
 window.chPrintValorisation = function(chId){
@@ -8915,7 +8969,7 @@ function bodySituationAdmin(ch, client){
     const d = docById(l.docId); if(!d) return '';
     const acc = accorde(l); const p = paiementsDevis(ch, d.id).reduce((a, e) => a + (Number(e.montant)||0), 0);
     const fs = facturesOfDevis(ch, d).map(f => f.num).join(', ');
-    return `<tr><td class="b">${esc(d.num)}</td><td class="c">${l.valide?'✔ '+dFr(l.dateValidation):'Non validé'}</td><td class="c">${l.base==='HT'?'HT':'TTC'}${!client&&l.montant!=null&&l.montant!==''?' (négocié)':''}</td><td class="r">${fmt(d.ht)}</td><td class="r">${fmt(d.ttc)}</td><td class="r b">${fmt(acc)}</td><td class="r">${fmt(p)}</td><td class="tt">${fmt(acc-p)}</td><td style="font-size:9.5px;">${esc(fs||'-')}</td></tr>`;
+    return `<tr><td class="b">${esc(d.num)}</td><td class="c">${!l.valide?'Non validé':(inSit(l)?'✔ '+dFr(l.dateValidation):'Validé — hors situation')}</td><td class="c">${l.base==='HT'?'HT':'TTC'}${!client&&l.montant!=null&&l.montant!==''?' (négocié)':''}</td><td class="r">${fmt(d.ht)}</td><td class="r">${fmt(d.ttc)}</td><td class="r b">${fmt(acc)}</td><td class="r">${fmt(p)}</td><td class="tt">${fmt(acc-p)}</td><td style="font-size:9.5px;">${esc(fs||'-')}</td></tr>`;
   }).join('');
   // 3. Paiements
   const pays = paiements(ch).slice().sort((a, b) => (a.date||'').localeCompare(b.date||''));
@@ -8941,7 +8995,7 @@ function bodySituationAdmin(ch, client){
 }
 
 window.chPrintSituationAdminClient = function(clientNom){
-  const ids = chs().filter(c => c.clientNom === clientNom).map(c => c.id);
+  const ids = chsActifs().filter(c => c.clientNom === clientNom).map(c => c.id);
   if(!ids.length) return;
   printSituationDossier(ids, true);
 };
@@ -8951,7 +9005,7 @@ window.chPrintSituationAdminClient = function(clientNom){
 function livreTTC(ch){
   // Valeur TTC livrée = montant accordé de chaque devis validé × part des lignes livrées (en valeur)
   let tot = 0, liv = 0, nbL = 0, nbT = 0;
-  ch.devis.filter(l => l.valide).forEach(l => {
+  ch.devis.filter(inSit).forEach(l => {
     const d = docById(l.docId); if(!d) return;
     const acc = accorde(l); let v = 0, vl = 0;
     (d.items||[]).forEach((it, idx) => {
@@ -8969,7 +9023,7 @@ function htmlSituationDossier(list, admin){
   const T = {acc:0, liv:0, enc:0, achats:0};
   const dash = v => Math.abs(v) < 0.005 ? '—' : fmt(v);
   let n = 0, rows = '';
-  const used = list.filter(ch => ch.devis.some(l => l.valide));
+  const used = list.filter(ch => ch.devis.some(inSit));
   used.forEach(ch => {
     const lv = livreTTC(ch);
     n++; T.acc += lv.acc; T.liv += lv.liv; T.enc += lv.enc;
@@ -8977,7 +9031,7 @@ function htmlSituationDossier(list, admin){
     if(lv.liv >= lv.acc - 0.005 && lv.acc > 0) badges = '<span class="bd g">Livré</span>';
     else if(lv.liv <= 0.005) badges = '<span class="bd o">En cours</span>';
     else badges = `<span class="bd g">${Math.round(lv.liv*100/lv.acc)} % livré</span><span class="bd o">reste en cours</span>`;
-    const nums = ch.devis.filter(l => l.valide).map(l => { const d = docById(l.docId); return d ? esc(d.num) : ''; }).filter(Boolean).join(', ');
+    const nums = ch.devis.filter(inSit).map(l => { const d = docById(l.docId); return d ? esc(d.num) : ''; }).filter(Boolean).join(', ');
     let ach = '';
     if(admin){ const k = coutsOf(ch); T.achats += k.tot; ach = `<td class="r nw">${fmt(k.tot)}</td>`; }
     rows += `<tr><td class="c nn">${n}</td><td>${esc(ch.nom)} ${badges}</td><td class="nm">${nums}</td><td class="r nw">${fmt(lv.acc)}</td><td class="r nw">${dash(lv.liv)}</td><td class="r nw">${dash(lv.enc)}</td>${ach}</tr>`;
@@ -9027,10 +9081,10 @@ function clientsBlock(list, admin){
 }
 function printSituationDossier(ids, admin){
   const idSet = new Set(ids);
-  const list = chs().map(normCh).filter(c => idSet.has(c.id))
+  const list = chs().map(normCh).filter(c => idSet.has(c.id) && !c.archive)
     .sort((a, b) => (a.clientNom||'').localeCompare(b.clientNom||'') || (a.nom||'').localeCompare(b.nom||'', 'fr', {numeric: true}));
   if(!list.length){ notify('Aucun chantier sélectionné', 'err'); return; }
-  if(!list.some(c => c.devis.some(l => l.valide))){ notify('Aucun devis validé dans ces chantiers', 'err'); return; }
+  if(!list.some(c => c.devis.some(inSit))){ notify('Aucun devis « dans la situation » dans ces chantiers', 'err'); return; }
   const cn = list[0].clientNom || '';
   const multi = new Set(list.map(c => c.clientNom)).size > 1;
   const body = htmlSituationDossier(list, admin) + (admin ? '' : `<div class="keep" style="text-align:right;margin-top:18px;font-style:italic;">Fait à Marrakech, le ${dFr(today())}<br><br><b>Signature &amp; Cachet :</b></div>`);
@@ -9043,7 +9097,7 @@ window.chPrintSituationMulti = function(ids, mode, detail){
   const admin = mode === 'admin';
   if(!detail){ printSituationDossier(ids, admin); return; }
   const idSet = new Set(ids);
-  const list = chs().map(normCh).filter(c => idSet.has(c.id))
+  const list = chs().map(normCh).filter(c => idSet.has(c.id) && !c.archive)
     .sort((a, b) => (a.clientNom||'').localeCompare(b.clientNom||'') || (a.nom||'').localeCompare(b.nom||'', 'fr', {numeric: true}));
   if(!list.length){ notify('Aucun chantier sélectionné', 'err'); return; }
   const clients = Array.from(new Set(list.map(c => c.clientNom||'—')));
@@ -9294,7 +9348,7 @@ function renderAccueil(){
   squelette();
   const box=document.getElementById('acc'); if(!box) return;
   const docs=(D.docs||[]).slice().sort((a,b)=>(b.date||'').localeCompare(a.date||'')||(b.id||0)-(a.id||0));
-  const chEnCours=(D.chantiers||[]).filter(c=>(c.statut||'en_cours')==='en_cours');
+  const chEnCours=(D.chantiers||[]).filter(c=>!c.archive&&(c.statut||'en_cours')==='en_cours');
   const rupt=(D.stock||[]).filter(p=>(Number(p.qty)||0)<=0);
   const d=new Date();
   let h='<div><h1>Bonjour Tarek</h1><p class="acc-date">'+esc(d.toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long',year:'numeric'}))+'</p></div>';
